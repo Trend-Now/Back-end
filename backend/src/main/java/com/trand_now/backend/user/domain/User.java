@@ -20,12 +20,12 @@ public class User {
     @Column(nullable = false, name = "name")
     private String name;
 
-    @Column(nullable = false, name = "email")
+    @Column(nullable = false, unique = true, name = "email")
     private String email;
 
-    @Column(nullable = false, name = "provider")
+    @Column(nullable = false, unique = true, name = "provider")
     private String provider;
 
-    @Column(nullable = false, name = "sns_id")
+    @Column(nullable = false, unique = true, name = "sns_id")
     private String snsId;
 }
