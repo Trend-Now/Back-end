@@ -1,4 +1,4 @@
-package com.trand_now.backend.user.presentation;
+package com.trend_now.backend.user.presentation;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

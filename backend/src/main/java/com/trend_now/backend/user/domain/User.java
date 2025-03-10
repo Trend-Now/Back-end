@@ -1,4 +1,4 @@
-package com.trand_now.backend.user.domain;
+package com.trend_now.backend.user.domain;
 
 
 import jakarta.persistence.*;

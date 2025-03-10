@@ -1,6 +1,6 @@
-package com.trand_now.backend.user.application.impl;
+package com.trend_now.backend.user.application.impl;
 
-import com.trand_now.backend.user.application.UserService;
+import com.trend_now.backend.user.application.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
