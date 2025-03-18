@@ -36,6 +36,11 @@ dependencies {
 
 	// swagger 의존성 주입
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
+
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+	testImplementation 'org.assertj:assertj-core:3.23.1'
+	testRuntimeOnly 'com.h2database:h2:2.1.214'
+	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.1'
 }
 
 tasks.named('test') {

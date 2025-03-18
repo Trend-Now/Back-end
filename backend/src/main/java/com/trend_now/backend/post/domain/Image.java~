@@ -1,0 +1,5 @@
+package com.trend_now.backend.post.domain;
+
+public class Image {
+
+}
