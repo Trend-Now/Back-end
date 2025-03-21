@@ -1,5 +1,9 @@
 package com.trend_now.backend.board.application;
 
+import com.trend_now.backend.board.domain.Board;
+import com.trend_now.backend.board.dto.BoardSaveDto;
+import com.trend_now.backend.board.dto.SignalKeywordDto;
+import com.trend_now.backend.board.dto.Top10;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
@@ -21,9 +25,17 @@ public class SignalKeywordJob implements Job {
 
         SignalKeywordService signalKeywordService = applicationContext.getBean(
                 SignalKeywordService.class);
+        BoardService boardService = applicationContext.getBean(BoardService.class);
 
         try {
-            signalKeywordService.fetchRealTimeKeyword().block();
+            SignalKeywordDto signalKeywordDto = signalKeywordService.fetchRealTimeKeyword().block();
+            boardService.cleanUpExpiredKeys();
+            for(int i = 0; i < signalKeywordDto.getTop10().size(); i++) {
+                Top10 top10 = signalKeywordDto.getTop10().get(i);
+                BoardSaveDto boardSaveDto = BoardSaveDto.from(top10);
+                boardService.saveBoardRedis(boardSaveDto, i + 1);
+            }
+            boardService.setRankValidListTime();
         } catch (Exception e) {
             throw new JobExecutionException(KEYWORD_JOB_ERROR_MESSAGE, e);
         }
