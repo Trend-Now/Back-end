@@ -77,4 +77,26 @@ public class BoardService {
 
         return -1L;
     }
+
+    @Transactional
+    public void updateBoardIsDeleted(BoardSaveDto boardSaveDto) {
+        if(redisTemplate.opsForValue().get(boardSaveDto.getName()) != null) {
+            List<Board> findBoard = boardRepository.findByName(boardSaveDto.getName());
+            if(findBoard.isEmpty()) {
+                return;
+            }
+            if(findBoard.getFirst().isDeleted()) {
+                findBoard.getFirst().changeDeleted();
+            }
+        }
+        else {
+            List<Board> findBoard = boardRepository.findByName(boardSaveDto.getName());
+            if(findBoard.isEmpty()) {
+                return;
+            }
+            if(!findBoard.getFirst().isDeleted()) {
+                findBoard.getFirst().changeDeleted();
+            }
+        }
+    }
 }

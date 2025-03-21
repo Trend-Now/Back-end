@@ -35,6 +35,7 @@ public class SignalKeywordJob implements Job {
                 BoardSaveDto boardSaveDto = BoardSaveDto.from(top10);
                 boardService.saveBoardRedis(boardSaveDto, i + 1);
                 boardService.saveBoardIfNotExists(boardSaveDto);
+                boardService.updateBoardIsDeleted(boardSaveDto);
             }
             boardService.setRankValidListTime();
         } catch (Exception e) {

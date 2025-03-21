@@ -40,4 +40,8 @@ public class Board extends BaseEntity {
     @Builder.Default
     @Column(nullable = false)
     private boolean deleted = false;
+
+    public void changeDeleted() {
+        this.deleted = !this.deleted;
+    }
 }
