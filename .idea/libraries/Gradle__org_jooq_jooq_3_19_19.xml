@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: org.jooq:jooq:3.19.19" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="org.jooq" artifactId="jooq" version="3.19.19" baseVersion="3.19.19" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jooq/jooq/3.19.19/71c3be41b6dcc15b8ccb6bfacf6f082991516714/jooq-3.19.19.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

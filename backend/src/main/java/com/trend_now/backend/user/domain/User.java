@@ -11,12 +11,15 @@ import lombok.*;
         @UniqueConstraint(name = "uk_provider_sns_id", columnNames = {"provider", "snsId"})
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 @Getter
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId;
+    @Column(name = "user_id")
+    private Long id;
 
     @Column(nullable = false, name = "name")
     private String name;
