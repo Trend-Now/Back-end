@@ -1,6 +1,7 @@
 package com.trend_now.backend.alarm.domain;
 
 
+import com.trend_now.backend.config.domain.BaseEntity;
 import com.trend_now.backend.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,7 +26,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Getter
-public class AlarmSetting {
+public class AlarmSetting extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
