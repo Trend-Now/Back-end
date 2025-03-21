@@ -1,0 +1,44 @@
+package com.trend_now.backend.board.application;
+
+import com.trend_now.backend.board.dto.BoardSaveDto;
+import com.trend_now.backend.board.dto.SignalNewsResponse;
+import com.trend_now.backend.board.dto.Top10;
+import lombok.extern.slf4j.Slf4j;
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.springframework.context.ApplicationContext;
+
+@Slf4j
+public class TopKeywordJob implements Job {
+
+    // 1. 외부 API에서 필요한 값들을 가져온다.
+    // 2. DB에 게시판이 존재하지 않을 경우 저장한다.
+    // 3. Redis에 새로 생성된 게시판들을 TTL 값과 함께 캐싱할 수 있도록 한다.
+
+    @Override
+    public void execute(JobExecutionContext context) throws JobExecutionException {
+        JobDataMap jobDataMap = context.getMergedJobDataMap();
+
+        ApplicationContext applicationContext = (ApplicationContext) jobDataMap.get(
+                "applicationContext");
+
+        SignalNewsService signalNewsService = applicationContext.getBean(SignalNewsService.class);
+        BoardService boardService = applicationContext.getBean(BoardService.class);
+
+        try {
+            SignalNewsResponse signalNewsResponse = signalNewsService.fetchRealTimeNews().block();
+            //signalNewsResponse.getTop10().stream()
+                    //.map(BoardSaveDto::from)
+                    //.forEach(boardService::saveBoardIfNotExists);
+            for(int i = 0; i < signalNewsResponse.getTop10().size(); i++) {
+                Top10 top10 = signalNewsResponse.getTop10().get(i);
+                BoardSaveDto boardSaveDto = BoardSaveDto.from(top10);
+                boardService.saveBoardIfNotExists(boardSaveDto);
+            }
+        } catch (Exception e) {
+            throw new JobExecutionException("실시간 검색어 순위 리스트 스케줄러가 정상적으로 동작하지 않았습니다.", e);
+        }
+    }
+}

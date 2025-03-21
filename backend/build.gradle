@@ -51,6 +51,9 @@ dependencies {
 
 	// quartz
 	implementation 'org.springframework.boot:spring-boot-starter-quartz:3.2.3'
+
+	// webClient
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 }
 
 tasks.named('test') {
