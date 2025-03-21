@@ -30,6 +30,7 @@ public class BoardServiceTest {
 
     private static final String BOARD_RANK_KEY = "board_rank";
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
+    private static final String BOARD_RANK_REALTIME_KEY = "board_rank_realtime";
     private static final int BOARD_COUNT = 10;
     private static final long KEY_LIVE_TIME = 301L;
 
@@ -144,6 +145,54 @@ public class BoardServiceTest {
         String min = Long.toString(LocalTime.now().plusSeconds(KEY_LIVE_TIME - 1).toSecondOfDay());
 
         assertThat(validTime).isBetween(min, max);
+    }
+
+    @Test
+    @DisplayName("시간이 만료된 RankKey는 ZSet에서 제거한다")
+    public void 만료_RankKey_ZSet_제거() throws Exception {
+        //given
+
+        //when
+        //페이징을 위해 BOARD_RANK_KEY에 대한 ZSet은 만료된 키를 제외하고 남겨둔다
+
+        for (int i = 0; i < BOARD_COUNT; i++) {
+            BoardSaveDto boardSaveDto = new BoardSaveDto(boards.get(i).getName(),
+                    boards.get(i).getBoardCategory());
+            boardService.saveBoardRedis(boardSaveDto, i);
+        }
+
+        String testBoardKey = "B0";
+        redisTemplate.expire(testBoardKey, 0L, TimeUnit.SECONDS);
+
+        boardService.cleanUpExpiredKeys();
+
+        //then
+        Set<String> allRankKeys = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
+
+        assertThat(allRankKeys).isNotNull();
+        assertThat(allRankKeys.size()).isEqualTo(BOARD_COUNT - 1);
+        assertThat(allRankKeys.iterator().next()).isEqualTo("B1");
+    }
+
+    @Test
+    @DisplayName("스케줄링이 실행될 때 실시간 검색어 순위는 Redis에서 초기화된다")
+    public void 실시간_검색어_순위_초기화_Redis() throws Exception {
+        //given
+
+        //when
+        //실시간 검색어 순위를 저장할 때 10개의 검색어는 BOARD_RANK_KEY와 BOARD_REALTIME_RANK_KEY에 저장된다
+
+        for (int i = 0; i < BOARD_COUNT; i++) {
+            BoardSaveDto boardSaveDto = new BoardSaveDto(boards.get(i).getName(),
+                    boards.get(i).getBoardCategory());
+            boardService.saveBoardRedis(boardSaveDto, i);
+        }
+
+        boardService.cleanUpExpiredKeys();
+
+        //then
+        Set<String> allRankKeys = redisTemplate.opsForZSet().range(BOARD_RANK_REALTIME_KEY, 0, -1);
+        assertThat(allRankKeys).isEmpty();
     }
 
 }
