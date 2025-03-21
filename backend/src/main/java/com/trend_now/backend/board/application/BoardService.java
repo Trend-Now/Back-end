@@ -23,6 +23,7 @@ public class BoardService {
     private static final long KEY_LIVE_TIME = 301L;
     private static final int KEY_EXPIRE = 0;
 
+    private final BoardRepository boardRepository;
     private final RedisTemplate<String, String> redisTemplate;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, int score) {
@@ -58,5 +59,22 @@ public class BoardService {
                 redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, key);
             }
         }
+    }
+
+    @Transactional
+    public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto) {
+        List<Board> findBoard = boardRepository.findByName(boardSaveDto.getName());
+
+        if (findBoard.isEmpty()) {
+            Board board = Board.builder()
+                    .name(boardSaveDto.getName())
+                    .boardCategory(boardSaveDto.getBoardCategory())
+                    .build();
+
+            boardRepository.save(board);
+            return board.getId();
+        }
+
+        return -1L;
     }
 }
