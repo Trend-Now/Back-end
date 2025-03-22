@@ -37,12 +37,6 @@ dependencies {
 	// swagger 의존성 주입
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
 
-	// jupiter
-	testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
-
-	// assertj
-	testImplementation 'org.assertj:assertj-core:3.23.1'
-
 	// h2 데이터베이스 (v2.1.214)
 	testRuntimeOnly 'com.h2database:h2:2.1.214'
 

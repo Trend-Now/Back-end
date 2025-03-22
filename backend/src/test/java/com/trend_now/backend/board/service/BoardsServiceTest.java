@@ -3,7 +3,7 @@ package com.trend_now.backend.board.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.trend_now.backend.board.application.BoardService;
-import com.trend_now.backend.board.domain.Board;
+import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import java.time.LocalTime;
@@ -26,7 +26,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @SpringBootTest
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yml")
-public class BoardServiceTest {
+public class BoardsServiceTest {
 
     private static final String BOARD_RANK_KEY = "board_rank";
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
@@ -40,17 +40,17 @@ public class BoardServiceTest {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    private List<Board> boards;
+    private List<Boards> boards;
 
     @BeforeEach
     public void before() {
         boards = new ArrayList<>();
         for (int i = 0; i < BOARD_COUNT; i++) {
-            Board board = Board.builder()
+            Boards boards = Boards.builder()
                     .name("B" + i)
                     .boardCategory(BoardCategory.REALTIME)
                     .build();
-            boards.add(board);
+            this.boards.add(boards);
         }
 
         redisTemplate.getConnectionFactory().getConnection().flushDb();

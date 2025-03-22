@@ -1,7 +1,8 @@
-package com.trend_now.backend.alarm.domain;
+package com.trend_now.backend.post.domain;
 
+import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.config.domain.BaseEntity;
-import com.trend_now.backend.user.domain.User;
+import com.trend_now.backend.user.domain.Users;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -21,22 +22,30 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Getter
-public class Alarm extends BaseEntity {
+public class Posts extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "alarm_id")
+    @Column(name = "post_id")
     private Long id;
 
     @Column(nullable = false)
-    private String alarmTitle;
+    private String title;
 
     @Column(nullable = false)
-    private String alarmContent;
+    private String writer;
 
-    private String alarmContentUrl;
+    @Column(nullable = false)
+    private String content;
+
+    @Column(nullable = false)
+    private int viewCount = 0;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "board_id")
+    private Boards boards;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    private Users users;
 }

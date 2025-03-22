@@ -1,6 +1,7 @@
-package com.trend_now.backend.post.domain;
+package com.trend_now.backend.alarm.domain;
 
 import com.trend_now.backend.config.domain.BaseEntity;
+import com.trend_now.backend.user.domain.Users;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -20,16 +21,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Getter
-public class Image extends BaseEntity {
+public class Fcms extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "image_id")
+    @Column(name = "fcm_id")
     private Long id;
 
-    private String imageUrl;
+    @Column(nullable = false)
+    private String deviceToken;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id")
-    private Post post;
+    @JoinColumn(name = "user_id")
+    private Users users;
 }

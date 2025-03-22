@@ -1,6 +1,5 @@
 package com.trend_now.backend.board.application;
 
-import com.trend_now.backend.board.domain.Board;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.Top10;

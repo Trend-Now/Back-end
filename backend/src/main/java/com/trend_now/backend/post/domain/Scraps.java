@@ -1,7 +1,7 @@
-package com.trend_now.backend.alarm.domain;
+package com.trend_now.backend.post.domain;
 
 import com.trend_now.backend.config.domain.BaseEntity;
-import com.trend_now.backend.user.domain.User;
+import com.trend_now.backend.user.domain.Users;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -21,17 +21,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Getter
-public class Fcm extends BaseEntity {
+public class Scraps extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "fcm_id")
+    @Column(name = "scrap_id")
     private Long id;
-
-    @Column(nullable = false)
-    private String fcmToken;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    private Users users;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id")
+    private Posts posts;
 }

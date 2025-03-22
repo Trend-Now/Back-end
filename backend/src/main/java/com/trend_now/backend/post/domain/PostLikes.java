@@ -1,7 +1,7 @@
 package com.trend_now.backend.post.domain;
 
 import com.trend_now.backend.config.domain.BaseEntity;
-import com.trend_now.backend.user.domain.User;
+import com.trend_now.backend.user.domain.Users;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -21,18 +21,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Getter
-public class Scrap extends BaseEntity {
+public class PostLikes extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "scrap_id")
+    @Column(name = "post_like_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    private Users users;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
-    private Post post;
+    private Posts posts;
 }

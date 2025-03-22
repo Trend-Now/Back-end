@@ -1,6 +1,6 @@
 package com.trend_now.backend.board.application;
 
-import com.trend_now.backend.board.domain.Board;
+import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
 import java.time.LocalTime;
@@ -63,16 +63,16 @@ public class BoardService {
 
     @Transactional
     public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto) {
-        List<Board> findBoard = boardRepository.findByName(boardSaveDto.getName());
+        List<Boards> findBoards = boardRepository.findByName(boardSaveDto.getName());
 
-        if (findBoard.isEmpty()) {
-            Board board = Board.builder()
+        if (findBoards.isEmpty()) {
+            Boards boards = Boards.builder()
                     .name(boardSaveDto.getName())
                     .boardCategory(boardSaveDto.getBoardCategory())
                     .build();
 
-            boardRepository.save(board);
-            return board.getId();
+            boardRepository.save(boards);
+            return boards.getId();
         }
 
         return -1L;
@@ -81,21 +81,21 @@ public class BoardService {
     @Transactional
     public void updateBoardIsDeleted(BoardSaveDto boardSaveDto) {
         if(redisTemplate.opsForValue().get(boardSaveDto.getName()) != null) {
-            List<Board> findBoard = boardRepository.findByName(boardSaveDto.getName());
-            if(findBoard.isEmpty()) {
+            List<Boards> findBoards = boardRepository.findByName(boardSaveDto.getName());
+            if(findBoards.isEmpty()) {
                 return;
             }
-            if(findBoard.getFirst().isDeleted()) {
-                findBoard.getFirst().changeDeleted();
+            if(findBoards.getFirst().isDeleted()) {
+                findBoards.getFirst().changeDeleted();
             }
         }
         else {
-            List<Board> findBoard = boardRepository.findByName(boardSaveDto.getName());
-            if(findBoard.isEmpty()) {
+            List<Boards> findBoards = boardRepository.findByName(boardSaveDto.getName());
+            if(findBoards.isEmpty()) {
                 return;
             }
-            if(!findBoard.getFirst().isDeleted()) {
-                findBoard.getFirst().changeDeleted();
+            if(!findBoards.getFirst().isDeleted()) {
+                findBoards.getFirst().changeDeleted();
             }
         }
     }

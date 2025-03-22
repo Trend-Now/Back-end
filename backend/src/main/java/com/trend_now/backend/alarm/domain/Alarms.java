@@ -1,15 +1,15 @@
-package com.trend_now.backend.board.domain;
+package com.trend_now.backend.alarm.domain;
 
 import com.trend_now.backend.config.domain.BaseEntity;
+import com.trend_now.backend.user.domain.Users;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,31 +17,26 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "board", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_name", columnNames = {"name"})
-})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 @Getter
-public class Board extends BaseEntity {
+public class Alarms extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "board_id")
+    @Column(name = "alarm_id")
     private Long id;
 
     @Column(nullable = false)
-    private String name;
+    private String title;
 
-    @Enumerated(EnumType.STRING)
-    private BoardCategory boardCategory;
-
-    @Builder.Default
     @Column(nullable = false)
-    private boolean deleted = false;
+    private String content;
 
-    public void changeDeleted() {
-        this.deleted = !this.deleted;
-    }
+    private String contentUrl;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private Users users;
 }

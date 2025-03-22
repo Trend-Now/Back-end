@@ -1,7 +1,7 @@
-package com.trend_now.backend.post.domain;
+package com.trend_now.backend.comment.domain;
 
 import com.trend_now.backend.config.domain.BaseEntity;
-import com.trend_now.backend.user.domain.User;
+import com.trend_now.backend.post.domain.Posts;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -21,18 +21,20 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Getter
-public class PostLike extends BaseEntity {
+public class Comments extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "post_like_id")
+    @Column(name = "comment_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(nullable = false)
+    private String content;
+
+    @Column(nullable = false)
+    private String writer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
-    private Post post;
+    private Posts posts;
 }

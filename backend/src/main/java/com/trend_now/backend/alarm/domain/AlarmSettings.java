@@ -2,7 +2,7 @@ package com.trend_now.backend.alarm.domain;
 
 
 import com.trend_now.backend.config.domain.BaseEntity;
-import com.trend_now.backend.user.domain.User;
+import com.trend_now.backend.user.domain.Users;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Getter
-public class AlarmSetting extends BaseEntity {
+public class AlarmSettings extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,9 +42,9 @@ public class AlarmSetting extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    private Users users;
 
-    public AlarmSetting(AlarmSettingType alarmSettingType, LocalTime alarmSettingTime,
+    public AlarmSettings(AlarmSettingType alarmSettingType, LocalTime alarmSettingTime,
             String alarmSettingKeyword) {
         this.alarmSettingType = alarmSettingType;
         this.alarmSettingTime = Optional.ofNullable(alarmSettingTime)
