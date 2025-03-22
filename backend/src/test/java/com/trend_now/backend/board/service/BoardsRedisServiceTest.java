@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
+import com.trend_now.backend.board.dto.BoardPagingRequestDto;
+import com.trend_now.backend.board.dto.BoardPagingResponseDto;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -15,6 +17,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -195,6 +199,136 @@ public class BoardsRedisServiceTest {
         //then
         Set<String> allRankKeys = redisTemplate.opsForZSet().range(BOARD_RANK_REALTIME_KEY, 0, -1);
         assertThat(allRankKeys).isEmpty();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "0, 5, B0",  // 첫 번째 페이지, 5개씩 -> 첫 번째 항목은 B0
+            "1, 5, B5",  // 두 번째 페이지, 5개씩 -> 첫 번째 항목은 B5
+            "2, 5, B10", // 세 번째 페이지, 5개씩 -> 첫 번째 항목은 B10
+            "0, 10, B0", // 첫 번째 페이지, 10개씩 -> 첫 번째 항목은 B0
+            "1, 10, B10" // 두 번째 페이지, 10개씩 -> 첫 번째 항목은 B10
+    })
+    @DisplayName("페이지와 사이즈가 주어지면 적절한 페이지를 반환한다")
+    public void 페이지네이션_기본기능(int page, int size, String expectedBoardName) throws Exception {
+        //given
+        int pagination_board_count = 20;
+        List<Boards> pagination_boards = new ArrayList<>();
+        for (int i = 0; i < pagination_board_count; i++) {
+            Boards board = Boards.builder()
+                    .name("B" + i)
+                    .boardCategory(BoardCategory.REALTIME)
+                    .build();
+            pagination_boards.add(board);
+        }
+
+        for (int i = 0; i < pagination_board_count; i++) {
+            BoardSaveDto boardSaveDto = new BoardSaveDto(pagination_boards.get(i).getName(),
+                    pagination_boards.get(i).getBoardCategory());
+            boardRedisService.saveBoardRedis(boardSaveDto, i);
+        }
+
+        //when
+        BoardPagingResponseDto allRealTimeBoardPaging = boardRedisService.findAllRealTimeBoardPaging(
+                new BoardPagingRequestDto(page, size));
+
+        //then
+        assertThat(allRealTimeBoardPaging).isNotNull();
+        assertThat(allRealTimeBoardPaging.getBoardInfoDtos().size()).isEqualTo(size);
+        assertThat(allRealTimeBoardPaging.getBoardInfoDtos().getFirst().getBoardName()).isEqualTo(
+                expectedBoardName);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "0, 10, B19",  // 첫 번째 페이지(0번 페이지)에서 가장 TTL이 높은 B19가 나와야 함
+            "1, 10, B0",   // 두 번째 페이지(1번 페이지)에서 B9가 나와야 함
+            "3, 5, B5"     // 네 번째 페이지(3번 페이지)에서 B5가 나와야 함
+    })
+    @DisplayName("TTL이 큰 순서대로 페이지네이션이 실행되어 반환된다")
+    public void TTL_페이지네이션(int page, int size, String expectedBoardName) throws Exception {
+        //given
+        int pagination_board_count = 20;
+        List<Boards> pagination_boards = new ArrayList<>();
+        for (int i = 0; i < pagination_board_count; i++) {
+            Boards board = Boards.builder()
+                    .name("B" + i)
+                    .boardCategory(BoardCategory.REALTIME)
+                    .build();
+            pagination_boards.add(board);
+        }
+
+        for (int i = 0; i < pagination_board_count; i++) {
+            BoardSaveDto boardSaveDto = new BoardSaveDto(pagination_boards.get(i).getName(),
+                    pagination_boards.get(i).getBoardCategory());
+            boardRedisService.saveBoardRedis(boardSaveDto, i);
+        }
+
+        // 마지막 게시글 10개의 시간을 임의로 증가
+        pagination_boards.stream()
+                .skip(10)
+                .forEach(board -> {
+                    Long currentExpire = redisTemplate.getExpire(board.getName(), TimeUnit.SECONDS);
+                    if (currentExpire > 0) {
+                        currentExpire += (long) (pagination_boards.indexOf(board)
+                                * 10);  // i 값을 board의 인덱스 값으로 계산
+                    }
+                    redisTemplate.expire(board.getName(), currentExpire, TimeUnit.SECONDS);
+                });
+
+        //when
+        BoardPagingResponseDto allRealTimeBoardPaging = boardRedisService.findAllRealTimeBoardPaging(
+                new BoardPagingRequestDto(page, size));
+
+        //then
+        assertThat(allRealTimeBoardPaging).isNotNull();
+        assertThat(allRealTimeBoardPaging.getBoardInfoDtos().size()).isEqualTo(size);
+        assertThat(allRealTimeBoardPaging.getBoardInfoDtos().getFirst().getBoardName()).isEqualTo(
+                expectedBoardName);
+    }
+
+
+    @ParameterizedTest
+    @CsvSource({
+            "0, 10, B0",   // 첫 번째 페이지(0번 페이지)에서 score이 가장 작은 B0가 나와야 함
+            "1, 10, B5",   // 두 번째 페이지(1번 페이지)에서 B5가 나와야 함
+            "3, 5, B17"     // 네 번째 페이지(3번 페이지)에서 B17가 나와야 함
+    })
+    @DisplayName("TTL이 같다면 score은 오름차순 정렬되어 반환된다")
+    public void TTL_같을경우_score_오름차순_페이지네이션(int page, int size, String expectedBoardName)
+            throws Exception {
+        //given
+        int pagination_board_count = 20;
+        List<Boards> pagination_boards = new ArrayList<>();
+        for (int i = 0; i < pagination_board_count; i++) {
+            Boards board = Boards.builder()
+                    .name("B" + i)
+                    .boardCategory(BoardCategory.REALTIME)
+                    .build();
+            pagination_boards.add(board);
+        }
+
+        for (int i = 0; i < pagination_board_count; i++) {
+            BoardSaveDto boardSaveDto = new BoardSaveDto(pagination_boards.get(i).getName(),
+                    pagination_boards.get(i).getBoardCategory());
+            boardRedisService.saveBoardRedis(boardSaveDto, i);
+        }
+
+        // 마지막 게시글의 score을 1 ~ 10까지로 변경
+        for (int i = 0; i < pagination_board_count - 10; i++) {
+            redisTemplate.opsForZSet()
+                    .add(BOARD_RANK_KEY, pagination_boards.get(i + 10).getName(), i + 1);
+        }
+
+        //when
+        BoardPagingResponseDto allRealTimeBoardPaging = boardRedisService.findAllRealTimeBoardPaging(
+                new BoardPagingRequestDto(page, size));
+
+        //then
+        assertThat(allRealTimeBoardPaging).isNotNull();
+        assertThat(allRealTimeBoardPaging.getBoardInfoDtos().size()).isEqualTo(size);
+        assertThat(allRealTimeBoardPaging.getBoardInfoDtos().getFirst().getBoardName()).isEqualTo(
+                expectedBoardName);
     }
 
 }
