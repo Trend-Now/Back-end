@@ -1,0 +1,12 @@
+package com.trend_now.backend.board.dto;
+
+import jakarta.validation.constraints.NotEmpty;
+import lombok.Data;
+
+@Data
+public class TopTen {
+
+    private int rank;
+
+    private String keyword;
+}
