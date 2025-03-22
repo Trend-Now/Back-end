@@ -69,33 +69,6 @@ public class BoardRedisService {
         return redisTemplate.opsForValue().get(boardName) != null;
     }
 
-//    public List<BoardPageRequest> getBoardsWithPaging(PageRequest pageRequest) {
-//        Set<String> allBoardName = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
-//
-//        if (allBoardName == null || allBoardName.isEmpty()) {
-//            return Collections.emptyList();
-//        }
-//
-//        List<BoardPageRequest> boardPageRequests = new ArrayList<>();
-//
-//        for (String boardName : allBoardName) {
-//            Long ttl = redisTemplate.getExpire(boardName, TimeUnit.SECONDS);
-//            if (ttl != null) {
-//                Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardName);
-//                if (score != null) {
-//                    boardPageRequests.add(new BoardPageRequest(boardName, ttl, score));
-//                }
-//            }
-//        }
-//
-//        boardPageRequests.sort(BoardPageRequest.ttlThenScoreComparator);
-//
-//        int start = (int) pageRequest.getOffset();
-//        int end = (start + pageRequest.getPageSize()) > boardPageRequests.size()
-//                ? boardPageRequests.size() : (start + pageRequest.getPageSize());
-//        return boardPageRequests.subList(start, end);
-//    }
-
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
             BoardPagingRequestDto boardPagingRequestDto) {
         Set<String> allBoardName = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);

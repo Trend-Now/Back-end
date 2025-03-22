@@ -18,13 +18,6 @@ public class BoardController {
 
     private final BoardRedisService boardRedisService;
 
-//    @GetMapping("/lists")
-//    public ResponseEntity<List<BoardPageRequest>> getBoards(@RequestParam int page, @RequestParam int size) {
-//        PageRequest pageRequest = PageRequest.of(page, size);
-//        List<BoardPageRequest> boards = boardRedisService.getBoardsWithPaging(pageRequest);
-//        return ResponseEntity.ok(boards);
-//    }
-
     @GetMapping("/list")
     public ResponseEntity<BoardPagingResponseDto> findAllRealTimeBoards(
             @RequestParam(required = false, defaultValue = "0") int page,
