@@ -50,11 +50,9 @@ public class BoardRedisService {
             return;
         }
 
-        for(String key : allRankKey) {
-            if(!Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
-                redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, key);
-            }
-        }
+        allRankKey.stream()
+                .filter(key -> !Boolean.TRUE.equals(redisTemplate.hasKey(key)))
+                .forEach(key -> redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, key));
     }
 
     public boolean isRealTimeBoard(BoardSaveDto boardSaveDto) {
