@@ -74,7 +74,7 @@ public class BoardsControllerTest {
             "0, 20"  // page=0, size=20 -> 총 20개 항목, 전체 20개, 총 1페이지
     })
     public void getBoards_Pagination_Success(int page, int size) throws Exception {
-        mockMvc.perform(get("/api/boards/list")
+        mockMvc.perform(get("/api/v1/boards/list")
                         .param("page", String.valueOf(page))
                         .param("size", String.valueOf(size))
                 )

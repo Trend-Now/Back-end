@@ -94,4 +94,8 @@ public class BoardRedisService {
 
         return BoardPagingResponseDto.from(boardInfoDtos.subList(start, end));
     }
+
+    public String getBoardRankValidTime() {
+        return redisTemplate.opsForValue().get(BOARD_RANK_VALID_KEY);
+    }
 }
