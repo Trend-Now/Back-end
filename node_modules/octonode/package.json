@@ -1,0 +1,33 @@
+{
+  "name": "octonode",
+  "version": "0.10.2",
+  "author": "Pavan Kumar Sunkara <pavan.sss1991@gmail.com> (http://pksunkara.github.com)",
+  "description": "nodejs wrapper for github v3 api",
+  "main": "./lib/octonode",
+  "repository": "pksunkara/octonode",
+  "keywords": [
+    "wrapper",
+    "api",
+    "v3",
+    "github"
+  ],
+  "scripts": {
+    "test": "npm run lib && vows --spec test/auth/index.js",
+    "lib": "coffee -c -o lib src"
+  },
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "deep-extend": "^0.6.0",
+    "randomstring": "^1.1.5",
+    "request": "^2.72.0"
+  },
+  "devDependencies": {
+    "coffeescript": "^1.12.7",
+    "nock": "^13.0.5",
+    "vows": "^0.8.2"
+  },
+  "engines": {
+    "node": ">0.4.11"
+  },
+  "license": "MIT"
+}
