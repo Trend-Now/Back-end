@@ -7,6 +7,7 @@ import com.trend_now.backend.board.dto.SseDisconnectDto;
 import com.trend_now.backend.board.dto.TimeSyncDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -60,7 +61,8 @@ public class SignalKeywordController {
 
     @Operation(summary = "SSE 연결 중단", description = "클라이언트는 클라이언트 측에서 만들어진 랜덤 값(clientId)과 함께 SSE 연결 중단을 시도합니다.")
     @PostMapping("/unsubscribe")
-    public ResponseEntity<String> unsubscribe(@RequestBody SseDisconnectDto sseDisconnectDto) {
+    public ResponseEntity<String> unsubscribe(
+            @Valid @RequestBody SseDisconnectDto sseDisconnectDto) {
         String clientId = sseDisconnectDto.getClientId();
         signalKeywordService.deleteClientId(clientId);
         return ResponseEntity.status(HttpStatus.OK).body(UNSUBSCRIBE_SUCCESS_MESSAGE);
