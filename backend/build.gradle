@@ -50,6 +50,8 @@ dependencies {
 
 	// webClient
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	implementation 'org.springframework:spring-messaging'
 }
 
 tasks.named('test') {

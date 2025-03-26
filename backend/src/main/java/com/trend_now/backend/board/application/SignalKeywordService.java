@@ -3,16 +3,11 @@ package com.trend_now.backend.board.application;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trend_now.backend.board.dto.MsgFormat;
 import com.trend_now.backend.board.dto.SignalKeywordDto;
-import com.trend_now.backend.board.dto.SignalKeywordEventDto;
-import com.trend_now.backend.board.repository.SseEmitterRepository;
-import java.io.IOException;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -32,11 +27,8 @@ public class SignalKeywordService {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
-    private final SseEmitterRepository sseEmitterRepository;
     private final RedisTemplate<String, String> redisTemplate;
-
-    @Value("${sse.timeout}")
-    private Long timeout;
+    private final SseEmitterService sseEmitterService;
 
     public Mono<SignalKeywordDto> fetchRealTimeKeyword() {
         return webClient.get()
@@ -73,39 +65,17 @@ public class SignalKeywordService {
     }
 
     public SseEmitter subscribe(String clientId) {
-        SseEmitter sseEmitter = new SseEmitter(timeout);
         saveClientId(clientId);
-        sseEmitterRepository.save(clientId, sseEmitter);
+        SseEmitter sseEmitter = sseEmitterService.createEmitter(clientId);
 
         sseEmitter.onTimeout(sseEmitter::complete);
         sseEmitter.onError((e) -> sseEmitter.complete());
         sseEmitter.onCompletion(() -> {
-            sseEmitterRepository.deleteById(clientId);
+            sseEmitterService.deleteEmitter(clientId);
         });
 
-        send(MsgFormat.SUBSCRIBE, SIGNAL_KEYWORD_LIST_EMITTER_NAME, clientId, sseEmitter);
+        sseEmitterService.send(MsgFormat.SUBSCRIBE, SIGNAL_KEYWORD_LIST_EMITTER_NAME, clientId,
+                sseEmitter);
         return sseEmitter;
-    }
-
-    public void sendKeywordList(SignalKeywordEventDto event) {
-        SignalKeywordDto signalKeywordDto = event.getSignalKeywordDto();
-        String clientId = event.getClientId();
-
-        sseEmitterRepository.findById(clientId)
-                .ifPresent(sseEmitter -> send(signalKeywordDto, SIGNAL_KEYWORD_LIST_EMITTER_NAME,
-                        clientId, sseEmitter));
-    }
-
-    private void send(Object data, String emitterName, String clientId, SseEmitter sseEmitter) {
-        try {
-            log.info("SSE에서 전송한 clientId: 데이터 {}:[{}]", clientId, data);
-            sseEmitter.send(SseEmitter.event()
-                    .name(emitterName)
-                    .id(clientId)
-                    .data(data, MediaType.APPLICATION_JSON));
-        } catch (IOException | IllegalStateException e) {
-            log.error("SSE 전송 중 오류가 발생했습니다.", e);
-            sseEmitterRepository.deleteById(clientId);
-        }
     }
 }

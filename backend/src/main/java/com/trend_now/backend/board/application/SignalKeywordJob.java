@@ -4,7 +4,6 @@ import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10;
-import com.trend_now.backend.board.presentation.SignalKeywordEventPublisher;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -30,8 +29,7 @@ public class SignalKeywordJob implements Job {
                 SignalKeywordService.class);
         BoardService boardService = applicationContext.getBean(BoardService.class);
         BoardRedisService boardRedisService = applicationContext.getBean(BoardRedisService.class);
-        SignalKeywordEventPublisher eventPublisher = applicationContext.getBean(
-                SignalKeywordEventPublisher.class);
+        RedisPublisher redisPublisher = applicationContext.getBean(RedisPublisher.class);
 
         try {
             SignalKeywordDto signalKeywordDto = signalKeywordService.fetchRealTimeKeyword().block();
@@ -53,7 +51,7 @@ public class SignalKeywordJob implements Job {
                 log.info("스케줄러에서 clientId: {}에게 이벤트 발행", clientId);
                 SignalKeywordEventDto event = new SignalKeywordEventDto(clientId,
                         SIGNAL_KEYWORD_LIST_EVENT_MESSAGE, signalKeywordDto);
-                eventPublisher.publishEvent(event);
+                redisPublisher.publish(event);
             }
         } catch (Exception e) {
             throw new JobExecutionException(KEYWORD_JOB_ERROR_MESSAGE, e);
