@@ -1,6 +1,7 @@
 package com.trend_now.backend.post.presentation;
 
 import com.trend_now.backend.post.application.PostsService;
+import com.trend_now.backend.post.dto.PostsDeleteDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsPagingResponseDto;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -30,7 +32,8 @@ public class PostsController {
 
     private static final String SUCCESS_PAGING_POSTS_MESSAGE = "모든 게시글을 가져오는 데 성공했습니다.";
     private static final String SUCCESS_SAVE_POSTS_MESSAGE = "게시글을 저장하는 데 성공했습니다.";
-    private static final String SUCCESS_UPDATE_BOARD_MESSAGE = "게시글을 수정하는 데 성공했습니다.";
+    private static final String SUCCESS_UPDATE_POSTS_MESSAGE = "게시글을 수정하는 데 성공했습니다.";
+    private static final String SUCCESS_DELETE_POSTS_MESSAGE = "게시글을 삭제하는 데 성공했습니다.";
 
     private final PostsService postsService;
 
@@ -67,6 +70,15 @@ public class PostsController {
 
         postsService.updatePostsById(postsUpdateDto);
 
-        return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_UPDATE_BOARD_MESSAGE);
+        return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_UPDATE_POSTS_MESSAGE);
+    }
+
+    @Operation(summary = "게시글 삭제", description = "작성한 게시글을 삭제합니다.")
+    @DeleteMapping("/")
+    public ResponseEntity<String> deletePosts(@Valid @RequestBody PostsDeleteDto postsDeleteDto) {
+
+        postsService.deletePostsById(postsDeleteDto);
+
+        return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_POSTS_MESSAGE);
     }
 }

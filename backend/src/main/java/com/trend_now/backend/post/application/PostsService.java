@@ -9,6 +9,7 @@ package com.trend_now.backend.post.application;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.post.domain.Posts;
+import com.trend_now.backend.post.dto.PostsDeleteDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
@@ -86,4 +87,15 @@ public class PostsService {
     }
 
     //게시글 삭제 - 상시 가능
+    @Transactional
+    public void deletePostsById(PostsDeleteDto postsDeleteDto) {
+        Posts posts = postsRepository.findById(postsDeleteDto.getPostId())
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
+
+        if (!posts.isSameWriter(postsDeleteDto.getWriter())) {
+            throw new IllegalArgumentException(NOT_SAME_WRITER);
+        }
+
+        postsRepository.deleteById(postsDeleteDto.getPostId());
+    }
 }

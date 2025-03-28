@@ -1,11 +1,13 @@
 package com.trend_now.backend.posts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.post.application.PostsService;
+import com.trend_now.backend.post.dto.PostsDeleteDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
@@ -14,6 +16,7 @@ import com.trend_now.backend.user.domain.Users;
 import com.trend_now.backend.user.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -131,6 +134,22 @@ public class PostsServiceTest {
         assertThat(postsInfoDto.getTitle()).isEqualTo(postsUpdateDto.getTitle());
         assertThat(postsInfoDto.getContent()).isEqualTo(postsUpdateDto.getContent());
         assertThat(postsInfoDto.getWriter()).isEqualTo(postsUpdateDto.getWriter());
+    }
+
+    @Test
+    @DisplayName("작성자가 직접 작성한 게시글을 삭제할 수 있다")
+    public void 게시글_삭제() throws Exception {
+        //given
+        PostsDeleteDto postsDeleteDto = PostsDeleteDto.of(1L, users.getName());
+
+        //when
+        postsService.deletePostsById(postsDeleteDto);
+        em.flush();
+        em.clear();
+
+        //then
+        assertThatThrownBy(() -> postsService.findPostsById(1L))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
 }
