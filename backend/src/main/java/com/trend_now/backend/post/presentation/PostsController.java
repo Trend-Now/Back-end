@@ -5,6 +5,7 @@ import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsPagingResponseDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
+import com.trend_now.backend.post.dto.PostsUpdateDto;
 import com.trend_now.backend.user.domain.Users;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,6 +30,7 @@ public class PostsController {
 
     private static final String SUCCESS_PAGING_POSTS_MESSAGE = "모든 게시글을 가져오는 데 성공했습니다.";
     private static final String SUCCESS_SAVE_POSTS_MESSAGE = "게시글을 저장하는 데 성공했습니다.";
+    private static final String SUCCESS_UPDATE_BOARD_MESSAGE = "게시글을 수정하는 데 성공했습니다.";
 
     private final PostsService postsService;
 
@@ -56,5 +59,14 @@ public class PostsController {
         Long savePosts = postsService.savePosts(postsSaveDto, users);
 
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_SAVE_POSTS_MESSAGE);
+    }
+
+    @Operation(summary = "게시글 수정", description = "게시판에 게시글의 제목 또는 내용을 수정합니다.")
+    @PutMapping("/")
+    public ResponseEntity<String> updatePosts(@Valid @RequestBody PostsUpdateDto postsUpdateDto) {
+
+        postsService.updatePostsById(postsUpdateDto);
+
+        return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_UPDATE_BOARD_MESSAGE);
     }
 }

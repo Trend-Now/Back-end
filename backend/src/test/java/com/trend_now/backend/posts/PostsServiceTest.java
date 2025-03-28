@@ -9,8 +9,11 @@ import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
+import com.trend_now.backend.post.dto.PostsUpdateDto;
 import com.trend_now.backend.user.domain.Users;
 import com.trend_now.backend.user.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +34,9 @@ import org.springframework.transaction.annotation.Transactional;
 @TestPropertySource(locations = "classpath:application-test.yml")
 @Transactional
 public class PostsServiceTest {
+
+    @PersistenceContext
+    private EntityManager em;
 
     @Autowired
     private UserRepository userRepository;
@@ -107,4 +113,24 @@ public class PostsServiceTest {
             assertThat(result.getContent()).isNotEmpty();
         }
     }
+
+    @Test
+    @DisplayName("작성자가 직접 작성한 게시글을 수정할 수 있다")
+    public void 게시글_수정() throws Exception {
+        //given
+        PostsUpdateDto postsUpdateDto = PostsUpdateDto.of(1L, "updateTitle", "updateContent",
+                users.getName());
+
+        //when
+        postsService.updatePostsById(postsUpdateDto);
+        em.flush();
+        em.clear();
+
+        //then
+        PostsInfoDto postsInfoDto = postsService.findPostsById(1L);
+        assertThat(postsInfoDto.getTitle()).isEqualTo(postsUpdateDto.getTitle());
+        assertThat(postsInfoDto.getContent()).isEqualTo(postsUpdateDto.getContent());
+        assertThat(postsInfoDto.getWriter()).isEqualTo(postsUpdateDto.getWriter());
+    }
+
 }

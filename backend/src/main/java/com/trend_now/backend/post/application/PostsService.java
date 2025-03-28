@@ -12,6 +12,7 @@ import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
+import com.trend_now.backend.post.dto.PostsUpdateDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import com.trend_now.backend.user.domain.Users;
 import lombok.RequiredArgsConstructor;
@@ -28,10 +29,12 @@ public class PostsService {
 
     private static final String NOT_EXIST_BOARD = "선택하신 게시판이 존재하지 않습니다.";
     private static final String NOT_EXIST_POSTS = "선택하신 게시글이 존재하지 않습니다.";
+    private static final String NOT_SAME_WRITER = "작성자가 일치하지 않습니다.";
 
     private final PostsRepository postsRepository;
     private final BoardRepository boardRepository;
 
+    //게시글 조회 - 가변 타이머 작동 중에만 가능
     public Page<PostsInfoDto> findAllPostsPagingByBoardId(
             PostsPagingRequestDto postsPagingRequestDto) {
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
@@ -43,6 +46,8 @@ public class PostsService {
         return postsPaging.map(PostsInfoDto::from);
     }
 
+    //게시글 작성 - 가변 타이머 작동 중에만 가능
+    @Transactional
     public Long savePosts(PostsSaveDto postsSaveDto, Users users) {
         Boards findBoards = boardRepository.findById(postsSaveDto.getBoardId())
                 .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_BOARD));
@@ -59,10 +64,26 @@ public class PostsService {
         return posts.getId();
     }
 
+    //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
     public PostsInfoDto findPostsById(Long postId) {
         Posts posts = postsRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
 
         return PostsInfoDto.from(posts);
     }
+
+    //게시글 수정 - 가변 타이머 작동 중에만 가능
+    @Transactional
+    public void updatePostsById(PostsUpdateDto postsUpdateDto) {
+        Posts posts = postsRepository.findById(postsUpdateDto.getPostId())
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
+
+        if (!posts.isSameWriter(postsUpdateDto.getWriter())) {
+            throw new IllegalArgumentException(NOT_SAME_WRITER);
+        }
+
+        posts.changePosts(postsUpdateDto.getTitle(), postsUpdateDto.getContent());
+    }
+
+    //게시글 삭제 - 상시 가능
 }
