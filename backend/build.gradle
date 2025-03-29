@@ -34,6 +34,7 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
 	// swagger 의존성 주입
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
@@ -49,6 +50,8 @@ dependencies {
 
 	// webClient
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	implementation 'org.springframework:spring-messaging'
 }
 
 tasks.named('test') {

@@ -1,3 +1,6 @@
+/*
+ * 클래스 설명 : 시그널 검색어 순위를 호출했을 때 받아오는 데이터 (실시간 검색어 하나를 의미)
+ */
 package com.trend_now.backend.board.dto;
 
 import jakarta.validation.constraints.NotEmpty;
