@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "github-label-sync": "^3.0.0"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "jira-prepare-commit-msg": "^1.7.2"
+  },
+  "scripts": {
+    "prepare": "husky install",
+    "postinstall": "husky install"
+  },
+  "jira-prepare-commit-msg": {
+    "messagePattern": "[$J] $M",
+    "allowEmptyCommitMessage": false,
+    "ignoredBranchesPattern": "^(master|main|dev|develop|development|release)$"
+  }
+}

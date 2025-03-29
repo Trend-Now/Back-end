@@ -1,5 +1,9 @@
 package com.trend_now.backend.post.domain;
 
+<<<<<<< HEAD
+public class Image {
+
+=======
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -31,4 +35,5 @@ public class Image {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
+>>>>>>> develop
 }
