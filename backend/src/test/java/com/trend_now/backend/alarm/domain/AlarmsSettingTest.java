@@ -1,9 +1,7 @@
-package com.trand_now.backend.alarm.domain;
+package com.trend_now.backend.alarm.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.trend_now.backend.alarm.domain.AlarmSetting;
-import com.trend_now.backend.alarm.domain.AlarmSettingType;
 import java.time.LocalTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,17 +10,17 @@ import org.springframework.test.context.TestPropertySource;
 
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yml")
-public class AlarmSettingTest {
+public class AlarmsSettingTest {
 
     @Test
     @DisplayName("TOP_10 타입의 AlarmSetting이 기본 시간 05:00으로 생성되는지 테스트")
     void createAlarmSettingWithTop10_DefaultTime() {
         // when
-        AlarmSetting alarmSetting = new AlarmSetting(AlarmSettingType.TOP_10, null, null);
+        AlarmSettings alarmSettings = new AlarmSettings(AlarmSettingType.TOP_10, null, null);
 
         // then
-        assertThat(alarmSetting.getAlarmSettingTime()).isEqualTo(LocalTime.of(5, 0));
-        assertThat(alarmSetting.getAlarmSettingKeyword()).isNull();
+        assertThat(alarmSettings.getAlarmSettingTime()).isEqualTo(LocalTime.of(5, 0));
+        assertThat(alarmSettings.getAlarmSettingKeyword()).isNull();
     }
 
     @Test
@@ -32,21 +30,21 @@ public class AlarmSettingTest {
         LocalTime customTime = LocalTime.of(7, 30);
 
         // when
-        AlarmSetting alarmSetting = new AlarmSetting(AlarmSettingType.TOP_10, customTime, null);
+        AlarmSettings alarmSettings = new AlarmSettings(AlarmSettingType.TOP_10, customTime, null);
 
         // then
-        assertThat(alarmSetting.getAlarmSettingTime()).isEqualTo(customTime);
+        assertThat(alarmSettings.getAlarmSettingTime()).isEqualTo(customTime);
     }
 
     @Test
     @DisplayName("KEYWORD 타입의 AlarmSetting이 기본값 null로 생성되는지 테스트")
     void createAlarmSettingWithKeyword_DefaultKeyword() {
         // when
-        AlarmSetting alarmSetting = new AlarmSetting(AlarmSettingType.KEYWORD, null, null);
+        AlarmSettings alarmSettings = new AlarmSettings(AlarmSettingType.KEYWORD, null, null);
 
         // then
-        assertThat(alarmSetting.getAlarmSettingKeyword()).isNull();
-        assertThat(alarmSetting.getAlarmSettingTime()).isNull();
+        assertThat(alarmSettings.getAlarmSettingKeyword()).isNull();
+        assertThat(alarmSettings.getAlarmSettingTime()).isNull();
     }
 
     @Test
@@ -56,9 +54,9 @@ public class AlarmSettingTest {
         String keyword = "news";
 
         // when
-        AlarmSetting alarmSetting = new AlarmSetting(AlarmSettingType.KEYWORD, null, keyword);
+        AlarmSettings alarmSettings = new AlarmSettings(AlarmSettingType.KEYWORD, null, keyword);
 
         // then
-        assertThat(alarmSetting.getAlarmSettingKeyword()).isEqualTo(keyword);
+        assertThat(alarmSettings.getAlarmSettingKeyword()).isEqualTo(keyword);
     }
 }

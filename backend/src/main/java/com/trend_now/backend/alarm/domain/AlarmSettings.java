@@ -1,7 +1,8 @@
 package com.trend_now.backend.alarm.domain;
 
 
-import com.trend_now.backend.user.domain.User;
+import com.trend_now.backend.config.domain.BaseEntity;
+import com.trend_now.backend.user.domain.Users;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,13 +16,17 @@ import jakarta.persistence.ManyToOne;
 import java.time.LocalTime;
 import java.util.Optional;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 @Getter
-public class AlarmSetting {
+public class AlarmSettings extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,9 +42,9 @@ public class AlarmSetting {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    private Users users;
 
-    public AlarmSetting(AlarmSettingType alarmSettingType, LocalTime alarmSettingTime,
+    public AlarmSettings(AlarmSettingType alarmSettingType, LocalTime alarmSettingTime,
             String alarmSettingKeyword) {
         this.alarmSettingType = alarmSettingType;
         this.alarmSettingTime = Optional.ofNullable(alarmSettingTime)

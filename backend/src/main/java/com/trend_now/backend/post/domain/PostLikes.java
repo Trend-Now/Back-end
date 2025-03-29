@@ -1,6 +1,7 @@
-package com.trend_now.backend.alarm.domain;
+package com.trend_now.backend.post.domain;
 
-import com.trend_now.backend.user.domain.User;
+import com.trend_now.backend.config.domain.BaseEntity;
+import com.trend_now.backend.user.domain.Users;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,28 +11,28 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 @Getter
-public class Alarm {
+public class PostLikes extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "alarm_id")
+    @Column(name = "post_like_id")
     private Long id;
-
-    @Column(nullable = false)
-    private String alarmTitle;
-
-    @Column(nullable = false)
-    private String alarmContent;
-
-    private String alarmContentUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    private Users users;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id")
+    private Posts posts;
 }
