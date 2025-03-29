@@ -23,7 +23,7 @@ public class SignalKeywordSchedulerConfig {
     private static final String SIGNAL_KEYWORD_GROUP = "SignalGroup";
     private static final String SIGNAL_KEYWORD_JOB = "SignalKeywordJob";
     private static final String SIGNAL_KEYWORD_TRIGGER = "SignalKeywordTrigger";
-    private static final int SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS = 301;
+    private static final int SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS = 11;
 
     private Scheduler scheduler;
     private final ApplicationContext applicationContext;

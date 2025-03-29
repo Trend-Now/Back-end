@@ -39,7 +39,7 @@ public class BoardRedisService {
             keyLiveTime += currentExpire;
         }
 
-        redisTemplate.opsForValue().set(key, "실시간 게시글");
+        redisTemplate.opsForValue().set(key, "실시간 게시판");
         redisTemplate.expire(key, keyLiveTime, TimeUnit.SECONDS);
         redisTemplate.opsForZSet().add(BOARD_RANK_KEY, key, score);
         redisTemplate.opsForZSet().add(BOARD_REALTIME_RANK_KEY, key, score);
