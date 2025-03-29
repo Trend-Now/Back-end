@@ -1,7 +1,7 @@
 package com.trend_now.backend.post.domain;
 
 import com.trend_now.backend.config.domain.BaseEntity;
-import com.trend_now.backend.user.domain.Users;
+import com.trend_now.backend.member.domain.Members;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -30,7 +30,7 @@ public class PostLikes extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private Users users;
+    private Members members;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")

@@ -1,4 +1,4 @@
-package com.trend_now.backend.user.presentation;
+package com.trend_now.backend.member.presentation;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Tag(name = "회원 서비스", description = "회원 API")
 @RequestMapping("/api/v1/user")
-public class UserController {
+public class MemberController {
 
     // 연결 확인
     @GetMapping("")

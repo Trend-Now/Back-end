@@ -1,4 +1,4 @@
-package com.trend_now.backend.user.domain;
+package com.trend_now.backend.member.domain;
 
 
 import com.trend_now.backend.config.domain.BaseEntity;
@@ -15,7 +15,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Getter
-public class Users extends BaseEntity {
+public class Members extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
