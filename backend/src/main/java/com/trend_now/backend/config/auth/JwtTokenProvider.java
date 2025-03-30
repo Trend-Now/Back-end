@@ -46,6 +46,7 @@ public class JwtTokenProvider {
                 .signWith(SECRET_KEY)
                 .compact();
 
+        log.info("[JwtTokenProvider.createToken] 생성된 JWT = {}", token);
         return token;
     }
 }
