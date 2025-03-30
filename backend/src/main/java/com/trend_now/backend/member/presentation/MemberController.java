@@ -42,7 +42,7 @@ public class MemberController {
      *  - 사용자 정보를 통해 서비스 유저인지 확인
      *  - 유저인 경우, JWT 토큰 발급
      */
-    @PostMapping("/google/doLogin")
+    @PostMapping("/google/login")
     public ResponseEntity<GoogleLoginResponse> googleLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
         return new ResponseEntity<>(googleService.getToken(authCodeToJwtRequest), HttpStatus.OK);
     }
