@@ -25,21 +25,25 @@ import java.util.List;
 @Slf4j
 public class JwtTokenFilter extends GenericFilter {
 
+    private static final String AUTHORIZATION = "Authorization";
+    private static final String JWT_PREFIX = "Bearer ";
+
     @Value("${jwt.secret}")
     private String secretKey;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+
         // HTTP 내부 데이터를 조금 더 편하게 쓸려고 다운캐스팅 진행
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 
         // HttpServletRequest 객체 Header에서 토큰 값 추출
-        String token = httpServletRequest.getHeader("Authorization");
+        String token = httpServletRequest.getHeader(AUTHORIZATION);
 
         try {
             if (token != null) {
-                if (!token.substring(0, 7).equals("Bearer ")) {
+                if (!token.substring(0, 7).equals(JWT_PREFIX)) {
                     log.error("[JwtTokenFilter.doFilter] : Bearer 형식이 아닙니다.");
                     throw new AuthenticationException("Bearer 형식이 아닙니다.");
                 }
