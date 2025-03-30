@@ -2,7 +2,7 @@ package com.trend_now.backend.member.application;
 
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.member.data.vo.AccessToken;
-import com.trend_now.backend.member.data.vo.GoogleLoginResponse;
+import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
 import com.trend_now.backend.member.data.vo.GoogleProfile;
 import com.trend_now.backend.member.data.vo.AuthCodeToJwtRequest;
 import com.trend_now.backend.member.domain.Members;
@@ -44,7 +44,7 @@ public class GoogleService {
      *  - 이 과정에는 인가 코드를 통해 Access Token을 발급 받고, Access Token을 통해 구글로부터 사용자 정보를 받는다.
      *  - 사용자 정보를 본 서비스에서 검증하여 JWT 토큰을 발급해준다.
      */
-    public GoogleLoginResponse getToken(AuthCodeToJwtRequest authCodeToJwtRequest) {
+    public OAuth2LoginResponse getToken(AuthCodeToJwtRequest authCodeToJwtRequest) {
         AccessToken accessToken = getAccessToken(authCodeToJwtRequest.getCode());
         GoogleProfile googleProfile = getGoogleProfile(accessToken.getAccess_token());
 
@@ -56,7 +56,7 @@ public class GoogleService {
         // JWT 토큰 발급
         String jwtToken = jwtTokenProvider.createToken(originalMember.getId());
 
-        return GoogleLoginResponse.builder()
+        return OAuth2LoginResponse.builder()
                 .memberId(originalMember.getId())
                 .jwt(jwtToken)
                 .build();

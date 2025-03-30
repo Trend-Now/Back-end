@@ -5,7 +5,7 @@ import com.trend_now.backend.member.application.GoogleService;
 import com.trend_now.backend.member.application.KakaoService;
 import com.trend_now.backend.member.application.MemberService;
 import com.trend_now.backend.member.data.vo.AuthCodeToJwtRequest;
-import com.trend_now.backend.member.data.vo.GoogleLoginResponse;
+import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 
 @RestController
@@ -45,12 +43,12 @@ public class MemberController {
      *  - 유저인 경우, JWT 토큰 발급
      */
     @PostMapping("/login/google")
-    public ResponseEntity<GoogleLoginResponse> googleLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
+    public ResponseEntity<OAuth2LoginResponse> googleLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
         return new ResponseEntity<>(googleService.getToken(authCodeToJwtRequest), HttpStatus.OK);
     }
 
     @PostMapping("/login/kakao")
-    public ResponseEntity<GoogleLoginResponse> kakaoLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
+    public ResponseEntity<OAuth2LoginResponse> kakaoLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
         return new ResponseEntity<>(kakaoService.getToken(authCodeToJwtRequest), HttpStatus.OK);
     }
 }
