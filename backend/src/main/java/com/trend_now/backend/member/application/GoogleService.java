@@ -49,22 +49,17 @@ public class GoogleService {
         GoogleProfile googleProfile = getGoogleProfile(accessToken.getAccess_token());
 
         // socialId를 통해 회원 탐색(없으면 null 반환)
-        Members originalMember = memberRepository.findBySnsId(googleProfile.getSub()).orElse(null);
-
-        // 최초 로그인인 경우, 회원 정보 저장
-        if(originalMember == null) {
-            originalMember = memberService.createOauth(googleProfile, Provider.GOOGLE);
-        }
+        // 최초 로그인 경우, 회원 정보 저장
+        Members originalMember = memberRepository.findBySnsId(googleProfile.getSub())
+                .orElseGet(() -> memberService.createOauth(googleProfile, Provider.GOOGLE));
 
         // JWT 토큰 발급
         String jwtToken = jwtTokenProvider.createToken(originalMember.getId());
 
-        GoogleLoginResponse googleLoginResponse = GoogleLoginResponse.builder()
+        return GoogleLoginResponse.builder()
                 .memberId(originalMember.getId())
                 .jwt(jwtToken)
                 .build();
-
-        return googleLoginResponse;
     }
 
     // Access Token 획득 메서드
