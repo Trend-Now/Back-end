@@ -1,6 +1,7 @@
 package com.trend_now.backend.member.application;
 
 import com.trend_now.backend.member.data.vo.GoogleProfile;
+import com.trend_now.backend.member.data.vo.KakaoProfile;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
@@ -20,12 +21,25 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public Members createOauth(GoogleProfile googleProfile, Provider provider) {
+    public Members createGoogleOauth(GoogleProfile googleProfile, Provider provider) {
         Members member = Members.builder()
                 .email(googleProfile.getEmail())
                 .name("test")
                 .provider(provider)
                 .snsId(googleProfile.getSub())
+                .build();
+
+        memberRepository.save(member);
+        return member;
+    }
+
+    @Transactional
+    public Members createKakaoOauth(KakaoProfile kakaoProfile, Provider provider) {
+        Members member = Members.builder()
+                .email(kakaoProfile.getKakao_account().getEmail())
+                .name("test")
+                .provider(provider)
+                .snsId(kakaoProfile.getId())
                 .build();
 
         memberRepository.save(member);

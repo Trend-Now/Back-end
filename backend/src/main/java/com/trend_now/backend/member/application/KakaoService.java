@@ -1,10 +1,7 @@
 package com.trend_now.backend.member.application;
 
 import com.trend_now.backend.config.auth.JwtTokenProvider;
-import com.trend_now.backend.member.data.vo.AccessToken;
-import com.trend_now.backend.member.data.vo.GoogleLoginResponse;
-import com.trend_now.backend.member.data.vo.GoogleProfile;
-import com.trend_now.backend.member.data.vo.AuthCodeToJwtRequest;
+import com.trend_now.backend.member.data.vo.*;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
@@ -20,18 +17,15 @@ import org.springframework.web.client.RestClient;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class GoogleService {
+public class KakaoService {
 
-    @Value("${oauth.google.client-id}")
-    private String googleClientId;
+    @Value("${oauth.kakao.client-id}")
+    private String kakaoClientId;
 
-    @Value("${oauth.google.client-secret}")
-    private String googleClientSecret;
+    @Value("${oauth.kakao.redirect-uri}")
+    private String kakaoRedirectUri;
 
-    @Value("${oauth.google.redirect-uri}")
-    private String googleRedirectUri;
-
-    private static final String googleUri = "https://oauth2.googleapis.com/token";
+    private static final String kakaoUri = "https://kauth.kakao.com/oauth/token";
 
 
     private final MemberRepository memberRepository;
@@ -46,12 +40,12 @@ public class GoogleService {
      */
     public GoogleLoginResponse getToken(AuthCodeToJwtRequest authCodeToJwtRequest) {
         AccessToken accessToken = getAccessToken(authCodeToJwtRequest.getCode());
-        GoogleProfile googleProfile = getGoogleProfile(accessToken.getAccess_token());
+        KakaoProfile kakaoProfile = getKakaoProfile(accessToken.getAccess_token());
 
         // socialId를 통해 회원 탐색(없으면 null 반환)
         // 최초 로그인 경우, 회원 정보 저장
-        Members originalMember = memberRepository.findBySnsId(googleProfile.getSub())
-                .orElseGet(() -> memberService.createGoogleOauth(googleProfile, Provider.GOOGLE));
+        Members originalMember = memberRepository.findBySnsId(kakaoProfile.getId())
+                .orElseGet(() -> memberService.createKakaoOauth(kakaoProfile, Provider.KAKAO));
 
         // JWT 토큰 발급
         String jwtToken = jwtTokenProvider.createToken(originalMember.getId());
@@ -69,33 +63,32 @@ public class GoogleService {
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("code", code);
-        params.add("client_id", googleClientId);
-        params.add("client_secret", googleClientSecret);
-        params.add("redirect_uri", googleRedirectUri);
+        params.add("client_id", kakaoClientId);
+        params.add("redirect_uri", kakaoRedirectUri);
         params.add("grant_type", "authorization_code");
 
         ResponseEntity<AccessToken> response = restClient.post()
-                .uri(googleUri)
+                .uri(kakaoUri)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .body(params)
                 .retrieve()     // 응답 Body 값만 추출
                 .toEntity(AccessToken.class);
 
-        log.info("[GoogleService.getAccessToken] : 응답 Access Token JSON = {}", response.getBody());
+        log.info("[KakaoService.getAccessToken] : 응답 Access Token JSON = {}", response.getBody());
         return response.getBody();
     }
 
     // 사용자 정보 획득 메서드
-    private GoogleProfile getGoogleProfile(String accessToken) {
+    private KakaoProfile getKakaoProfile(String accessToken) {
         RestClient restClient = RestClient.create();
 
-        ResponseEntity<GoogleProfile> response =  restClient.get()
-                .uri("https://openidconnect.googleapis.com/v1/userinfo")
+        ResponseEntity<KakaoProfile> response =  restClient.get()
+                .uri("https://kapi.kakao.com/v2/user/me")
                 .header("Authorization", "Bearer " + accessToken)
                 .retrieve()
-                .toEntity(GoogleProfile.class);
+                .toEntity(KakaoProfile.class);
 
-        log.info("[GoogleService.getGoogleProfile] : 응답 profile JSON = {}", response.getBody());
+        log.info("[KakaoService.getKakaoProfile] : 응답 profile JSON = {}", response.getBody());
         return response.getBody();
     }
 }

@@ -2,6 +2,7 @@ package com.trend_now.backend.member.presentation;
 
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.member.application.GoogleService;
+import com.trend_now.backend.member.application.KakaoService;
 import com.trend_now.backend.member.application.MemberService;
 import com.trend_now.backend.member.data.vo.AuthCodeToJwtRequest;
 import com.trend_now.backend.member.data.vo.GoogleLoginResponse;
@@ -26,6 +27,7 @@ public class MemberController {
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;
     private final GoogleService googleService;
+    private final KakaoService kakaoService;
 
     // 연결 확인
     @GetMapping("")
@@ -45,5 +47,10 @@ public class MemberController {
     @PostMapping("/login/google")
     public ResponseEntity<GoogleLoginResponse> googleLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
         return new ResponseEntity<>(googleService.getToken(authCodeToJwtRequest), HttpStatus.OK);
+    }
+
+    @PostMapping("/login/kakao")
+    public ResponseEntity<GoogleLoginResponse> kakaoLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
+        return new ResponseEntity<>(kakaoService.getToken(authCodeToJwtRequest), HttpStatus.OK);
     }
 }

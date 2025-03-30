@@ -42,7 +42,7 @@ public class SecurityConfig {
                 // 특정 url 패턴에 대해서는 security filter에서 제외(Authentication 객체를 안만들겠다는 의미)
                 // todo. 비회원도 사용 가능한 API의 uri 패턴 추가
                 .authorizeHttpRequests(a -> a.requestMatchers(
-                                "/api/v1/member/google/doLogin", "/swagger-ui/**", "/v3/api-docs/**")
+                                "/api/v1/member/login/**", "/swagger-ui/**", "/v3/api-docs/**")
                         .permitAll().anyRequest().authenticated())
 
                 /**
