@@ -25,8 +25,19 @@ public class KakaoService {
     @Value("${oauth.kakao.redirect-uri}")
     private String kakaoRedirectUri;
 
-    private static final String kakaoUri = "https://kauth.kakao.com/oauth/token";
+    private static final String CODE = "code";
+    private static final String CLIENT_ID = "client_id";
+    private static final String REDIRECT_URI = "redirect_uri";
+    private static final String GRANT_TYPE = "grant_type";
+    private static final String AUTHORIZATION_CODE = "authorization_code";
 
+    private static final String ACCESS_TOKEN_KAKAO_URI = "https://kauth.kakao.com/oauth/token";
+    private static final String ACCESS_TOKEN_HEADER_NAME = "Content-Type";
+    private static final String ACCESS_TOKEN_HEADER_VALUE = "application/x-www-form-urlencoded";
+
+    private static final String PROFILE_KAKAO_URI = "https://kapi.kakao.com/v2/user/me";
+    private static final String PROFILE_HEADER_NAME = "Authorization";
+    private static final String PROFILE_HEADER_VALUE = "Bearer ";
 
     private final MemberRepository memberRepository;
     private final MemberService memberService;
@@ -35,7 +46,7 @@ public class KakaoService {
     /**
      *  getToken(AuthCodeToJwtRequest)
      *  - 인가 코드를 통해 JWT 토큰을 반환받는다.
-     *  - 이 과정에는 인가 코드를 통해 Access Token을 발급 받고, Access Token을 통해 구글로부터 사용자 정보를 받는다.
+     *  - 이 과정에는 인가 코드를 통해 Access Token을 발급 받고, Access Token을 통해 카카오로부터 사용자 정보를 받는다.
      *  - 사용자 정보를 본 서비스에서 검증하여 JWT 토큰을 발급해준다.
      */
     public OAuth2LoginResponse getToken(AuthCodeToJwtRequest authCodeToJwtRequest) {
@@ -57,19 +68,19 @@ public class KakaoService {
     }
 
     // Access Token 획득 메서드
-    // RestClient를 사용해서 구글 서버와 통신
+    // RestClient를 사용해서 카카오 서버와 통신
     private AccessToken getAccessToken(String code) {
         RestClient restClient = RestClient.create();
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("code", code);
-        params.add("client_id", kakaoClientId);
-        params.add("redirect_uri", kakaoRedirectUri);
-        params.add("grant_type", "authorization_code");
+        params.add(CODE, code);
+        params.add(CLIENT_ID, kakaoClientId);
+        params.add(REDIRECT_URI, kakaoRedirectUri);
+        params.add(GRANT_TYPE, AUTHORIZATION_CODE);
 
         ResponseEntity<AccessToken> response = restClient.post()
-                .uri(kakaoUri)
-                .header("Content-Type", "application/x-www-form-urlencoded")
+                .uri(ACCESS_TOKEN_KAKAO_URI)
+                .header(ACCESS_TOKEN_HEADER_NAME, ACCESS_TOKEN_HEADER_VALUE)
                 .body(params)
                 .retrieve()     // 응답 Body 값만 추출
                 .toEntity(AccessToken.class);
@@ -83,8 +94,8 @@ public class KakaoService {
         RestClient restClient = RestClient.create();
 
         ResponseEntity<KakaoProfile> response =  restClient.get()
-                .uri("https://kapi.kakao.com/v2/user/me")
-                .header("Authorization", "Bearer " + accessToken)
+                .uri(PROFILE_KAKAO_URI)
+                .header(PROFILE_HEADER_NAME, PROFILE_HEADER_VALUE + accessToken)
                 .retrieve()
                 .toEntity(KakaoProfile.class);
 

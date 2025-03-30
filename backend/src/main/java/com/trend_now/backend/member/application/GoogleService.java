@@ -31,8 +31,20 @@ public class GoogleService {
     @Value("${oauth.google.redirect-uri}")
     private String googleRedirectUri;
 
-    private static final String googleUri = "https://oauth2.googleapis.com/token";
+    private static final String CODE = "code";
+    private static final String CLIENT_ID = "client_id";
+    private static final String CLIENT_SECRET = "client_secret";
+    private static final String REDIRECT_URI = "redirect_uri";
+    private static final String GRANT_TYPE = "grant_type";
+    private static final String AUTHORIZATION_CODE = "authorization_code";
 
+    private static final String ACCESS_TOKEN_GOOGLE_URI = "https://oauth2.googleapis.com/token";
+    private static final String ACCESS_TOKEN_HEADER_NAME = "Content-Type";
+    private static final String ACCESS_TOKEN_HEADER_VALUE = "application/x-www-form-urlencoded";
+
+    private static final String PROFILE_GOOGLE_URI = "https://openidconnect.googleapis.com/v1/userinfo";
+    private static final String PROFILE_HEADER_NAME = "Authorization";
+    private static final String PROFILE_HEADER_VALUE = "Bearer ";
 
     private final MemberRepository memberRepository;
     private final MemberService memberService;
@@ -68,15 +80,15 @@ public class GoogleService {
         RestClient restClient = RestClient.create();
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("code", code);
-        params.add("client_id", googleClientId);
-        params.add("client_secret", googleClientSecret);
-        params.add("redirect_uri", googleRedirectUri);
-        params.add("grant_type", "authorization_code");
+        params.add(CODE, code);
+        params.add(CLIENT_ID, googleClientId);
+        params.add(CLIENT_SECRET, googleClientSecret);
+        params.add(REDIRECT_URI, googleRedirectUri);
+        params.add(GRANT_TYPE, AUTHORIZATION_CODE);
 
         ResponseEntity<AccessToken> response = restClient.post()
-                .uri(googleUri)
-                .header("Content-Type", "application/x-www-form-urlencoded")
+                .uri(ACCESS_TOKEN_GOOGLE_URI)
+                .header(ACCESS_TOKEN_HEADER_NAME, ACCESS_TOKEN_HEADER_VALUE)
                 .body(params)
                 .retrieve()     // 응답 Body 값만 추출
                 .toEntity(AccessToken.class);
@@ -90,8 +102,8 @@ public class GoogleService {
         RestClient restClient = RestClient.create();
 
         ResponseEntity<GoogleProfile> response =  restClient.get()
-                .uri("https://openidconnect.googleapis.com/v1/userinfo")
-                .header("Authorization", "Bearer " + accessToken)
+                .uri(PROFILE_GOOGLE_URI)
+                .header(PROFILE_HEADER_NAME, PROFILE_HEADER_VALUE + accessToken)
                 .retrieve()
                 .toEntity(GoogleProfile.class);
 
