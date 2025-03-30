@@ -41,7 +41,7 @@ public class AlarmSettings extends BaseEntity {
     private String alarmSettingKeyword;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "member_id")
     private Members members;
 
     public AlarmSettings(AlarmSettingType alarmSettingType, LocalTime alarmSettingTime,

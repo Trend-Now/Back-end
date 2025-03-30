@@ -29,7 +29,7 @@ public class PostLikes extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "member_id")
     private Members members;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -32,6 +32,6 @@ public class Fcms extends BaseEntity {
     private String deviceToken;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "member_id")
     private Members members;
 }
