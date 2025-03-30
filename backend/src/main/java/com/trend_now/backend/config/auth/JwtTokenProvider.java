@@ -32,13 +32,12 @@ public class JwtTokenProvider {
                 SignatureAlgorithm.HS512.getJcaName());
     }
 
-    public String createToken(String email, String role) {
-        /**
-         *  Claims은 JWT의 페이로드의 데이터 단위
-         *  - setSubject() 메서드를 통해 JWT를 인증할 식별자를 원하는 데이터로 지정 가능
-         */
-        Claims claims = Jwts.claims().setSubject(email);
-        claims.put("role", role);   // private Claim으로 협의하에 사용
+    /**
+     *  JWT 토큰을 생성할 때, 사용자 식별이 가능한 PK 값을 이용
+     *  - setSubject() 메서드를 통해 memberId를 JWT의 sub Claim에 저장
+     */
+    public String createToken(Long memberId) {
+        Claims claims = Jwts.claims().setSubject(String.valueOf(memberId));
         Date now = new Date();
         String token = Jwts.builder()
                 .setClaims(claims)

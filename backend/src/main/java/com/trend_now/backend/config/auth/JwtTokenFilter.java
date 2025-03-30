@@ -40,7 +40,7 @@ public class JwtTokenFilter extends GenericFilter {
         try {
             if (token != null) {
                 if (!token.substring(0, 7).equals("Bearer ")) {
-                    log.error("[JwtTokenFilter] : Bearer 형식이 아닙니다.");
+                    log.error("[JwtTokenFilter.doFilter] : Bearer 형식이 아닙니다.");
                     throw new AuthenticationException("Bearer 형식이 아닙니다.");
                 }
 
@@ -83,7 +83,7 @@ public class JwtTokenFilter extends GenericFilter {
 
         // JWT 검증에서 예외가 발생하면 doFilter() 메서드를 통해 필터 체인에 접근하지 않고 사용자에게 에러를 반환
         catch (Exception e) {
-            log.error("");
+            log.error("[JwtTokenFilter.doFilter] : JWT이 올바르지 않습니다.");
             e.printStackTrace();
             httpServletResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
             httpServletResponse.setContentType("application/json");
