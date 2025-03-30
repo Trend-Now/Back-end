@@ -31,7 +31,7 @@ public class GoogleService {
     @Value("${oauth.google.redirect-uri}")
     private String googleRedirectUri;
 
-    private String googleUri = "https://oauth2.googleapis.com/token";
+    private static final String googleUri = "https://oauth2.googleapis.com/token";
 
 
     private final MemberRepository memberRepository;
