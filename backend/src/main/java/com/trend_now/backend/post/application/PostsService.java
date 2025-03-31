@@ -8,6 +8,7 @@ package com.trend_now.backend.post.application;
 
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostsDeleteDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
@@ -15,7 +16,6 @@ import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateDto;
 import com.trend_now.backend.post.repository.PostsRepository;
-import com.trend_now.backend.user.domain.Users;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -49,15 +49,15 @@ public class PostsService {
 
     //게시글 작성 - 가변 타이머 작동 중에만 가능
     @Transactional
-    public Long savePosts(PostsSaveDto postsSaveDto, Users users) {
+    public Long savePosts(PostsSaveDto postsSaveDto, Members members) {
         Boards findBoards = boardRepository.findById(postsSaveDto.getBoardId())
                 .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_BOARD));
 
         Posts posts = Posts.builder()
                 .title(postsSaveDto.getTitle())
                 .content(postsSaveDto.getContent())
-                .writer(users.getName())
-                .users(users)
+                .writer(members.getName())
+                .members(members)
                 .boards(findBoards)
                 .build();
 
