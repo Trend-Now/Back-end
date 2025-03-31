@@ -48,4 +48,13 @@ public class Posts extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Members members;
+
+    public boolean isSameWriter(String writer) {
+        return this.writer.equals(writer);
+    }
+
+    public void changePosts(String title, String content) {
+        this.title = title;
+        this.content = content;
+    }
 }
