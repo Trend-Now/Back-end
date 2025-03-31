@@ -7,6 +7,7 @@ import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.member.domain.Members;
+import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.dto.PostsDeleteDto;
@@ -59,9 +60,9 @@ public class PostsServiceTest {
                 .name("testUser")
                 .email("testEmail")
                 .snsId("testSnsId")
-                .provider("testProvider")
+                .provider(Provider.TEST)
                 .build();
-        MemberRepository.save(members);
+        memberRepository.save(members);
 
         boards = Boards.builder()
                 .name("testBoard")
