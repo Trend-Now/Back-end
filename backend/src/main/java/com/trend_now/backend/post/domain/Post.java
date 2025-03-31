@@ -1,5 +1,6 @@
 package com.trend_now.backend.post.domain;
 
+import com.trend_now.backend.board.domain.Boards;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.Entity;
@@ -41,5 +42,5 @@ public abstract class Post {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")
-    private Board board;
+    private Boards board;
 }

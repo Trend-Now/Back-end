@@ -34,7 +34,6 @@ public class BoardsRedisServiceTest {
 
     private static final String BOARD_RANK_KEY = "board_rank";
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
-    private static final String BOARD_RANK_REALTIME_KEY = "board_rank_realtime";
     private static final int BOARD_COUNT = 10;
     private static final long KEY_LIVE_TIME = 301L;
 
@@ -194,11 +193,15 @@ public class BoardsRedisServiceTest {
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
+        redisTemplate.delete(boards.getFirst().getName());
         boardRedisService.cleanUpExpiredKeys();
 
         //then
-        Set<String> allRankKeys = redisTemplate.opsForZSet().range(BOARD_RANK_REALTIME_KEY, 0, -1);
-        assertThat(allRankKeys).isEmpty();
+        Set<String> allRankKeys = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
+
+        assertThat(allRankKeys).isNotNull();
+        assertThat(allRankKeys.size()).isEqualTo(BOARD_COUNT - 1);
+        assertThat(allRankKeys.iterator().next()).isEqualTo("B1");
     }
 
     @ParameterizedTest

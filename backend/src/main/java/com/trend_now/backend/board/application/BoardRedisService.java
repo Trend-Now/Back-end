@@ -24,7 +24,6 @@ public class BoardRedisService {
 
     private static final String BOARD_RANK_KEY = "board_rank";
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
-    private static final String BOARD_REALTIME_RANK_KEY = "board_realtime_rank";
     private static final long KEY_LIVE_TIME = 301L;
     private static final int KEY_EXPIRE = 0;
 
@@ -42,7 +41,6 @@ public class BoardRedisService {
         redisTemplate.opsForValue().set(key, "실시간 게시판");
         redisTemplate.expire(key, keyLiveTime, TimeUnit.SECONDS);
         redisTemplate.opsForZSet().add(BOARD_RANK_KEY, key, score);
-        redisTemplate.opsForZSet().add(BOARD_REALTIME_RANK_KEY, key, score);
     }
 
     public void setRankValidListTime() {
@@ -52,8 +50,6 @@ public class BoardRedisService {
     }
 
     public void cleanUpExpiredKeys() {
-        redisTemplate.opsForZSet().removeRange(BOARD_REALTIME_RANK_KEY, 0, -1);
-
         Set<String> allRankKey = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
         if (allRankKey == null || allRankKey.isEmpty()) {
             return;
