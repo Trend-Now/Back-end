@@ -4,6 +4,7 @@ import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.member.application.GoogleService;
 import com.trend_now.backend.member.application.KakaoService;
 import com.trend_now.backend.member.application.MemberService;
+import com.trend_now.backend.member.application.NaverService;
 import com.trend_now.backend.member.data.vo.AuthCodeToJwtRequest;
 import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +27,7 @@ public class MemberController {
     private final JwtTokenProvider jwtTokenProvider;
     private final GoogleService googleService;
     private final KakaoService kakaoService;
+    private final NaverService naverService;
 
     // 연결 확인
     @GetMapping("")
@@ -50,5 +52,10 @@ public class MemberController {
     @PostMapping("/login/kakao")
     public ResponseEntity<OAuth2LoginResponse> kakaoLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
         return new ResponseEntity<>(kakaoService.getToken(authCodeToJwtRequest), HttpStatus.OK);
+    }
+
+    @PostMapping("/login/naver")
+    public ResponseEntity<OAuth2LoginResponse> naverLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
+        return new ResponseEntity<>(naverService.getToken(authCodeToJwtRequest), HttpStatus.OK);
     }
 }

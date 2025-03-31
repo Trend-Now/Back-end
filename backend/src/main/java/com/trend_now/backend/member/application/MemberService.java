@@ -2,6 +2,7 @@ package com.trend_now.backend.member.application;
 
 import com.trend_now.backend.member.data.vo.GoogleProfile;
 import com.trend_now.backend.member.data.vo.KakaoProfile;
+import com.trend_now.backend.member.data.vo.NaverProfile;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
@@ -42,6 +43,19 @@ public class MemberService {
                 .name(createNickname())
                 .provider(provider)
                 .snsId(kakaoProfile.getId())
+                .build();
+
+        memberRepository.save(member);
+        return member;
+    }
+
+    @Transactional
+    public Members createNaverOauth(NaverProfile naverProfile, Provider provider) {
+        Members member = Members.builder()
+                .email(naverProfile.getResponse().getEmail())
+                .name(createNickname())
+                .provider(provider)
+                .snsId(naverProfile.getResponse().getId())
                 .build();
 
         memberRepository.save(member);
