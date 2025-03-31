@@ -2,7 +2,7 @@ package com.trend_now.backend.alarm.domain;
 
 
 import com.trend_now.backend.config.domain.BaseEntity;
-import com.trend_now.backend.user.domain.Users;
+import com.trend_now.backend.member.domain.Members;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -41,8 +41,8 @@ public class AlarmSettings extends BaseEntity {
     private String alarmSettingKeyword;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private Users users;
+    @JoinColumn(name = "member_id")
+    private Members members;
 
     public AlarmSettings(AlarmSettingType alarmSettingType, LocalTime alarmSettingTime,
             String alarmSettingKeyword) {
