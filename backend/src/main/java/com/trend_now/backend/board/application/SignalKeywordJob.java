@@ -51,7 +51,7 @@ public class SignalKeywordJob implements Job {
                 log.info("스케줄러에서 clientId: {}에게 이벤트 발행", clientId);
                 SignalKeywordEventDto event = new SignalKeywordEventDto(clientId,
                         SIGNAL_KEYWORD_LIST_EVENT_MESSAGE, signalKeywordDto);
-                redisPublisher.publish(event);
+                redisPublisher.publishSignalKeywordEvent(event);
             }
         } catch (Exception e) {
             throw new JobExecutionException(KEYWORD_JOB_ERROR_MESSAGE, e);
