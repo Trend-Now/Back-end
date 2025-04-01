@@ -6,14 +6,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.member.domain.Members;
+import com.trend_now.backend.member.domain.Provider;
+import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.dto.PostsDeleteDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateDto;
-import com.trend_now.backend.user.domain.Users;
-import com.trend_now.backend.user.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.assertj.core.api.Assertions;
@@ -42,7 +43,7 @@ public class PostsServiceTest {
     private EntityManager em;
 
     @Autowired
-    private UserRepository userRepository;
+    private MemberRepository memberRepository;
 
     @Autowired
     private BoardRepository boardRepository;
@@ -50,18 +51,18 @@ public class PostsServiceTest {
     @Autowired
     private PostsService postsService;
 
-    private Users users;
+    private Members members;
     private Boards boards;
 
     @BeforeEach
     public void before() {
-        users = Users.builder()
+        members = Members.builder()
                 .name("testUser")
                 .email("testEmail")
                 .snsId("testSnsId")
-                .provider("testProvider")
+                .provider(Provider.TEST)
                 .build();
-        userRepository.save(users);
+        memberRepository.save(members);
 
         boards = Boards.builder()
                 .name("testBoard")
@@ -71,7 +72,7 @@ public class PostsServiceTest {
 
         for (int i = 1; i <= 10; i++) {
             PostsSaveDto postsSaveDto = PostsSaveDto.of(boards.getId(), "title" + i, "content" + i);
-            postsService.savePosts(postsSaveDto, users);
+            postsService.savePosts(postsSaveDto, members);
         }
     }
 
@@ -82,7 +83,7 @@ public class PostsServiceTest {
         PostsSaveDto postsSaveDto = PostsSaveDto.of(boards.getId(), "testTitle", "testContent");
 
         //when
-        Long savePosts = postsService.savePosts(postsSaveDto, users);
+        Long savePosts = postsService.savePosts(postsSaveDto, members);
 
         //then
         PostsInfoDto postsInfoDto = postsService.findPostsById(savePosts);
@@ -122,7 +123,7 @@ public class PostsServiceTest {
     public void 게시글_수정() throws Exception {
         //given
         PostsUpdateDto postsUpdateDto = PostsUpdateDto.of(1L, "updateTitle", "updateContent",
-                users.getName());
+                members.getName());
 
         //when
         postsService.updatePostsById(postsUpdateDto);
@@ -140,7 +141,7 @@ public class PostsServiceTest {
     @DisplayName("작성자가 직접 작성한 게시글을 삭제할 수 있다")
     public void 게시글_삭제() throws Exception {
         //given
-        PostsDeleteDto postsDeleteDto = PostsDeleteDto.of(1L, users.getName());
+        PostsDeleteDto postsDeleteDto = PostsDeleteDto.of(1L, members.getName());
 
         //when
         postsService.deletePostsById(postsDeleteDto);

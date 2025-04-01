@@ -1,5 +1,6 @@
 package com.trend_now.backend.post.presentation;
 
+import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.dto.PostsDeleteDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
@@ -7,7 +8,6 @@ import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsPagingResponseDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateDto;
-import com.trend_now.backend.user.domain.Users;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -57,9 +57,9 @@ public class PostsController {
     @Operation(summary = "게시글 저장", description = "게시판에 게시글을 저장합니다.")
     @PostMapping("/")
     public ResponseEntity<String> savePosts(@Valid @RequestBody PostsSaveDto postsSaveDto,
-            Users users) {
+            Members members) {
 
-        Long savePosts = postsService.savePosts(postsSaveDto, users);
+        Long savePosts = postsService.savePosts(postsSaveDto, members);
 
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_SAVE_POSTS_MESSAGE);
     }

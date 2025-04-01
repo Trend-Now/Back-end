@@ -1,4 +1,4 @@
-package com.trend_now.backend.user.domain;
+package com.trend_now.backend.member.domain;
 
 
 import com.trend_now.backend.config.domain.BaseEntity;
@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "users", uniqueConstraints = {
+@Table(name = "members", uniqueConstraints = {
         @UniqueConstraint(name = "uk_email", columnNames = {"email"}),
         @UniqueConstraint(name = "uk_sns_id", columnNames = {"snsId"}),
         @UniqueConstraint(name = "uk_provider_sns_id", columnNames = {"provider", "snsId"})
@@ -15,11 +15,11 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Getter
-public class User extends BaseEntity {
+public class Members extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
+    @Column(name = "member_id")
     private Long id;
 
     @Column(nullable = false, name = "name")
@@ -28,8 +28,9 @@ public class User extends BaseEntity {
     @Column(nullable = false, name = "email")
     private String email;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "provider")
-    private String provider;
+    private Provider provider;
 
     @Column(nullable = false, name = "sns_id")
     private String snsId;
