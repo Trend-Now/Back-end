@@ -17,36 +17,32 @@ public class BoardService {
 
     @Transactional
     public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto) {
-        List<Boards> findBoards = boardRepository.findByName(boardSaveDto.getName());
-
-        if (findBoards.isEmpty()) {
-            Boards boards = Boards.builder()
-                    .name(boardSaveDto.getName())
-                    .boardCategory(boardSaveDto.getBoardCategory())
-                    .build();
-
-            boardRepository.save(boards);
-            return boards.getId();
-        }
-
-        return -1L;
+        Boards board = boardRepository.findByName(boardSaveDto.getName())
+                .orElseGet(() -> boardRepository.save(
+                        Boards.builder()
+                                .name(boardSaveDto.getName())
+                                .boardCategory(boardSaveDto.getBoardCategory())
+                                .build()
+                )
+        );
+        return board.getId();
     }
+
 
     @Transactional
     public void updateBoardIsDeleted(BoardSaveDto boardSaveDto, boolean isInRedis) {
-        List<Boards> findBoards = boardRepository.findByName(boardSaveDto.getName());
-        if (findBoards.isEmpty()) {
-            return;
-        }
+        Boards findBoards = boardRepository.findByName(boardSaveDto.getName())
+                .orElseGet(() -> null);
 
-        Boards board = findBoards.getFirst();
+        if(findBoards == null) return;
+
         if(isInRedis) {
-            if(board.isDeleted()) {
-                board.changeDeleted();
+            if(findBoards.isDeleted()) {
+                findBoards.changeDeleted();
             }
         } else {
-            if(!board.isDeleted()) {
-                board.changeDeleted();
+            if(!findBoards.isDeleted()) {
+                findBoards.changeDeleted();
             }
         }
     }
