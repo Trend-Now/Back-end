@@ -1,9 +1,6 @@
 package com.trend_now.backend.post.domain;
 
-<<<<<<< HEAD
-public class Image {
-
-=======
+import com.trend_now.backend.config.domain.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -23,7 +20,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Getter
-public class Image {
+public class Images extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,6 +31,5 @@ public class Image {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
-    private Post post;
->>>>>>> develop
+    private Posts posts;
 }
