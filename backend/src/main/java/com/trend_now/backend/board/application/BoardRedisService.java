@@ -89,7 +89,7 @@ public class BoardRedisService {
                     String boardName = parts[0];
                     Long boardId = Long.parseLong(parts[1]);
 
-                    Long boardLiveTime = redisTemplate.getExpire(boardName, TimeUnit.SECONDS);
+                    Long boardLiveTime = redisTemplate.getExpire(boardKey, TimeUnit.SECONDS);
                     Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
                     return new BoardInfoDto(boardId, boardName, boardLiveTime, score);
                 })
