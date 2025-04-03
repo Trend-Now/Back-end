@@ -7,6 +7,7 @@ package com.trend_now.backend.board.application;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trend_now.backend.board.dto.RealTimeBoardKeyExpiredEvent;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,23 +20,38 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RedisPublisher {
 
-    private final ChannelTopic channelTopic;
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
+    private final ChannelTopic signalKeywordEventTopic;
+    private final ChannelTopic realTimeBoardEventTopic;
 
     /** publish를 호출하면, topic을 구독하는 모든 구독자에게 message가 발행 (pub) */
 
     /**
-     * Object publish
+     * 실시간 검색어 순위 publish
      */
-    public void publish(SignalKeywordEventDto event) {
+    public void publishSignalKeywordEvent(SignalKeywordEventDto event) {
         try {
             String message = objectMapper.writeValueAsString(event);
-            log.info("RedisPublisher가 채널: {}에 이벤트: {}를 발행했습니다.", channelTopic.getTopic(), event);
-            redisTemplate.convertAndSend(channelTopic.getTopic(), message);
+            log.info("RedisPublisher(실시간 검색어 갱신)가 채널: {}에 이벤트: {}를 발행했습니다.",
+                    signalKeywordEventTopic.getTopic(), event);
+            redisTemplate.convertAndSend(signalKeywordEventTopic.getTopic(), message);
         } catch (JsonProcessingException e) {
-            log.info("RedisPublisher에서 이벤트 변환 중 오류 발생: {}", e.getMessage(), e);
+            log.info("RedisPublisher(실시간 검색어 갱신)에서 이벤트 변환 중 오류 발생: {}", e.getMessage(), e);
         }
     }
 
+    /**
+     * 실시간 게시판 만료 publish
+     */
+    public void publishRealTimeBoardExpiredEvent(RealTimeBoardKeyExpiredEvent event) {
+        try {
+            String message = objectMapper.writeValueAsString(event);
+            log.info("RedisPublisher(실시간 게시판 만료)가 채널: {}에 이벤트: {}를 발행했습니다.",
+                    realTimeBoardEventTopic.getTopic(), event);
+            redisTemplate.convertAndSend(realTimeBoardEventTopic.getTopic(), message);
+        } catch (JsonProcessingException e) {
+            log.info("RedisPublisher(실시간 게시판 만료)에서 이벤트 변환 중 오류 발생: {}", e.getMessage(), e);
+        }
+    }
 }

@@ -24,8 +24,10 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 @Configuration
 public class RedisConfig {
 
-    private static final String SUBSCRIBER_LISTENER_METHOD_NAME = "sendKeywordListBySubscriber";
-    private static final String SSE_EVENT_TOPIC_NAME = "sse-events";
+    private static final String SIGNAL_KEYWORD_SUBSCRIBER_LISTENER_METHOD_NAME = "sendKeywordListBySubscriber";
+    private static final String SIGNAL_KEYWORD_EVENT_TOPIC_NAME = "signal-keyword-events";
+    private static final String REALTIME_BOARD_SUBSCRIBER_LISTENER_METHOD_NAME = "sendRealTimeBoardExpiredBySubscriber";
+    private static final String REALTIME_BOARD_EVENT_TOPIC_NAME = "realtime-board-events";
 
     @Value("${spring.data.redis.host}")
     private String redisHost;
@@ -38,9 +40,20 @@ public class RedisConfig {
         return new LettuceConnectionFactory(redisHost, redisPort);
     }
 
+    /**
+     * redis pub/sub에 사용되는 채널로 실시간 검색어 순위 이벤트가 발행되는 채널
+     */
     @Bean
-    public ChannelTopic sseEventTopic() {
-        return new ChannelTopic(SSE_EVENT_TOPIC_NAME);
+    public ChannelTopic signalKeywordEventTopic() {
+        return new ChannelTopic(SIGNAL_KEYWORD_EVENT_TOPIC_NAME);
+    }
+
+    /**
+     * redis pub/sub에 사용되는 채널로 실시간 게시판 만료 이벤트가 발행되는 채널
+     */
+    @Bean
+    public ChannelTopic realTimeBoardEventTopic() {
+        return new ChannelTopic(REALTIME_BOARD_EVENT_TOPIC_NAME);
     }
 
     @Bean
@@ -64,12 +77,13 @@ public class RedisConfig {
      */
     @Bean
     public RedisMessageListenerContainer redisMessageListener(
-            MessageListenerAdapter sseEventListenerAdapter,
-            ChannelTopic topic
+            MessageListenerAdapter signalKeywordEventListenerAdapter,
+            MessageListenerAdapter realTimeBoardEventListenerAdapter
     ) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(redisConnectionFactory());
-        container.addMessageListener(sseEventListenerAdapter, topic);
+        container.addMessageListener(signalKeywordEventListenerAdapter, signalKeywordEventTopic());
+        container.addMessageListener(realTimeBoardEventListenerAdapter, realTimeBoardEventTopic());
         return container;
     }
 
@@ -77,7 +91,17 @@ public class RedisConfig {
      * Redis에 발행되는 실제 이벤트(실시간 검색어 순위)를 처리하는 subscriber 설정 추가
      */
     @Bean
-    public MessageListenerAdapter sseEventListenerAdapter(RedisSubscriber subscriber) {
-        return new MessageListenerAdapter(subscriber, SUBSCRIBER_LISTENER_METHOD_NAME);
+    public MessageListenerAdapter signalKeywordEventListenerAdapter(RedisSubscriber subscriber) {
+        return new MessageListenerAdapter(subscriber,
+                SIGNAL_KEYWORD_SUBSCRIBER_LISTENER_METHOD_NAME);
+    }
+
+    /**
+     * Redis에 발행되는 실제 이벤트(실시간 게시판 만료)를 처리하는 subscriber 설정 추가
+     */
+    @Bean
+    public MessageListenerAdapter realTimeBoardEventListenerAdapter(RedisSubscriber subscriber) {
+        return new MessageListenerAdapter(subscriber,
+                REALTIME_BOARD_SUBSCRIBER_LISTENER_METHOD_NAME);
     }
 }
