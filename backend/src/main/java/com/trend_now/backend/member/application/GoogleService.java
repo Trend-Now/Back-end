@@ -65,6 +65,7 @@ public class GoogleService {
         Members originalMember = memberRepository.findBySnsId(googleProfile.getSub())
                 .orElseGet(() -> memberService.createGoogleOauth(googleProfile, Provider.GOOGLE));
 
+        // jwt 자체가 "json web token"이므로 변수 네이밍에 대해 다시 고려해볼 필요가 있음
         // JWT 토큰 발급
         String jwtToken = jwtTokenProvider.createToken(originalMember.getId());
 

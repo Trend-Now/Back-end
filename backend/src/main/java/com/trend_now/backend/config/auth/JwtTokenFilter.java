@@ -1,5 +1,7 @@
 package com.trend_now.backend.config.auth;
 
+import com.trend_now.backend.member.domain.Members;
+import com.trend_now.backend.member.repository.MemberRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.*;
@@ -8,10 +10,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -27,9 +31,16 @@ public class JwtTokenFilter extends GenericFilter {
 
     private static final String AUTHORIZATION = "Authorization";
     private static final String JWT_PREFIX = "Bearer ";
+    private final MemberRepository memberRepository;
+
+    private static final String NOT_EXIST_MEMBER = "존재하지 않는 회원입니다.";
 
     @Value("${jwt.secret}")
     private String secretKey;
+
+    public JwtTokenFilter(MemberRepository memberRepository) {
+        this.memberRepository = memberRepository;
+    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -78,8 +89,14 @@ public class JwtTokenFilter extends GenericFilter {
                 List<GrantedAuthority> authorities = new ArrayList<>();
                 authorities.add(new SimpleGrantedAuthority("ROLE_" + claims.get("role")));
                 UserDetails userDetails = new User(claims.getSubject(), "", authorities);   // password는 의미가 없어 빈 문자열 입력
+
+                Members members = memberRepository.findByEmail(claims.getSubject())
+                        .orElseThrow(() -> new BadCredentialsException(NOT_EXIST_MEMBER));
                 Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, jwtToken, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(members, jwtToken, userDetails.getAuthorities());
+
+                // SecurityContextHolder 객체에 사용자 정보 객체 저장
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
 
             chain.doFilter(request, response);

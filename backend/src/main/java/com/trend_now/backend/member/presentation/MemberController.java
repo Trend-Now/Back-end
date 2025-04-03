@@ -5,14 +5,18 @@ import com.trend_now.backend.member.application.GoogleService;
 import com.trend_now.backend.member.application.KakaoService;
 import com.trend_now.backend.member.application.MemberService;
 import com.trend_now.backend.member.application.NaverService;
+import com.trend_now.backend.member.data.dto.UpdateNicknameRequestDto;
 import com.trend_now.backend.member.data.vo.AuthCodeToJwtRequest;
 import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
+import com.trend_now.backend.member.domain.Members;
+import com.trend_now.backend.member.repository.MemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -57,5 +61,24 @@ public class MemberController {
     @PostMapping("/login/naver")
     public ResponseEntity<OAuth2LoginResponse> naverLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
         return new ResponseEntity<>(naverService.getToken(authCodeToJwtRequest), HttpStatus.OK);
+    }
+
+    /**
+     *  닉네임 변경 API
+     */
+    @PatchMapping("/nickname")
+    public ResponseEntity<String> updateNickname(@AuthenticationPrincipal Members member, @RequestBody UpdateNicknameRequestDto nicknameRequest) {
+        memberService.updateNickname(member, nicknameRequest.nickname());
+        return new ResponseEntity<>("닉네임 변경이 완료 되었습니다.", HttpStatus.OK);
+    }
+
+    /**
+     * 회원 탈퇴 API
+     * API가 호출되면 해당 회원의 값을 DB에서 물리적으로 삭제함
+     */
+    @DeleteMapping("/me")
+    public ResponseEntity<String> deleteMember(@AuthenticationPrincipal Members member) {
+        memberService.deleteMember(member);
+        return new ResponseEntity<>("회원 탈퇴가 완료 되었습니다.", HttpStatus.NO_CONTENT);
     }
 }
