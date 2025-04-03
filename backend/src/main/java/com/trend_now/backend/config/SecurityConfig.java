@@ -42,8 +42,8 @@ public class SecurityConfig {
                 // 특정 url 패턴에 대해서는 security filter에서 제외(Authentication 객체를 안만들겠다는 의미)
                 // todo. 비회원도 사용 가능한 API의 uri 패턴 추가
                 .authorizeHttpRequests(a -> a.requestMatchers(
-                        "/api/v1/boards/list"
-                                ,"/api/v1/member/login/**", "/swagger-ui/**", "/v3/api-docs/**")
+                                "/api/v1/member/login/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/boards/list", "/api/v1/news/realtime",
+                                "/api/v1/timeSync", "/api/v1/subscribe", "/api/v1/unsubscribe", "/sse-test")
                         .permitAll().anyRequest().authenticated())
 
                 /**
@@ -65,7 +65,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));    // 개발 프론트엔드 도메인 허용
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:63342"));    // 개발 프론트엔드 도메인 허용
         configuration.setAllowedMethods(Arrays.asList("*"));    // 모든 HTTP 메서드 허용
         configuration.setAllowedHeaders(Arrays.asList("*"));    // 모든 헤더 값 허용
         configuration.setAllowCredentials(true);    // 자격 증명을 허용(Authorization 헤더를 허용 목적)
