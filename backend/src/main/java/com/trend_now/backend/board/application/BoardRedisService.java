@@ -5,13 +5,11 @@ import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import java.time.LocalTime;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -19,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class BoardRedisService {
 
@@ -31,7 +30,7 @@ public class BoardRedisService {
     private final RedisTemplate<String, String> redisTemplate;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, int score) {
-        String key = boardSaveDto.getName();
+        String key = boardSaveDto.getName() + ":" + boardSaveDto.getBoardId();
         long keyLiveTime = KEY_LIVE_TIME;
 
         Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
@@ -78,10 +77,21 @@ public class BoardRedisService {
         }
 
         List<BoardInfoDto> boardInfoDtos = allBoardName.stream()
-                .map(boardName -> {
+                .map(boardKey -> {
+
+                    // boardId 추출
+                    String[] parts = boardKey.split(":");
+                    log.info("[BoardRedisService.findAllRealTimeBoardPaging] : parts = {}", Arrays.toString(parts));
+
+                    // 데이터 타입 이상 시, 다음으로 넘김
+                    if(parts.length < 2) return null;
+
+                    String boardName = parts[0];
+                    Long boardId = Long.parseLong(parts[1]);
+
                     Long boardLiveTime = redisTemplate.getExpire(boardName, TimeUnit.SECONDS);
-                    Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardName);
-                    return new BoardInfoDto(boardName, boardLiveTime, score);
+                    Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
+                    return new BoardInfoDto(boardId, boardName, boardLiveTime, score);
                 })
                 .sorted(Comparator.comparingLong(BoardInfoDto::getBoardLiveTime).reversed()
                         .thenComparingDouble(BoardInfoDto::getScore))
