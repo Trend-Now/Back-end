@@ -11,7 +11,7 @@
     "postinstall": "husky install"
   },
   "jira-prepare-commit-msg": {
-    "messagePattern": "[$J] $M",
+    "messagePattern": "$J $M",
     "allowEmptyCommitMessage": false,
     "ignoredBranchesPattern": "^(master|main|dev|develop|development|release)$"
   }
