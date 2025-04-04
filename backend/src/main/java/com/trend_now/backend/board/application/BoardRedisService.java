@@ -27,10 +27,15 @@ public class BoardRedisService {
     private static final long KEY_LIVE_TIME = 301L;
     private static final int KEY_EXPIRE = 0;
 
+    private static final String BOARD_KEY_DELIMITER  = ":";
+    private static final int BOARD_KEY_PARTS_LENGTH = 2;
+    private static final int BOARD_NAME_INDEX = 0;
+    private static final int BOARD_ID_INDEX = 1;
+
     private final RedisTemplate<String, String> redisTemplate;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, int score) {
-        String key = boardSaveDto.getName() + ":" + boardSaveDto.getBoardId();
+        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         long keyLiveTime = KEY_LIVE_TIME;
 
         Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
@@ -80,14 +85,14 @@ public class BoardRedisService {
                 .map(boardKey -> {
 
                     // boardId 추출
-                    String[] parts = boardKey.split(":");
+                    String[] parts = boardKey.split(BOARD_KEY_DELIMITER);
                     log.info("[BoardRedisService.findAllRealTimeBoardPaging] : parts = {}", Arrays.toString(parts));
 
                     // 데이터 타입 이상 시, 다음으로 넘김
-                    if(parts.length < 2) return null;
+                    if(parts.length < BOARD_KEY_PARTS_LENGTH) return null;
 
-                    String boardName = parts[0];
-                    Long boardId = Long.parseLong(parts[1]);
+                    String boardName = parts[BOARD_NAME_INDEX];
+                    Long boardId = Long.parseLong(parts[BOARD_ID_INDEX]);
 
                     Long boardLiveTime = redisTemplate.getExpire(boardKey, TimeUnit.SECONDS);
                     Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
