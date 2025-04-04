@@ -3,6 +3,7 @@ package com.trend_now.backend.exception;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.exception.dto.ErrorResponseDto;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * 모든 컨트롤러에서 발생하는 예외를 처리한다.
  */
 @RestControllerAdvice
+@Hidden // Swagger가 이 클래스를 문서화하지 않도록 설정
 public class GlobalExceptionHandler {
 
     /**
