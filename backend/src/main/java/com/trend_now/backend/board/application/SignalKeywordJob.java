@@ -35,11 +35,21 @@ public class SignalKeywordJob implements Job {
             SignalKeywordDto signalKeywordDto = signalKeywordService.fetchRealTimeKeyword().block();
             boardRedisService.cleanUpExpiredKeys();
             for (int i = 0; i < signalKeywordDto.getTop10().size(); i++) {
+
+                /**
+                 *  Signal에서 받아온 데이터 Top10 객체를 통해 BoardSaveDto 객체 생성
+                 *  - top10.getName() 의 데이터와 일치하는 게시판이 존재하면 해당 게시판의 식별자를 가져오고,
+                 *      없으면 저장 후 가져온다.
+                 *  - 가져온 게시판 식별자, 게시판 이름, 게시판 종류를 가지고 BoardSaveDto 객체 생성
+                 *  - 해당 BoardSaveDto 객체를 통해 redis에 게시판 식별자, 게시판 이름, 게시판 종류, 순위 저장
+                 */
+
                 Top10 top10 = signalKeywordDto.getTop10().get(i);
                 BoardSaveDto boardSaveDto = BoardSaveDto.from(top10);
 
+                Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+                boardSaveDto.setBoardId(boardId);
                 boardRedisService.saveBoardRedis(boardSaveDto, i + 1);
-                boardService.saveBoardIfNotExists(boardSaveDto);
 
                 boolean isRealTimeBoard = boardRedisService.isRealTimeBoard(boardSaveDto);
                 boardService.updateBoardIsDeleted(boardSaveDto, isRealTimeBoard);

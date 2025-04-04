@@ -17,36 +17,33 @@ public class BoardService {
 
     @Transactional
     public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto) {
-        List<Boards> findBoards = boardRepository.findByName(boardSaveDto.getName());
-
-        if (findBoards.isEmpty()) {
-            Boards boards = Boards.builder()
-                    .name(boardSaveDto.getName())
-                    .boardCategory(boardSaveDto.getBoardCategory())
-                    .build();
-
-            boardRepository.save(boards);
-            return boards.getId();
-        }
-
-        return -1L;
+        Boards board = boardRepository.findByName(boardSaveDto.getName())
+                .orElseGet(() -> boardRepository.save(
+                        Boards.builder()
+                                .name(boardSaveDto.getName())
+                                .boardCategory(boardSaveDto.getBoardCategory())
+                                .build()
+                )
+        );
+        return board.getId();
     }
+
 
     @Transactional
     public void updateBoardIsDeleted(BoardSaveDto boardSaveDto, boolean isInRedis) {
-        List<Boards> findBoards = boardRepository.findByName(boardSaveDto.getName());
-        if (findBoards.isEmpty()) {
-            return;
-        }
+        // 요구사항을 기반으로 Redis에 있는 게시판 데이터는 DB에도 존재해야 한다.
+        Boards findBoards = boardRepository.findByName(boardSaveDto.getName())
+                .orElseThrow(
+                        () -> new IllegalStateException("해당 게시판이 존재하지 않습니다: " + boardSaveDto.getName())
+                );
 
-        Boards board = findBoards.getFirst();
         if(isInRedis) {
-            if(board.isDeleted()) {
-                board.changeDeleted();
+            if(findBoards.isDeleted()) {
+                findBoards.changeDeleted();
             }
         } else {
-            if(!board.isDeleted()) {
-                board.changeDeleted();
+            if(!findBoards.isDeleted()) {
+                findBoards.changeDeleted();
             }
         }
     }

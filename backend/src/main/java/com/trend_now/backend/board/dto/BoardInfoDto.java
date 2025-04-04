@@ -7,6 +7,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class BoardInfoDto {
 
+    private Long boardId;
     private String boardName;
     private long boardLiveTime;
     private double score;

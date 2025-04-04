@@ -5,13 +5,11 @@ import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import java.time.LocalTime;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -19,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class BoardRedisService {
 
@@ -27,10 +26,15 @@ public class BoardRedisService {
     private static final long KEY_LIVE_TIME = 301L;
     private static final int KEY_EXPIRE = 0;
 
+    private static final String BOARD_KEY_DELIMITER  = ":";
+    private static final int BOARD_KEY_PARTS_LENGTH = 2;
+    private static final int BOARD_NAME_INDEX = 0;
+    private static final int BOARD_ID_INDEX = 1;
+
     private final RedisTemplate<String, String> redisTemplate;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, int score) {
-        String key = boardSaveDto.getName();
+        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         long keyLiveTime = KEY_LIVE_TIME;
 
         Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
@@ -74,10 +78,21 @@ public class BoardRedisService {
         }
 
         List<BoardInfoDto> boardInfoDtos = allBoardName.stream()
-                .map(boardName -> {
-                    Long boardLiveTime = redisTemplate.getExpire(boardName, TimeUnit.SECONDS);
-                    Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardName);
-                    return new BoardInfoDto(boardName, boardLiveTime, score);
+                .map(boardKey -> {
+
+                    // boardId 추출
+                    String[] parts = boardKey.split(BOARD_KEY_DELIMITER);
+                    log.info("[BoardRedisService.findAllRealTimeBoardPaging] : parts = {}", Arrays.toString(parts));
+
+                    // 데이터 타입 이상 시, 다음으로 넘김
+                    if(parts.length < BOARD_KEY_PARTS_LENGTH) return null;
+
+                    String boardName = parts[BOARD_NAME_INDEX];
+                    Long boardId = Long.parseLong(parts[BOARD_ID_INDEX]);
+
+                    Long boardLiveTime = redisTemplate.getExpire(boardKey, TimeUnit.SECONDS);
+                    Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
+                    return new BoardInfoDto(boardId, boardName, boardLiveTime, score);
                 })
                 .sorted(Comparator.comparingLong(BoardInfoDto::getBoardLiveTime).reversed()
                         .thenComparingDouble(BoardInfoDto::getScore))
