@@ -7,9 +7,7 @@ import com.trend_now.backend.member.data.vo.NaverProfile;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
-import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.repository.PostsRepository;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -95,7 +93,7 @@ public class MemberService {
     @Transactional
     public void deleteMember(Members member) {
         // 해당 회원이 작성한 게시글의 멤버 정보 삭제
-        postsRepository.findByMembers_Id(member.getId()).forEach(post -> post.setMembers(null));
+        postsRepository.findAllByMembers_Id(member.getId()).forEach(post -> post.setMembers(null));
         /*
            해당 회원이 작성한 댓글의 멤버 정보를 삭제하는 코드도 추가가 필요함
            Comments 관련 기능이 없어서 추가하지 않음

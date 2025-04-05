@@ -9,9 +9,13 @@ import com.trend_now.backend.member.data.dto.UpdateNicknameRequestDto;
 import com.trend_now.backend.member.data.vo.AuthCodeToJwtRequest;
 import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
 import com.trend_now.backend.member.domain.Members;
-import com.trend_now.backend.member.repository.MemberRepository;
+import com.trend_now.backend.post.application.PostsService;
+import com.trend_now.backend.post.application.ScrapService;
+import com.trend_now.backend.post.dto.PostsInfoDto;
+import com.trend_now.backend.post.dto.PostsPagingResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,6 +36,8 @@ public class MemberController {
     private final GoogleService googleService;
     private final KakaoService kakaoService;
     private final NaverService naverService;
+    private final ScrapService scrapService;
+    private final PostsService postsService;
 
     // 연결 확인
     @GetMapping("")
@@ -67,6 +73,7 @@ public class MemberController {
      *  닉네임 변경 API
      */
     @PatchMapping("/nickname")
+    @Operation(summary = "닉네임 변경", description = "닉네임 변경을 요청한 사용자의 닉네임을 변경합니다.")
     public ResponseEntity<String> updateNickname(@AuthenticationPrincipal Members member, @RequestBody UpdateNicknameRequestDto nicknameRequest) {
         memberService.updateNickname(member, nicknameRequest.nickname());
         return new ResponseEntity<>("닉네임 변경이 완료 되었습니다.", HttpStatus.OK);
@@ -76,9 +83,36 @@ public class MemberController {
      * 회원 탈퇴 API
      * API가 호출되면 해당 회원의 값을 DB에서 물리적으로 삭제함
      */
-    @DeleteMapping("/me")
-    public ResponseEntity<String> deleteMember(@AuthenticationPrincipal Members member) {
+    @DeleteMapping("/withdrawal")
+    @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 요청한 사용자의 정보를 삭제합니다. 해당 사용자가 작성한 글의 작성자는 NULL로 변경됩니다.")
+    public ResponseEntity<String> withdrawMember(@AuthenticationPrincipal Members member) {
         memberService.deleteMember(member);
         return new ResponseEntity<>("회원 탈퇴가 완료 되었습니다.", HttpStatus.NO_CONTENT);
+    }
+
+    /**
+     * 회원이 스크랩한 게시글 조회 API
+     */
+    @GetMapping("/scrap")
+    @Operation(summary = "스크랩한 게시글 조회", description = "회원이 스크랩한 게시글을 조회합니다.")
+    public ResponseEntity<PostsPagingResponseDto> getMemberScrapPosts(
+            @AuthenticationPrincipal Members member,
+            @RequestParam int page,
+            @RequestParam int size) {
+        List<PostsInfoDto> scrapsByMemberId = scrapService.getScrappedPostsByMemberId(member.getId(), page, size);
+        return new ResponseEntity<>(PostsPagingResponseDto.of("스크랩한 게시글 조회 완료", scrapsByMemberId), HttpStatus.OK);
+    }
+
+    /**
+     * 회원이 작성한 게시글 조회 API
+     */
+    @GetMapping("/posts")
+    @Operation(summary = "회원이 작성한 게시글 조회", description = "회원이 작성한 게시글을 조회합니다.")
+    public ResponseEntity<PostsPagingResponseDto> getMemberPosts(
+            @AuthenticationPrincipal Members member,
+            @RequestParam int page,
+            @RequestParam int size) {
+        List<PostsInfoDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page, size);
+        return new ResponseEntity<>(PostsPagingResponseDto.of("스크랩한 게시글 조회 완료", postsByMemberId), HttpStatus.OK);
     }
 }

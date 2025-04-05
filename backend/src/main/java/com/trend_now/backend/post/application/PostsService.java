@@ -16,6 +16,7 @@ import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateDto;
 import com.trend_now.backend.post.repository.PostsRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -97,5 +98,13 @@ public class PostsService {
         }
 
         postsRepository.deleteById(postsDeleteDto.getPostId());
+    }
+
+    public List<PostsInfoDto> getPostsByMemberId(Long memberId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Posts> posts = postsRepository.findByMembers_Id(memberId, pageable);
+        return posts.stream()
+                .map(post -> new PostsInfoDto(post.getTitle(), post.getWriter(), post.getContent(), post.getViewCount()))
+                .toList();
     }
 }
