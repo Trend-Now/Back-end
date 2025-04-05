@@ -84,13 +84,12 @@ public class JwtTokenFilter extends GenericFilter {
                  *  Spring 전역에서 SecurityContextHolder 객체를 사용할 수 있기에, 사용자 인증 정보를 바로 확인 가능하다.
                  *  - String 사용자 정보 = SecurityContextHolder.getContext().getAuthentication().getName();
                  */
-
                 // Authentication 객체 생성
                 List<GrantedAuthority> authorities = new ArrayList<>();
                 authorities.add(new SimpleGrantedAuthority("ROLE_" + claims.get("role")));
                 UserDetails userDetails = new User(claims.getSubject(), "", authorities);   // password는 의미가 없어 빈 문자열 입력
 
-                Members members = memberRepository.findByEmail(claims.getSubject())
+                Members members = memberRepository.findById(Long.parseLong(claims.getSubject()))
                         .orElseThrow(() -> new BadCredentialsException(NOT_EXIST_MEMBER));
                 Authentication authentication =
                         new UsernamePasswordAuthenticationToken(members, jwtToken, userDetails.getAuthorities());

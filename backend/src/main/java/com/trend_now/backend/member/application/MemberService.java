@@ -1,6 +1,7 @@
 package com.trend_now.backend.member.application;
 
 import com.trend_now.backend.exception.CustomException.DuplicateException;
+import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.data.vo.GoogleProfile;
 import com.trend_now.backend.member.data.vo.KakaoProfile;
 import com.trend_now.backend.member.data.vo.NaverProfile;
@@ -21,6 +22,9 @@ import java.util.Random;
 @RequiredArgsConstructor
 @Slf4j
 public class MemberService {
+
+    private static final String NOT_EXIST_MEMBER = "존재하지 않는 회원입니다.";
+    private static final String DUPLICATE_NICKNAME = "이미 존재하는 닉네임입니다.";
 
     private final MemberRepository memberRepository;
     private final PostsRepository postsRepository;
@@ -105,9 +109,12 @@ public class MemberService {
     @Transactional
     public void updateNickname(Members member, String nickname) {
         if(memberRepository.existsByName(nickname)) {
-            throw new DuplicateException("이미 존재하는 닉네임입니다.");
+            throw new DuplicateException(DUPLICATE_NICKNAME);
         }
-        member.setName(nickname);
+        // 영속 상태로 가져오기 위해 다시 조회
+        Members members = memberRepository.findById(member.getId())
+                .orElseThrow(() -> new NotFoundException(NOT_EXIST_MEMBER));
+        members.setName(nickname);
         log.info("닉네임 변경 완료 - {}", member.getName());
     }
 }

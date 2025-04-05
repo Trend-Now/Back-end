@@ -70,6 +70,14 @@ public class MemberController {
     }
 
     /**
+     * Postman 테스트용 API
+     */
+    @PostMapping("/login/test/naver")
+    public ResponseEntity<OAuth2LoginResponse> testNaverLogin(@RequestBody AuthCodeToJwtRequest accessToken) {
+        return new ResponseEntity<>(naverService.testGetToken(accessToken), HttpStatus.OK);
+    }
+
+    /**
      *  닉네임 변경 API
      */
     @PatchMapping("/nickname")
