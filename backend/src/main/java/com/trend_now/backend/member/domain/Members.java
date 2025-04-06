@@ -1,15 +1,19 @@
 package com.trend_now.backend.member.domain;
 
 
+import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.config.domain.BaseEntity;
+import com.trend_now.backend.post.domain.Posts;
+import com.trend_now.backend.post.domain.Scraps;
 import jakarta.persistence.*;
+import java.util.List;
 import lombok.*;
 
 @Entity
 @Table(name = "members", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_email", columnNames = {"email"}),
-        @UniqueConstraint(name = "uk_sns_id", columnNames = {"snsId"}),
-        @UniqueConstraint(name = "uk_provider_sns_id", columnNames = {"provider", "snsId"})
+    @UniqueConstraint(name = "uk_email", columnNames = {"email"}),
+    @UniqueConstraint(name = "uk_sns_id", columnNames = {"snsId"}),
+    @UniqueConstraint(name = "uk_provider_sns_id", columnNames = {"provider", "snsId"})
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -35,4 +39,10 @@ public class Members extends BaseEntity {
 
     @Column(nullable = false, name = "sns_id")
     private String snsId;
+
+    @OneToMany(mappedBy = "members", cascade = CascadeType.ALL)
+    private List<Posts> posts;
+
+    @OneToMany(mappedBy = "members", cascade = CascadeType.ALL)
+    private List<Scraps> scraps;
 }
