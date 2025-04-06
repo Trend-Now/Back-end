@@ -16,16 +16,17 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ScrapService {
+
     private final ScrapRepository scrapRepository;
 
     public List<PostsInfoDto> getScrappedPostsByMemberId(Long memberId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Scraps> scraps = scrapRepository.findScrapsByMembers_Id(memberId, pageable);
         return scraps.stream()
-                .map(scrap -> {
-                    Posts posts = scrap.getPosts();
-                    return new PostsInfoDto(posts.getTitle(), posts.getWriter(), posts.getContent(), posts.getViewCount());
-                })
-                .toList();
+            .map(scrap -> {
+                Posts posts = scrap.getPosts();
+                return PostsInfoDto.from(posts);
+            })
+            .toList();
     }
 }
