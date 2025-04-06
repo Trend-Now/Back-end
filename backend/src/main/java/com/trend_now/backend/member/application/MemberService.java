@@ -33,11 +33,11 @@ public class MemberService {
     @Transactional
     public Members createGoogleOauth(GoogleProfile googleProfile, Provider provider) {
         Members member = Members.builder()
-                .email(googleProfile.getEmail())
-                .name(createNickname())
-                .provider(provider)
-                .snsId(googleProfile.getSub())
-                .build();
+            .email(googleProfile.getEmail())
+            .name(createNickname())
+            .provider(provider)
+            .snsId(googleProfile.getSub())
+            .build();
 
         memberRepository.save(member);
         return member;
@@ -46,11 +46,11 @@ public class MemberService {
     @Transactional
     public Members createKakaoOauth(KakaoProfile kakaoProfile, Provider provider) {
         Members member = Members.builder()
-                .email(kakaoProfile.getKakao_account().getEmail())
-                .name(createNickname())
-                .provider(provider)
-                .snsId(kakaoProfile.getId())
-                .build();
+            .email(kakaoProfile.getKakao_account().getEmail())
+            .name(createNickname())
+            .provider(provider)
+            .snsId(kakaoProfile.getId())
+            .build();
 
         memberRepository.save(member);
         return member;
@@ -59,20 +59,19 @@ public class MemberService {
     @Transactional
     public Members createNaverOauth(NaverProfile naverProfile, Provider provider) {
         Members member = Members.builder()
-                .email(naverProfile.getResponse().getEmail())
-                .name(createNickname())
-                .provider(provider)
-                .snsId(naverProfile.getResponse().getId())
-                .build();
+            .email(naverProfile.getResponse().getEmail())
+            .name(createNickname())
+            .provider(provider)
+            .snsId(naverProfile.getResponse().getId())
+            .build();
 
         memberRepository.save(member);
         return member;
     }
 
     /**
-     *  임의 닉네임 생성 메서드
-     *  - name은 중복 허용 컬럼이므로 DB 조회없이 자바 에플리케이션 레벨에서 임의 생성
-     *  - 임의 알파벳 소문자 4개 + 임의 숫자 4개로 구성
+     * 임의 닉네임 생성 메서드 - name은 중복 허용 컬럼이므로 DB 조회없이 자바 에플리케이션 레벨에서 임의 생성 - 임의 알파벳 소문자 4개 + 임의 숫자 4개로
+     * 구성
      */
     private String createNickname() {
         StringBuilder nickname = new StringBuilder();
@@ -95,25 +94,19 @@ public class MemberService {
      * 회원 탈퇴
      */
     @Transactional
-    public void deleteMember(Members member) {
-        // 해당 회원이 작성한 게시글의 멤버 정보 삭제
-        postsRepository.findAllByMembers_Id(member.getId()).forEach(post -> post.setMembers(null));
-        /*
-           해당 회원이 작성한 댓글의 멤버 정보를 삭제하는 코드도 추가가 필요함
-           Comments 관련 기능이 없어서 추가하지 않음
-         */
-        memberRepository.delete(member);
-        log.info("회원 탈퇴 완료 - {}", member.getEmail());
+    public void deleteMember(Long memberId) {
+        memberRepository.deleteById(memberId);
+        log.info("회원 탈퇴 완료 - {}", memberId);
     }
 
     @Transactional
     public void updateNickname(Members member, String nickname) {
-        if(memberRepository.existsByName(nickname)) {
+        if (memberRepository.existsByName(nickname)) {
             throw new DuplicateException(DUPLICATE_NICKNAME);
         }
         // 영속 상태로 가져오기 위해 다시 조회
         Members members = memberRepository.findById(member.getId())
-                .orElseThrow(() -> new NotFoundException(NOT_EXIST_MEMBER));
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_MEMBER));
         members.setName(nickname);
         log.info("닉네임 변경 완료 - {}", member.getName());
     }
