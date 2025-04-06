@@ -7,6 +7,7 @@ import io.jsonwebtoken.Jwts;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -27,20 +28,19 @@ import java.util.List;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class JwtTokenFilter extends GenericFilter {
+
+    private final MemberRepository memberRepository;
+    private final CustomUserDetailsService customUserDetailsService;
 
     private static final String AUTHORIZATION = "Authorization";
     private static final String JWT_PREFIX = "Bearer ";
-    private final MemberRepository memberRepository;
 
     private static final String NOT_EXIST_MEMBER = "존재하지 않는 회원입니다.";
 
     @Value("${jwt.secret}")
     private String secretKey;
-
-    public JwtTokenFilter(MemberRepository memberRepository) {
-        this.memberRepository = memberRepository;
-    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -85,15 +85,13 @@ public class JwtTokenFilter extends GenericFilter {
                  *  - String 사용자 정보 = SecurityContextHolder.getContext().getAuthentication().getName();
                  */
                 // Authentication 객체 생성
-                List<GrantedAuthority> authorities = new ArrayList<>();
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + claims.get("role")));
-                UserDetails userDetails = new User(claims.getSubject(), "", authorities);   // password는 의미가 없어 빈 문자열 입력
+                UserDetails userDetails = customUserDetailsService.loadUserByUsername(claims.getSubject());
+                log.info("[JwtTokenFilter.doFilter] 생성된 UserDetails 객체 데이터 : {} ", userDetails.toString());
 
-                Members members = memberRepository.findById(Long.parseLong(claims.getSubject()))
-                        .orElseThrow(() -> new BadCredentialsException(NOT_EXIST_MEMBER));
                 Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(members, jwtToken, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(userDetails, jwtToken, userDetails.getAuthorities());
 
+                log.info("[JwtTokenFilter.doFilter] 생성된 Authentication 객체 데이터 : {} ", authentication);
                 // SecurityContextHolder 객체에 사용자 정보 객체 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
