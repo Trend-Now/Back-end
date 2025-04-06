@@ -9,6 +9,7 @@ import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.repository.PostsRepository;
+import com.trend_now.backend.post.repository.ScrapRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +30,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PostsRepository postsRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ScrapRepository scrapRepository;
 
     @Transactional
     public Members createGoogleOauth(GoogleProfile googleProfile, Provider provider) {
@@ -96,6 +98,8 @@ public class MemberService {
     @Transactional
     public void deleteMember(Long memberId) {
         memberRepository.deleteById(memberId);
+        postsRepository.deleteAllByMembers_Id(memberId);
+        scrapRepository.deleteAllByMembers_Id(memberId);
         log.info("회원 탈퇴 완료 - {}", memberId);
     }
 

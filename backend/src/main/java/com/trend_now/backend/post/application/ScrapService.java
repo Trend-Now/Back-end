@@ -25,7 +25,11 @@ public class ScrapService {
         return scraps.stream()
             .map(scrap -> {
                 Posts posts = scrap.getPosts();
-                return PostsInfoDto.from(posts);
+                return PostsInfoDto.builder()
+                    .title(posts.getTitle())
+                    .writer(posts.getWriter())
+                    .viewCount(posts.getViewCount())
+                    .build();
             })
             .toList();
     }

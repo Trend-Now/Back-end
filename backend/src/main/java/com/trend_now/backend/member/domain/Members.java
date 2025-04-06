@@ -39,10 +39,4 @@ public class Members extends BaseEntity {
 
     @Column(nullable = false, name = "sns_id")
     private String snsId;
-
-    @OneToMany(mappedBy = "members", cascade = CascadeType.ALL)
-    private List<Posts> posts;
-
-    @OneToMany(mappedBy = "members", cascade = CascadeType.ALL)
-    private List<Scraps> scraps;
 }

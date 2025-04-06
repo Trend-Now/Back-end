@@ -10,6 +10,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
 
     Page<Posts> findAllByBoardsId(Long boardId, Pageable pageable);
 
-    List<Posts> findAllByMembers_Id(Long membersId);
+    void deleteAllByMembers_Id(Long membersId);
+
     Page<Posts> findByMembers_Id(Long membersId, Pageable pageable);
 }
