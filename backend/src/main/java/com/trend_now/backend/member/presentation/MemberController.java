@@ -83,7 +83,7 @@ public class MemberController {
      */
     @PatchMapping("/nickname")
     @Operation(summary = "닉네임 변경", description = "닉네임 변경을 요청한 사용자의 닉네임을 변경합니다.")
-    public ResponseEntity<String> updateNickname(@AuthenticationPrincipal Members member, @RequestBody @Valid UpdateNicknameRequestDto nicknameRequest) {
+    public ResponseEntity<String> updateNickname(@AuthenticationPrincipal(expression = "members") Members member, @RequestBody @Valid UpdateNicknameRequestDto nicknameRequest) {
         memberService.updateNickname(member, nicknameRequest.nickname());
         return new ResponseEntity<>("닉네임 변경이 완료 되었습니다.", HttpStatus.OK);
     }
@@ -94,7 +94,7 @@ public class MemberController {
      */
     @DeleteMapping("/withdrawal")
     @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 요청한 사용자의 정보를 삭제합니다. 해당 사용자가 작성한 글의 작성자는 NULL로 변경됩니다.")
-    public ResponseEntity<String> withdrawMember(@AuthenticationPrincipal Members member) {
+    public ResponseEntity<String> withdrawMember(@AuthenticationPrincipal(expression = "members") Members member) {
         memberService.deleteMember(member.getId());
         return new ResponseEntity<>("회원 탈퇴가 완료 되었습니다.", HttpStatus.NO_CONTENT);
     }
@@ -105,7 +105,7 @@ public class MemberController {
     @GetMapping("/scrap")
     @Operation(summary = "스크랩한 게시글 조회", description = "회원이 스크랩한 게시글을 조회합니다.")
     public ResponseEntity<PostsPagingResponseDto> getMemberScrapPosts(
-            @AuthenticationPrincipal Members member,
+            @AuthenticationPrincipal(expression = "members") Members member,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         List<PostsInfoDto> scrapsByMemberId = scrapService.getScrappedPostsByMemberId(member.getId(), page, size);
@@ -118,7 +118,7 @@ public class MemberController {
     @GetMapping("/posts")
     @Operation(summary = "회원이 작성한 게시글 조회", description = "회원이 작성한 게시글을 조회합니다.")
     public ResponseEntity<PostsPagingResponseDto> getMemberPosts(
-            @AuthenticationPrincipal Members member,
+            @AuthenticationPrincipal(expression = "members") Members member,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         List<PostsInfoDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page, size);
