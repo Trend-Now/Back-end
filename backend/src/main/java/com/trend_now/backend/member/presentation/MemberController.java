@@ -15,6 +15,7 @@ import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -82,7 +83,7 @@ public class MemberController {
      */
     @PatchMapping("/nickname")
     @Operation(summary = "닉네임 변경", description = "닉네임 변경을 요청한 사용자의 닉네임을 변경합니다.")
-    public ResponseEntity<String> updateNickname(@AuthenticationPrincipal Members member, @RequestBody UpdateNicknameRequestDto nicknameRequest) {
+    public ResponseEntity<String> updateNickname(@AuthenticationPrincipal Members member, @RequestBody @Valid UpdateNicknameRequestDto nicknameRequest) {
         memberService.updateNickname(member, nicknameRequest.nickname());
         return new ResponseEntity<>("닉네임 변경이 완료 되었습니다.", HttpStatus.OK);
     }
@@ -94,7 +95,7 @@ public class MemberController {
     @DeleteMapping("/withdrawal")
     @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 요청한 사용자의 정보를 삭제합니다. 해당 사용자가 작성한 글의 작성자는 NULL로 변경됩니다.")
     public ResponseEntity<String> withdrawMember(@AuthenticationPrincipal Members member) {
-        memberService.deleteMember(member);
+        memberService.deleteMember(member.getId());
         return new ResponseEntity<>("회원 탈퇴가 완료 되었습니다.", HttpStatus.NO_CONTENT);
     }
 
@@ -105,8 +106,8 @@ public class MemberController {
     @Operation(summary = "스크랩한 게시글 조회", description = "회원이 스크랩한 게시글을 조회합니다.")
     public ResponseEntity<PostsPagingResponseDto> getMemberScrapPosts(
             @AuthenticationPrincipal Members member,
-            @RequestParam int page,
-            @RequestParam int size) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         List<PostsInfoDto> scrapsByMemberId = scrapService.getScrappedPostsByMemberId(member.getId(), page, size);
         return new ResponseEntity<>(PostsPagingResponseDto.of("스크랩한 게시글 조회 완료", scrapsByMemberId), HttpStatus.OK);
     }
@@ -118,8 +119,8 @@ public class MemberController {
     @Operation(summary = "회원이 작성한 게시글 조회", description = "회원이 작성한 게시글을 조회합니다.")
     public ResponseEntity<PostsPagingResponseDto> getMemberPosts(
             @AuthenticationPrincipal Members member,
-            @RequestParam int page,
-            @RequestParam int size) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         List<PostsInfoDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page, size);
         return new ResponseEntity<>(PostsPagingResponseDto.of("스크랩한 게시글 조회 완료", postsByMemberId), HttpStatus.OK);
     }
