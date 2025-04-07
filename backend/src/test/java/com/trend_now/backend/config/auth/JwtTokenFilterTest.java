@@ -96,6 +96,9 @@ class JwtTokenFilterTest {
         assertThat(authentication).isNotNull();
         assertThat(authentication.getAuthorities()).extracting(GrantedAuthority::getAuthority)
                 .contains("ROLE_USER");
+        assertThat(authentication.getPrincipal()).isInstanceOf(CustomUserDetails.class);
+        assertThat(((CustomUserDetails) authentication.getPrincipal()).getUsername())
+                .isEqualTo(String.valueOf(testMember.getId()));
     }
 
     @Test
