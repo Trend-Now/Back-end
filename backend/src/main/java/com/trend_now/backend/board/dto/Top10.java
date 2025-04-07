@@ -4,9 +4,11 @@
 package com.trend_now.backend.board.dto;
 
 import jakarta.validation.constraints.NotEmpty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class Top10 {
 
     @NotEmpty(message = "순위를 입력해주세요.")

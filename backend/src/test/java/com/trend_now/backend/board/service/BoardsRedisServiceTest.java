@@ -3,16 +3,19 @@ package com.trend_now.backend.board.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.trend_now.backend.board.application.BoardRedisService;
+import com.trend_now.backend.board.application.BoardService;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
 import com.trend_now.backend.board.dto.BoardSaveDto;
+import com.trend_now.backend.board.dto.Top10;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +37,7 @@ public class BoardsRedisServiceTest {
 
     private static final String BOARD_RANK_KEY = "board_rank";
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
+    private static final String BOARD_KEY_DELIMITER = ":";
     private static final int BOARD_COUNT = 10;
     private static final long KEY_LIVE_TIME = 301L;
 
@@ -41,9 +45,13 @@ public class BoardsRedisServiceTest {
     private BoardRedisService boardRedisService;
 
     @Autowired
+    private BoardService boardService;
+
+    @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
     private List<Boards> boards;
+    private List<Top10> top10s;
 
     @BeforeEach
     public void before() {
@@ -56,6 +64,12 @@ public class BoardsRedisServiceTest {
             this.boards.add(boards);
         }
 
+        top10s = new ArrayList<>();
+        for (int i = 0; i < BOARD_COUNT; i++) {
+            Top10 top10 = new Top10(i, "B" + i);
+            this.top10s.add(top10);
+        }
+
         redisTemplate.getConnectionFactory().getConnection().flushDb();
     }
 
@@ -66,15 +80,16 @@ public class BoardsRedisServiceTest {
 
         //when
         for (int i = 0; i < BOARD_COUNT; i++) {
-            BoardSaveDto boardSaveDto = new BoardSaveDto(boards.get(i).getName(),
-                    boards.get(i).getBoardCategory());
+            BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+            boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
         //then
         //ZSet은 defalut 값이 score이 오름차순 정렬
         //즉, 맨 처음 저장된 게시판 (실시간 1위)이 가장 작은 score을 가진다
-        String testBoardKey = "B0";
+        String testBoardKey = "B0:1";
         Long expireTime = redisTemplate.getExpire(testBoardKey, TimeUnit.SECONDS);
         Set<String> keys = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
 
@@ -93,18 +108,19 @@ public class BoardsRedisServiceTest {
 
         //when
         for (int i = 0; i < BOARD_COUNT; i++) {
-            BoardSaveDto boardSaveDto = new BoardSaveDto(boards.get(i).getName(),
-                    boards.get(i).getBoardCategory());
+            BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+            boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
         int testBoardIdx = 0;
-        boardRedisService.saveBoardRedis(
-                new BoardSaveDto(boards.get(testBoardIdx).getName(),
-                        boards.get(testBoardIdx).getBoardCategory()), 0);
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(testBoardIdx));
+        boardSaveDto.setBoardId(1L);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
         //then
-        String testBoardKey = "B0";
+        String testBoardKey = "B0:1";
         Long expireTime = redisTemplate.getExpire(testBoardKey, TimeUnit.SECONDS);
         assertThat(expireTime).isBetween(KEY_LIVE_TIME, KEY_LIVE_TIME * 2);
     }
@@ -116,22 +132,23 @@ public class BoardsRedisServiceTest {
 
         //when
         for (int i = 0; i < BOARD_COUNT; i++) {
-            BoardSaveDto boardSaveDto = new BoardSaveDto(boards.get(i).getName(),
-                    boards.get(i).getBoardCategory());
+            BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+            boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
         int testBoardIdx = 0;
-        boardRedisService.saveBoardRedis(
-                new BoardSaveDto(boards.get(testBoardIdx).getName(),
-                        boards.get(testBoardIdx).getBoardCategory()), 5);
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(testBoardIdx));
+        boardSaveDto.setBoardId(1L);
+        boardRedisService.saveBoardRedis(boardSaveDto, 5);
 
         //then
         Set<String> keys = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
 
         assertThat(keys).isNotNull();
         assertThat(keys.size()).isEqualTo(BOARD_COUNT);
-        assertThat(keys.iterator().next()).isEqualTo("B1");
+        assertThat(keys.iterator().next()).isEqualTo("B1:2");
     }
 
     @Test
@@ -161,12 +178,13 @@ public class BoardsRedisServiceTest {
         //페이징을 위해 BOARD_RANK_KEY에 대한 ZSet은 만료된 키를 제외하고 남겨둔다
 
         for (int i = 0; i < BOARD_COUNT; i++) {
-            BoardSaveDto boardSaveDto = new BoardSaveDto(boards.get(i).getName(),
-                    boards.get(i).getBoardCategory());
+            BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+            boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
-        String testBoardKey = "B0";
+        String testBoardKey = "B0:1";
         redisTemplate.expire(testBoardKey, 0L, TimeUnit.SECONDS);
 
         boardRedisService.cleanUpExpiredKeys();
@@ -176,7 +194,7 @@ public class BoardsRedisServiceTest {
 
         assertThat(allRankKeys).isNotNull();
         assertThat(allRankKeys.size()).isEqualTo(BOARD_COUNT - 1);
-        assertThat(allRankKeys.iterator().next()).isEqualTo("B1");
+        assertThat(allRankKeys.iterator().next()).isEqualTo("B1:2");
     }
 
     @Test
@@ -185,15 +203,15 @@ public class BoardsRedisServiceTest {
         //given
 
         //when
-        //실시간 검색어 순위를 저장할 때 10개의 검색어는 BOARD_RANK_KEY와 BOARD_REALTIME_RANK_KEY에 저장된다
-
         for (int i = 0; i < BOARD_COUNT; i++) {
-            BoardSaveDto boardSaveDto = new BoardSaveDto(boards.get(i).getName(),
-                    boards.get(i).getBoardCategory());
+            BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+            boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
-        redisTemplate.delete(boards.getFirst().getName());
+        String deleteKey = "B0:1";
+        redisTemplate.delete(deleteKey);
         boardRedisService.cleanUpExpiredKeys();
 
         //then
@@ -201,7 +219,7 @@ public class BoardsRedisServiceTest {
 
         assertThat(allRankKeys).isNotNull();
         assertThat(allRankKeys.size()).isEqualTo(BOARD_COUNT - 1);
-        assertThat(allRankKeys.iterator().next()).isEqualTo("B1");
+        assertThat(allRankKeys.iterator().next()).isEqualTo("B1:2");
     }
 
     @ParameterizedTest
@@ -216,18 +234,15 @@ public class BoardsRedisServiceTest {
     public void 페이지네이션_기본기능(int page, int size, String expectedBoardName) throws Exception {
         //given
         int pagination_board_count = 20;
-        List<Boards> pagination_boards = new ArrayList<>();
+        List<Top10> pagination_top10s = new ArrayList<>();
         for (int i = 0; i < pagination_board_count; i++) {
-            Boards board = Boards.builder()
-                    .name("B" + i)
-                    .boardCategory(BoardCategory.REALTIME)
-                    .build();
-            pagination_boards.add(board);
+            Top10 top10 = new Top10(i, "B" + i);
+            pagination_top10s.add(top10);
         }
 
         for (int i = 0; i < pagination_board_count; i++) {
-            BoardSaveDto boardSaveDto = new BoardSaveDto(pagination_boards.get(i).getName(),
-                    pagination_boards.get(i).getBoardCategory());
+            BoardSaveDto boardSaveDto = BoardSaveDto.from(pagination_top10s.get(i));
+            boardSaveDto.setBoardId((long) (i + 1));
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
@@ -253,30 +268,37 @@ public class BoardsRedisServiceTest {
         //given
         int pagination_board_count = 20;
         List<Boards> pagination_boards = new ArrayList<>();
+        List<Top10> pagination_top10s = new ArrayList<>();
         for (int i = 0; i < pagination_board_count; i++) {
             Boards board = Boards.builder()
                     .name("B" + i)
                     .boardCategory(BoardCategory.REALTIME)
                     .build();
+            Top10 top10 = new Top10(i, "B" + i);
             pagination_boards.add(board);
+            pagination_top10s.add(top10);
         }
 
         for (int i = 0; i < pagination_board_count; i++) {
-            BoardSaveDto boardSaveDto = new BoardSaveDto(pagination_boards.get(i).getName(),
-                    pagination_boards.get(i).getBoardCategory());
+            BoardSaveDto boardSaveDto = BoardSaveDto.from(pagination_top10s.get(i));
+            boardSaveDto.setBoardId((long) (i + 1));
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
         // 마지막 게시글 10개의 시간을 임의로 증가
+        AtomicInteger keyIndex = new AtomicInteger(11);
         pagination_boards.stream()
                 .skip(10)
                 .forEach(board -> {
-                    Long currentExpire = redisTemplate.getExpire(board.getName(), TimeUnit.SECONDS);
+                    int i = keyIndex.getAndIncrement(); // 11, 12, 13, ...
+                    String dynamicKey = board.getName() + BOARD_KEY_DELIMITER + i;
+
+                    Long currentExpire = redisTemplate.getExpire(dynamicKey, TimeUnit.SECONDS);
                     if (currentExpire > 0) {
                         currentExpire += (long) (pagination_boards.indexOf(board)
                                 * 10);  // i 값을 board의 인덱스 값으로 계산
                     }
-                    redisTemplate.expire(board.getName(), currentExpire, TimeUnit.SECONDS);
+                    redisTemplate.expire(dynamicKey, currentExpire, TimeUnit.SECONDS);
                 });
 
         //when
@@ -303,24 +325,29 @@ public class BoardsRedisServiceTest {
         //given
         int pagination_board_count = 20;
         List<Boards> pagination_boards = new ArrayList<>();
+        List<Top10> pagination_top10s = new ArrayList<>();
         for (int i = 0; i < pagination_board_count; i++) {
             Boards board = Boards.builder()
                     .name("B" + i)
                     .boardCategory(BoardCategory.REALTIME)
                     .build();
+            Top10 top10 = new Top10(i, "B" + i);
             pagination_boards.add(board);
+            pagination_top10s.add(top10);
         }
 
         for (int i = 0; i < pagination_board_count; i++) {
-            BoardSaveDto boardSaveDto = new BoardSaveDto(pagination_boards.get(i).getName(),
-                    pagination_boards.get(i).getBoardCategory());
+            BoardSaveDto boardSaveDto = BoardSaveDto.from(pagination_top10s.get(i));
+            boardSaveDto.setBoardId((long) (i + 1));
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
         // 마지막 게시글의 score을 1 ~ 10까지로 변경
         for (int i = 0; i < pagination_board_count - 10; i++) {
+            String dynamicKey =
+                    pagination_boards.get(i + 10).getName() + BOARD_KEY_DELIMITER + (i + 11);
             redisTemplate.opsForZSet()
-                    .add(BOARD_RANK_KEY, pagination_boards.get(i + 10).getName(), i + 1);
+                    .add(BOARD_RANK_KEY, dynamicKey, i + 1);
         }
 
         //when

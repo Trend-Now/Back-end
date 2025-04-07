@@ -5,9 +5,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.trend_now.backend.board.application.BoardRedisService;
+import com.trend_now.backend.board.application.BoardService;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSaveDto;
+import com.trend_now.backend.board.dto.Top10;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,25 +45,33 @@ public class BoardsControllerTest {
     private BoardRedisService boardRedisService;
 
     @Autowired
+    private BoardService boardService;
+
+    @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
     private List<Boards> boards;
+    private List<Top10> top10s;
 
     @BeforeEach
     public void before() {
         boards = new ArrayList<>();
+        top10s = new ArrayList<>();
         for (int i = 0; i < BOARD_COUNT; i++) {
             Boards boards = Boards.builder()
                     .name("B" + i)
                     .boardCategory(BoardCategory.REALTIME)
                     .build();
+            Top10 top10 = new Top10(i, "B" + i);
             this.boards.add(boards);
+            this.top10s.add(top10);
         }
 
         redisTemplate.getConnectionFactory().getConnection().flushDb();
         for (int i = 0; i < BOARD_COUNT; i++) {
-            BoardSaveDto boardSaveDto = new BoardSaveDto(boards.get(i).getName(),
-                    boards.get(i).getBoardCategory());
+            BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+            boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
     }

@@ -65,8 +65,8 @@ public class BoardRedisService {
     }
 
     public boolean isRealTimeBoard(BoardSaveDto boardSaveDto) {
-        String boardName = boardSaveDto.getName();
-        return redisTemplate.opsForValue().get(boardName) != null;
+        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        return redisTemplate.hasKey(key);
     }
 
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
@@ -94,6 +94,7 @@ public class BoardRedisService {
                     Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
                     return new BoardInfoDto(boardId, boardName, boardLiveTime, score);
                 })
+                .filter(Objects::nonNull)
                 .sorted(Comparator.comparingLong(BoardInfoDto::getBoardLiveTime).reversed()
                         .thenComparingDouble(BoardInfoDto::getScore))
                 .collect(Collectors.toList());
