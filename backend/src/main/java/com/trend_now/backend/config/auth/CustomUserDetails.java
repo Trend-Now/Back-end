@@ -28,12 +28,10 @@ public class CustomUserDetails implements UserDetails {
 
     private final Members members;
 
-    private static final String ROLE_PREFIX = "ROLE_";
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // 기본 권한은 USER 부여
-        return List.of(new SimpleGrantedAuthority(ROLE_PREFIX + Role.USER.toString()));
+        return List.of(new SimpleGrantedAuthority(members.getRole().getAuthority()));
     }
 
     @Override

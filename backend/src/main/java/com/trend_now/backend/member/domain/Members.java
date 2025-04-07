@@ -40,4 +40,9 @@ public class Members extends BaseEntity {
 
     @Column(nullable = false, name = "sns_id")
     private String snsId;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "role")
+    private Role role = Role.USER;
 }
