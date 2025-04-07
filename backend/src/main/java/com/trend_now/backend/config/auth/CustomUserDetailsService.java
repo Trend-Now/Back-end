@@ -22,10 +22,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final MemberRepository memberRepository;
 
+    private static final String NOT_EXIST_MEMBER = "MEMBER_ID 일치하는 회원이 없습니다.";
+
     @Override
     public UserDetails loadUserByUsername(String memberId) throws UsernameNotFoundException {
         Members member = memberRepository.findById(Long.parseLong(memberId))
-                .orElseThrow(() -> new NotFoundException("MEMBER_ID 일치하는 회원이 없습니다."));
+                .orElseThrow(() -> new NotFoundException(NOT_EXIST_MEMBER));
         return new CustomUserDetails(member);
     }
 }
