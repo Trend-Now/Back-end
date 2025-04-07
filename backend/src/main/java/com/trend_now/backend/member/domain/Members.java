@@ -40,12 +40,4 @@ public class Members extends BaseEntity {
 
     @Column(nullable = false, name = "sns_id")
     private String snsId;
-
-    @ToString.Exclude
-    @OneToMany(mappedBy = "members", cascade = CascadeType.ALL)
-    private List<Posts> posts;
-
-    @ToString.Exclude
-    @OneToMany(mappedBy = "members", cascade = CascadeType.ALL)
-    private List<Scraps> scraps;
 }
