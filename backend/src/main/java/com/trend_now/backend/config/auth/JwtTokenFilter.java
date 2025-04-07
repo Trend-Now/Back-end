@@ -1,5 +1,6 @@
 package com.trend_now.backend.config.auth;
 
+import com.trend_now.backend.exception.CustomException.InvalidTokenException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;
 import io.jsonwebtoken.Claims;
@@ -38,6 +39,7 @@ public class JwtTokenFilter extends GenericFilter {
     private static final String JWT_PREFIX = "Bearer ";
 
     private static final String NOT_EXIST_MEMBER = "존재하지 않는 회원입니다.";
+    private static final String INVALID_TOKEN = "유효하지 않은 토큰입니다.";
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -61,19 +63,11 @@ public class JwtTokenFilter extends GenericFilter {
 
                 String jwtToken = token.substring(7);
 
-                /**
-                 *  JWT 검증 및 claims(payload) 추출
-                 *  - 입력된 JWT 토큰의 (헤더 + 페이로드) 부분을 secretKey를 가지고 헤더에 명시된 암호화 알고리즘을 진행
-                 *  - 암호화 알고리즘을 통해 나온 문자열인 서명을 입력받은 토큰의 서명 부분과 비교
-                 *  - 일치하면 true, 불일치면 false 반환
-                 *  - getBody()를 통해 페이로드 부분(Claims) 추출
-                 */
-                Claims claims = Jwts.parserBuilder()
-                        .setSigningKey(secretKey)
-                        .build()
-                        .parseClaimsJws(jwtToken)
-                        .getBody();
-
+                // jwt 검증 및 Claims 객체 추출
+                Claims claims = validateToken(jwtToken);
+                if (claims == null) {
+                    throw new InvalidTokenException(INVALID_TOKEN);
+                }
 
                 /**
                  *  인증 객체 범위
@@ -108,5 +102,25 @@ public class JwtTokenFilter extends GenericFilter {
             httpServletResponse.getWriter().write("invalid token");
         }
 
+    }
+
+    /**
+     *  JWT 검증 및 claims(payload) 추출
+     *  - 입력된 JWT 토큰의 (헤더 + 페이로드) 부분을 secretKey를 가지고 헤더에 명시된 암호화 알고리즘을 진행
+     *  - 암호화 알고리즘을 통해 나온 문자열인 서명을 입력받은 토큰의 서명 부분과 비교
+     *  - 일치하면 true, 불일치면 false 반환
+     *  - getBody()를 통해 페이로드 부분(Claims) 추출
+     */
+    public Claims validateToken(String jwt) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(jwt)
+                    .getBody();
+        } catch (Exception e) {
+            log.error("[JwtTokenFilter.validateToken] : 유효하지 않은 JWT입니다. {}", e.getMessage());
+            return null;
+        }
     }
 }
