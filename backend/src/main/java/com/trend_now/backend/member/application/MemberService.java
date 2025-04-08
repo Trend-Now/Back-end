@@ -97,9 +97,9 @@ public class MemberService {
      */
     @Transactional
     public void deleteMember(Long memberId) {
-        memberRepository.deleteById(memberId);
         postsRepository.deleteAllByMembers_Id(memberId);
         scrapRepository.deleteAllByMembers_Id(memberId);
+        memberRepository.deleteById(memberId);
         log.info("회원 탈퇴 완료 - {}", memberId);
     }
 
