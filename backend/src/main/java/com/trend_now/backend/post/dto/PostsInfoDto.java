@@ -5,10 +5,12 @@ package com.trend_now.backend.post.dto;
 
 import com.trend_now.backend.post.domain.Posts;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
+@Builder
 public class PostsInfoDto {
 
     private String title;

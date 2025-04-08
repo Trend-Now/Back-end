@@ -66,11 +66,11 @@ public class GoogleService {
                 .orElseGet(() -> memberService.createGoogleOauth(googleProfile, Provider.GOOGLE));
 
         // JWT 토큰 발급
-        String jwtToken = jwtTokenProvider.createToken(originalMember.getId());
+        String jwt = jwtTokenProvider.createToken(originalMember.getId());
 
         return OAuth2LoginResponse.builder()
                 .memberId(originalMember.getId())
-                .jwt(jwtToken)
+                .jwt(jwt)
                 .build();
     }
 

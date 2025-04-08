@@ -79,6 +79,23 @@ public class NaverService {
                 .build();
     }
 
+    /**
+     * Postman 테스트용 메서드
+     */
+    public OAuth2LoginResponse testGetToken(AuthCodeToJwtRequest accessToken) {
+        NaverProfile naverProfile = getNaverProfile(accessToken.getCode());
+
+        Members originalMember = memberRepository.findBySnsId(naverProfile.getResponse().getId())
+                .orElseGet(() -> memberService.createNaverOauth(naverProfile, Provider.NAVER));
+
+        String jwtToken = jwtTokenProvider.createToken(originalMember.getId());
+
+        return OAuth2LoginResponse.builder()
+                .memberId(originalMember.getId())
+                .jwt(jwtToken)
+                .build();
+    }
+
     // Access Token 획득 메서드
     // RestClient를 사용해서 네이버 서버와 통신
     private AccessToken getAccessToken(String code) {
@@ -107,7 +124,7 @@ public class NaverService {
     private NaverProfile getNaverProfile(String accessToken) {
         RestClient restClient = RestClient.create();
 
-        ResponseEntity<NaverProfile> response =  restClient.get()
+        ResponseEntity<NaverProfile> response = restClient.get()
                 .uri(PROFILE_NAVER_URI)
                 .header(PROFILE_HEADER_NAME, PROFILE_HEADER_VALUE + accessToken)
                 .retrieve()
