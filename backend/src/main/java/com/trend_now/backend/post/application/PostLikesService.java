@@ -1,0 +1,145 @@
+package com.trend_now.backend.post.application;
+
+import com.trend_now.backend.member.domain.Members;
+import com.trend_now.backend.member.repository.MemberRepository;
+import com.trend_now.backend.post.domain.PostLikes;
+import com.trend_now.backend.post.domain.Posts;
+import com.trend_now.backend.post.repository.PostLikesRepository;
+import com.trend_now.backend.post.repository.PostsRepository;
+import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class PostLikesService {
+
+    private static final String NOT_EXIST_POSTS = "게시글이 존재하지 않습니다.";
+    private static final String NOT_EXIST_MEMBERS = "회원을 찾을 수 없습니다.";
+    private static final String NOT_EXIST_LIKES = "좋아요 객체가 존재하지 않습니다.";
+    private static final String REDIS_LIKE_MEMBER_KEY_PREFIX = "post_like_member:";
+    private static final String REDIS_LIKE_BOARD_KEY_DELIMITER = ":";
+    private static final int BOARD_KEY_PARTS_LENGTH = 2;
+    private static final int BOARD_ID_IDX = 0;
+    private static final int POST_ID_IDX = 1;
+
+    private final PostsRepository postsRepository;
+    private final MemberRepository memberRepository;
+    private final PostLikesRepository postLikesRepository;
+    private final RedisTemplate<String, String> redisMembersTemplate;
+
+    @Transactional
+    public void saveLike(Long postId, Long memberId) {
+        Posts posts = postsRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
+
+        Members members = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_MEMBERS));
+
+        PostLikes postLikes = PostLikes.builder()
+                .posts(posts)
+                .members(members)
+                .build();
+        postLikesRepository.save(postLikes);
+    }
+
+    @Transactional
+    public void deleteLike(Long postId, Long memberId) {
+        PostLikes postLikes = postLikesRepository.findByPostsIdAndMembersId(postId, memberId)
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_LIKES));
+        postLikesRepository.delete(postLikes);
+    }
+
+    public void doLike(Long boardId, Long postId, String name) {
+        postsRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
+
+        memberRepository.findByName(name)
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_MEMBERS));
+
+        String redisKey =
+                REDIS_LIKE_MEMBER_KEY_PREFIX + boardId + REDIS_LIKE_BOARD_KEY_DELIMITER + postId;
+
+        Boolean isRedisPresent = redisMembersTemplate.opsForSet().isMember(redisKey, name);
+
+        /**
+         * Write Back 패턴 사용(Redis를 주로 사용하고, DB는 주기적으로 업데이트)
+         * isRedisPresent : 사용자가 게시글에 좋아요를 눌렀는지 Redis에서 확인한다
+         * true를 반환할 경우 이미 좋아요를 누른 게시글
+         */
+        if (Boolean.TRUE.equals(isRedisPresent)) {
+            //이미 좋아요를 누른 경우
+            log.info("{}가 이미 좋아요를 누른 게시글이므로 좋아요가 취소 처리된다", name);
+            redisMembersTemplate.opsForSet().remove(redisKey, name);
+        } else {
+            //좋아요를 누른 게시글이 아닐 경우
+            log.info("{}가 좋아요를 누르지 않은 게시글이므로 좋아요 개수가 증가한다", name);
+            redisMembersTemplate.opsForSet().add(redisKey, name);
+        }
+    }
+
+    @Transactional
+    public void syncLikesToDatabase() {
+        //Write-Back 전략을 사용해 현재 Redis에 저장된 좋아요를 DB에 업데이트한다
+        Set<String> keys = redisMembersTemplate.keys(REDIS_LIKE_MEMBER_KEY_PREFIX + "*");
+
+        if (keys == null || keys.isEmpty()) {
+            log.info("동기화할 좋아요 데이터가 없습니다.");
+            return;
+        }
+
+        for (String key : keys) {
+            String[] parts = key.replace(REDIS_LIKE_MEMBER_KEY_PREFIX, "")
+                    .split(REDIS_LIKE_BOARD_KEY_DELIMITER);
+            if (parts.length != BOARD_KEY_PARTS_LENGTH) {
+                log.warn("잘못된 Redis 키 {} 형식의 데이터가 존재합니다.", key);
+                continue;
+            }
+
+            Long boardId = Long.parseLong(parts[BOARD_ID_IDX]);
+            Long postId = Long.parseLong(parts[POST_ID_IDX]);
+
+            Set<String> names = redisMembersTemplate.opsForSet().members(key);
+            if (names == null) {
+                names = Set.of();
+            }
+
+            Set<String> dbNames = postLikesRepository.findMembersNameByPostsId(postId);
+
+            /**
+             * 좋아요를 누른 사용자가
+             * - DB에 존재하지 않을 꼉우, DB에 좋아요 정보를 저장
+             * - DB에 존재할 경우, 로직을 계속 진행
+             *
+             * 좋아요를 취소한 사용자가
+             * - DB에 존재할 경우, DB에서 좋아요 정보를 삭제
+             * - DB에 존재하지 않을 경우, 로직을 게속 진행
+             */
+
+            for (String name : names) {
+                memberRepository.findByName(name).ifPresent(members -> {
+                    boolean alreadyLiked = postLikesRepository.existsByPostsIdAndMembersId(postId,
+                            members.getId());
+                    if (!alreadyLiked) {
+                        saveLike(postId, members.getId());
+                        log.info("DB에 게시글 번호 {}에 대한 회원 {}의 좋아요를 저장합니다", postId, name);
+                    }
+                });
+            }
+
+            for (String dbName : dbNames) {
+                if (!names.contains(dbName)) {
+                    memberRepository.findByName(dbName).ifPresent(members -> {
+                        deleteLike(postId, members.getId());
+                        log.info("DB에 게시글 번호 {}에 대한 회원 {}의 좋아요를 삭제합니다", postId, dbName);
+                    });
+                }
+            }
+        }
+    }
+}
