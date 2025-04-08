@@ -1,5 +1,6 @@
 package com.trend_now.backend.post.application;
 
+import com.trend_now.backend.config.RedissonConfig;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.domain.PostLikes;
@@ -24,14 +25,18 @@ public class PostLikesService {
     private static final String NOT_EXIST_LIKES = "좋아요 객체가 존재하지 않습니다.";
     private static final String REDIS_LIKE_MEMBER_KEY_PREFIX = "post_like_member:";
     private static final String REDIS_LIKE_BOARD_KEY_DELIMITER = ":";
+    private static final String REDIS_LIKE_LOCK_PREFIX = "POST_LIKES_LOCK";
     private static final int BOARD_KEY_PARTS_LENGTH = 2;
     private static final int BOARD_ID_IDX = 0;
     private static final int POST_ID_IDX = 1;
+    private static final int WAIT_MILLI_SEC = 10000;
+    private static final int RELEASE_MILLI_SEC = 10000;
 
     private final PostsRepository postsRepository;
     private final MemberRepository memberRepository;
     private final PostLikesRepository postLikesRepository;
     private final RedisTemplate<String, String> redisMembersTemplate;
+    private final RedissonConfig redissonConfig;
 
     @Transactional
     public void saveLike(Long postId, Long memberId) {
@@ -55,7 +60,19 @@ public class PostLikesService {
         postLikesRepository.delete(postLikes);
     }
 
+    /**
+     * 좋아요의 개수로 게시판의 시간이 결정되기 때문에 '좋아요의 개수'는 매우 중요하다 여러 사용자가 동시에 좋아요 버튼을 누르더라도 좋아요가 올바르게 눌려야 한다
+     */
+    public void increaseLikeLock(Long boardId, Long postId, String name) {
+        String lockName =
+                REDIS_LIKE_LOCK_PREFIX + boardId + REDIS_LIKE_BOARD_KEY_DELIMITER + postId;
+        redissonConfig.execute(lockName, WAIT_MILLI_SEC, RELEASE_MILLI_SEC,
+                () -> doLike(boardId, postId, name));
+    }
+
     public void doLike(Long boardId, Long postId, String name) {
+        log.info("게시판 {}에 있는 게시글 {}에 회원 {}이 좋아요를 눌렀습니다.", boardId, postId, name);
+
         postsRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
 
