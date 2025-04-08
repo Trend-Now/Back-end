@@ -1,4 +1,4 @@
-package com.trend_now.backend.posts;
+package com.trend_now.backend.posts.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -10,14 +10,16 @@ import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.application.PostsService;
+import com.trend_now.backend.post.domain.Post;
+import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostsDeleteDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateDto;
+import com.trend_now.backend.post.repository.PostsRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,6 +55,10 @@ public class PostsServiceTest {
 
     private Members members;
     private Boards boards;
+    private Posts posts;
+
+    @Autowired
+    private PostsRepository postsRepository;
 
     @BeforeEach
     public void before() {
@@ -74,6 +80,15 @@ public class PostsServiceTest {
             PostsSaveDto postsSaveDto = PostsSaveDto.of(boards.getId(), "title" + i, "content" + i);
             postsService.savePosts(postsSaveDto, members);
         }
+
+        posts = Posts.builder()
+                .title("testTitle")
+                .writer(members.getName())
+                .content("testContent")
+                .boards(boards)
+                .members(members)
+                .build();
+        postsRepository.save(posts);
     }
 
     @Test
@@ -97,7 +112,7 @@ public class PostsServiceTest {
             "0, 5",  // 첫 번째 페이지, 5개 게시글
             "1, 5",  // 두 번째 페이지, 5개 게시글
             "0, 10", // 첫 번째 페이지, 10개 게시글 (모두 가져오기)
-            "2, 5"   // 세 번째 페이지, 게시글 없음 (경계 테스트)
+            "11, 1"   // 열두 번째 페이지, 게시글 없음 (경계 테스트)
     })
     @DisplayName("게시판별 게시글 페이징 조회")
     public void 게시글_페이징_조회(int page, int size) {
@@ -111,7 +126,9 @@ public class PostsServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getSize()).isEqualTo(size);
 
-        if (page == 2) {
+        int allPosts = postsRepository.findAll().size();
+
+        if (page == allPosts) {
             assertThat(result.getContent()).isEmpty();
         } else {
             assertThat(result.getContent()).isNotEmpty();
@@ -122,7 +139,7 @@ public class PostsServiceTest {
     @DisplayName("작성자가 직접 작성한 게시글을 수정할 수 있다")
     public void 게시글_수정() throws Exception {
         //given
-        PostsUpdateDto postsUpdateDto = PostsUpdateDto.of(1L, "updateTitle", "updateContent",
+        PostsUpdateDto postsUpdateDto = PostsUpdateDto.of(posts.getId(), "updateTitle", "updateContent",
                 members.getName());
 
         //when
@@ -131,7 +148,7 @@ public class PostsServiceTest {
         em.clear();
 
         //then
-        PostsInfoDto postsInfoDto = postsService.findPostsById(1L);
+        PostsInfoDto postsInfoDto = postsService.findPostsById(posts.getId());
         assertThat(postsInfoDto.getTitle()).isEqualTo(postsUpdateDto.getTitle());
         assertThat(postsInfoDto.getContent()).isEqualTo(postsUpdateDto.getContent());
         assertThat(postsInfoDto.getWriter()).isEqualTo(postsUpdateDto.getWriter());
@@ -141,7 +158,7 @@ public class PostsServiceTest {
     @DisplayName("작성자가 직접 작성한 게시글을 삭제할 수 있다")
     public void 게시글_삭제() throws Exception {
         //given
-        PostsDeleteDto postsDeleteDto = PostsDeleteDto.of(1L, members.getName());
+        PostsDeleteDto postsDeleteDto = PostsDeleteDto.of(posts.getId(), members.getName());
 
         //when
         postsService.deletePostsById(postsDeleteDto);
@@ -149,7 +166,7 @@ public class PostsServiceTest {
         em.clear();
 
         //then
-        assertThatThrownBy(() -> postsService.findPostsById(1L))
+        assertThatThrownBy(() -> postsService.findPostsById(posts.getId()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

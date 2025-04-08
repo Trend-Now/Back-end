@@ -2,6 +2,7 @@ package com.trend_now.backend.member.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.trend_now.backend.exception.CustomException.DuplicateException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
@@ -63,7 +64,7 @@ class MemberServiceTest {
         memberRepository.save(testMember);
 
         // when & then
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(DuplicateException.class, () -> {
             memberService.updateNickname(testMember, "testUser1");
         });
     }
