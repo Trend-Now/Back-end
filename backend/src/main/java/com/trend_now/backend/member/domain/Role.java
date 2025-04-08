@@ -5,6 +5,12 @@ package com.trend_now.backend.member.domain;
  */
 public enum Role {
 
-    ADMIN, USER
+    ADMIN, USER;
+
+    private static final String ROLE_PREFIX = "ROLE_";
+
+    public String getAuthority() {
+        return ROLE_PREFIX + this.name();
+    }
 
 }
