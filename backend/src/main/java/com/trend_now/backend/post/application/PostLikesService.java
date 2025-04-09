@@ -7,7 +7,9 @@ import com.trend_now.backend.post.domain.PostLikes;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.repository.PostLikesRepository;
 import com.trend_now.backend.post.repository.PostsRepository;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -31,6 +33,7 @@ public class PostLikesService {
     private static final int POST_ID_IDX = 1;
     private static final int WAIT_MILLI_SEC = 10000;
     private static final int RELEASE_MILLI_SEC = 10000;
+    private static final Integer LIKE_INITIAL_COUNT = 0;
 
     private final PostsRepository postsRepository;
     private final MemberRepository memberRepository;
@@ -157,6 +160,60 @@ public class PostLikesService {
                     });
                 }
             }
+        }
+    }
+
+    /**
+     * Redis에서 장애가 발생했을 때, DB에서 좋아요 수를 읽어와야 한다
+     * 함수형 인터페이스를 사용해 장애 상황을 대처한다
+     */
+    private <T> T withFallback(Supplier<T> primary, Supplier<T> fallback) {
+        try {
+            log.info("Look Aside Redis 읽기 성공, 좋아요 수를 Redis에서 읽어옵니다");
+            return primary.get();
+        } catch (Exception e) {
+            log.warn("Look Aside Redis 읽기 실패, DB에서 좋아요 읽기 수행 중 : {}", e.getMessage());
+            return fallback.get();
+        }
+    }
+
+    public int getPostLikesCount(Long boardId, Long postId) {
+        String redisKey =
+                REDIS_LIKE_MEMBER_KEY_PREFIX + boardId + REDIS_LIKE_BOARD_KEY_DELIMITER + postId;
+
+        return withFallback(
+                () -> {
+                    Integer likeCount = Optional.ofNullable(
+                                    redisMembersTemplate.opsForSet().size(redisKey))
+                            .map(Long::intValue)
+                            .orElse(LIKE_INITIAL_COUNT);
+
+                    return likeCount.intValue();
+                },
+                () -> getPostLikesFromDatabase(redisKey, boardId, postId)
+        );
+    }
+
+    public int getPostLikesFromDatabase(String redisKey, Long boardId, Long postId) {
+        postsRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
+
+        Set<PostLikes> likeCount = postLikesRepository.findByPostsId(postId);
+
+        try {
+            log.info("DB에서 가져온 좋아요 개수를 Redis에 성공적으로 업데이트했습니다");
+            updateRedisLikeCount(redisKey, likeCount);
+            return likeCount.size();
+        } catch(Exception e) {
+            log.warn("DB에서 가져온 좋아요 개수를 Redis에 업데이트하는 데 실패했습니다 : {}", e.getMessage());
+        }
+
+        return likeCount.size();
+    }
+
+    private void updateRedisLikeCount(String redisKey, Set<PostLikes> likeCount) {
+        for(PostLikes postLikes : likeCount) {
+            redisMembersTemplate.opsForSet().add(redisKey, postLikes.getMembers().getName());
         }
     }
 }

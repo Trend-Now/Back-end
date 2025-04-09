@@ -11,8 +11,13 @@ import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.application.PostLikesService;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.repository.PostsRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,18 +29,19 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @TestPropertySource(locations = "classpath:application-test.yml")
-@Transactional
-public class PostLikesServiceTest {
+public class PostLikesConcurrencyTest {
 
     private static final String REDIS_LIKE_MEMBER_KEY_PREFIX = "post_like_member:";
     private static final String REDIS_LIKE_BOARD_KEY_DELIMITER = ":";
+
+    @PersistenceContext
+    private EntityManager em;
 
     @Autowired
     private PostLikesService postLikesService;
@@ -89,63 +95,35 @@ public class PostLikesServiceTest {
     }
 
     @Test
-    @DisplayName("Redis Cache Hit일 경우 Redis에서 좋아요 수를 반환한다")
-    public void Redis_좋아요_수() throws Exception {
+    @DisplayName("좋아요를 동시에 100명이 누르면 100개가 되어야 한다")
+    public void 좋아요_동시성() throws Exception {
         //given
-        String redisKey =
-                REDIS_LIKE_MEMBER_KEY_PREFIX + boards.getId() + REDIS_LIKE_BOARD_KEY_DELIMITER
-                        + posts.getId();
-        redisMembersTemplate.opsForSet().add(redisKey, "testUser1", "testUser2", "testUser3");
+        int threadCount = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        CountDownLatch latch = new CountDownLatch(threadCount);
 
         //when
-        int postLikesCount = postLikesService.getPostLikesCount(boards.getId(), posts.getId());
-
-        //then
-        assertThat(postLikesCount).isEqualTo(3);
-    }
-
-    @Test
-    @DisplayName("Redis Cache Miss 발생 시 DB에서 좋아요 수를 조회한다")
-    public void DB_좋아요_수() throws Exception {
-        //given
-        String redisKey =
-                REDIS_LIKE_MEMBER_KEY_PREFIX + boards.getId() + REDIS_LIKE_BOARD_KEY_DELIMITER
-                        + posts.getId();
-        for (int i = 0; i < 5; i++) {
-            postLikesService.increaseLikeLock(boards.getId(), posts.getId(),
-                    members.get(i).getName());
+        for (int i = 0; i < threadCount; i++) {
+            int idx = i;
+            executorService.submit(() -> {
+                try {
+                    postLikesService.increaseLikeLock(boards.getId(), posts.getId(),
+                            members.get(idx).getName());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    latch.countDown();
+                }
+            });
         }
-        postLikesService.syncLikesToDatabase();
-
-        //when
-        int postLikesFromDatabase = postLikesService.getPostLikesFromDatabase(redisKey,
-                boards.getId(),
-                posts.getId());
+        latch.await();
+        executorService.shutdown();
 
         //then
-        assertThat(postLikesFromDatabase).isEqualTo(5);
+        int likeCount = redisMembersTemplate.opsForSet()
+                .size(REDIS_LIKE_MEMBER_KEY_PREFIX + boards.getId() + REDIS_LIKE_BOARD_KEY_DELIMITER + posts.getId())
+                .intValue();
+        assertThat(likeCount).isEqualTo(100);
     }
 
-    @Test
-    @DisplayName("Redis Cache Miss 발생 시 Redis 좋아요 수를 DB의 값으로 업데이트한다")
-    public void Redis_DB_동기화() throws Exception {
-        //given
-        for (int i = 0; i < 10; i++) {
-            postLikesService.increaseLikeLock(boards.getId(), posts.getId(),
-                    members.get(i).getName());
-        }
-        postLikesService.syncLikesToDatabase();
-
-        String redisKey =
-                REDIS_LIKE_MEMBER_KEY_PREFIX + boards.getId() + REDIS_LIKE_BOARD_KEY_DELIMITER
-                        + posts.getId();
-        redisMembersTemplate.delete(redisKey);
-
-        //when
-        postLikesService.getPostLikesFromDatabase(redisKey, boards.getId(), posts.getId());
-
-        //then
-        int likeCount = redisMembersTemplate.opsForSet().size(redisKey).intValue();
-        assertThat(likeCount).isEqualTo(10);
-    }
 }

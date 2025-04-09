@@ -15,4 +15,6 @@ public interface PostLikesRepository extends JpaRepository<PostLikes, Long> {
 
     @Query("SELECT pl.members.name FROM PostLikes pl WHERE pl.posts.id = :postId")
     Set<String> findMembersNameByPostsId(@Param("postId") Long postId);
+
+    Set<PostLikes> findByPostsId(Long postId);
 }
