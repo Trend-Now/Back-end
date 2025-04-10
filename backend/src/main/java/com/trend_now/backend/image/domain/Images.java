@@ -1,6 +1,7 @@
-package com.trend_now.backend.post.domain;
+package com.trend_now.backend.image.domain;
 
 import com.trend_now.backend.config.domain.BaseEntity;
+import com.trend_now.backend.post.domain.Posts;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
