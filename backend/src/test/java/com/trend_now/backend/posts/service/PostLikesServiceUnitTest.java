@@ -21,6 +21,7 @@ import com.trend_now.backend.post.repository.PostLikesRepository;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,8 @@ public class PostLikesServiceUnitTest {
 
     private static final String REDIS_LIKE_USER_KEY_PREFIX = "post_like_member:";
     private static final String REDIS_LIKE_BOARD_KEY_DELIMITER = ":";
+    private static final String BOARD_KEY_DELIMITER = ":";
+    private static final String REDIS_LIKE_TIME_UP_PREFIX = "post_like_time_up:";
 
     @InjectMocks
     private PostLikesService postLikesService;
@@ -110,7 +113,7 @@ public class PostLikesServiceUnitTest {
         when(setOperations.isMember(eq(redisKey), eq(memberName))).thenReturn(false);
 
         //when
-        postLikesService.doLike(boards.getId(), posts.getId(), members.getName());
+        postLikesService.doLike(boards.getName(), boards.getId(), posts.getId(), members.getName());
 
         //then
         verify(setOperations, times(1)).add(eq(redisKey), eq(memberName));
@@ -131,7 +134,7 @@ public class PostLikesServiceUnitTest {
         when(setOperations.isMember(eq(redisKey), eq(memberName))).thenReturn(true);
 
         //when
-        postLikesService.doLike(boards.getId(), posts.getId(), members.getName());
+        postLikesService.doLike(boards.getName(), boards.getId(), posts.getId(), members.getName());
 
         //then
         verify(setOperations, times(1)).remove(eq(redisKey), eq(memberName));
@@ -207,4 +210,36 @@ public class PostLikesServiceUnitTest {
         //then
         verify(postLikesRepository, times(1)).delete(any(PostLikes.class));
     }
+
+    @Test
+    @DisplayName("한 게시글의 좋아요가 100개 이상될 때 게시판의 남은 시간이 5분 추가된다")
+    public void 좋아요_게시판_시간_추가() throws Exception {
+        //given
+        when(postsRepository.findById(any(Long.class))).thenReturn(Optional.of(posts));
+        when(memberRepository.findByName(any(String.class))).thenReturn(Optional.of(members));
+
+        String redisKey =
+                REDIS_LIKE_USER_KEY_PREFIX + boards.getId() + REDIS_LIKE_BOARD_KEY_DELIMITER
+                        + posts.getId();
+        String memberName = members.getName();
+        String timeUpFlagKey =
+                REDIS_LIKE_TIME_UP_PREFIX + boards.getId() + REDIS_LIKE_BOARD_KEY_DELIMITER
+                        + posts.getId();
+        String boardKey = boards.getName() + BOARD_KEY_DELIMITER + boards.getId();
+
+        when(setOperations.isMember(eq(redisKey), eq(memberName))).thenReturn(false);
+        when(setOperations.size(eq(redisKey))).thenReturn((long) 100);
+        when(redisMembersTemplate.hasKey(eq(timeUpFlagKey))).thenReturn(false);
+        when(redisMembersTemplate.getExpire(eq(boardKey), eq(TimeUnit.SECONDS))).thenReturn(301L);
+
+        //when
+        postLikesService.doLike(boards.getName(), boards.getId(), posts.getId(), members.getName());
+
+        //then
+        verify(setOperations, times(1)).add(eq(redisKey), eq(memberName));
+        verify(setOperations, never()).remove(eq(redisKey), eq(memberName));
+        verify(redisMembersTemplate, times(1)).expire(eq(boardKey), eq(301L + 301L),
+                eq(TimeUnit.SECONDS));
+    }
+
 }

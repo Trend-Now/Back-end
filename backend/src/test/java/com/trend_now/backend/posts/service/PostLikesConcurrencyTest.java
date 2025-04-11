@@ -107,7 +107,7 @@ public class PostLikesConcurrencyTest {
             int idx = i;
             executorService.submit(() -> {
                 try {
-                    postLikesService.increaseLikeLock(boards.getId(), posts.getId(),
+                    postLikesService.increaseLikeLock(boards.getName(), boards.getId(), posts.getId(),
                             members.get(idx).getName());
                 } catch (Exception e) {
                     e.printStackTrace();

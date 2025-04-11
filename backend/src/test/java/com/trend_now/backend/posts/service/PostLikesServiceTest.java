@@ -112,7 +112,7 @@ public class PostLikesServiceTest {
                 REDIS_LIKE_MEMBER_KEY_PREFIX + boards.getId() + REDIS_LIKE_BOARD_KEY_DELIMITER
                         + posts.getId();
         for (int i = 0; i < 5; i++) {
-            postLikesService.increaseLikeLock(boards.getId(), posts.getId(),
+            postLikesService.increaseLikeLock(boards.getName(), boards.getId(), posts.getId(),
                     members.get(i).getName());
         }
         postLikesService.syncLikesToDatabase();
@@ -131,7 +131,7 @@ public class PostLikesServiceTest {
     public void Redis_DB_동기화() throws Exception {
         //given
         for (int i = 0; i < 10; i++) {
-            postLikesService.increaseLikeLock(boards.getId(), posts.getId(),
+            postLikesService.increaseLikeLock(boards.getName(), boards.getId(), posts.getId(),
                     members.get(i).getName());
         }
         postLikesService.syncLikesToDatabase();

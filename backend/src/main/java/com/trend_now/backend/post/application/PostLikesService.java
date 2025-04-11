@@ -9,6 +9,7 @@ import com.trend_now.backend.post.repository.PostLikesRepository;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,12 +29,17 @@ public class PostLikesService {
     private static final String REDIS_LIKE_MEMBER_KEY_PREFIX = "post_like_member:";
     private static final String REDIS_LIKE_BOARD_KEY_DELIMITER = ":";
     private static final String REDIS_LIKE_LOCK_PREFIX = "POST_LIKES_LOCK";
+    private static final String REDIS_LIKE_TIME_UP_PREFIX = "post_like_time_up:";
     private static final int BOARD_KEY_PARTS_LENGTH = 2;
     private static final int BOARD_ID_IDX = 0;
     private static final int POST_ID_IDX = 1;
     private static final int WAIT_MILLI_SEC = 10000;
     private static final int RELEASE_MILLI_SEC = 10000;
     private static final Integer LIKE_INITIAL_COUNT = 0;
+    private static final int LIKE_TIME_UP_LIMIT = 100;
+    private static final String BOARD_KEY_DELIMITER = ":";
+    private static final long POST_LIKES_TIME_UP = 301L;
+    private static final int KEY_EXPIRE = 0;
 
     private final PostsRepository postsRepository;
     private final MemberRepository memberRepository;
@@ -66,14 +72,14 @@ public class PostLikesService {
     /**
      * 좋아요의 개수로 게시판의 시간이 결정되기 때문에 '좋아요의 개수'는 매우 중요하다 여러 사용자가 동시에 좋아요 버튼을 누르더라도 좋아요가 올바르게 눌려야 한다
      */
-    public void increaseLikeLock(Long boardId, Long postId, String name) {
+    public void increaseLikeLock(String boardName, Long boardId, Long postId, String name) {
         String lockName =
                 REDIS_LIKE_LOCK_PREFIX + boardId + REDIS_LIKE_BOARD_KEY_DELIMITER + postId;
         redissonConfig.execute(lockName, WAIT_MILLI_SEC, RELEASE_MILLI_SEC,
-                () -> doLike(boardId, postId, name));
+                () -> doLike(boardName, boardId, postId, name));
     }
 
-    public void doLike(Long boardId, Long postId, String name) {
+    public void doLike(String boardName, Long boardId, Long postId, String name) {
         log.info("게시판 {}에 있는 게시글 {}에 회원 {}이 좋아요를 눌렀습니다.", boardId, postId, name);
 
         postsRepository.findById(postId)
@@ -100,6 +106,26 @@ public class PostLikesService {
             //좋아요를 누른 게시글이 아닐 경우
             log.info("{}가 좋아요를 누르지 않은 게시글이므로 좋아요 개수가 증가한다", name);
             redisMembersTemplate.opsForSet().add(redisKey, name);
+
+            String timeUpFlagKey =
+                    REDIS_LIKE_TIME_UP_PREFIX + boardId + REDIS_LIKE_BOARD_KEY_DELIMITER + postId;
+            Boolean hasSetTimeUp = redisMembersTemplate.hasKey(timeUpFlagKey);
+            /**
+             * 좋아요가 게시글에 눌릴 때 100개 이상이 되면 게시글이 속한 게시판의 시간이 5분 추가된다
+             */
+            if (Boolean.FALSE.equals(hasSetTimeUp)
+                    && redisMembersTemplate.opsForSet().size(redisKey) >= LIKE_TIME_UP_LIMIT) {
+                log.info("게시판 {}의 좋아요 개수가 100개 이상이 되었을 때, 게시판의 시간이 5분 추가된다", boardId);
+                String boardKey = boardName + BOARD_KEY_DELIMITER + boardId;
+                long keyLiveTime = POST_LIKES_TIME_UP;
+
+                Long currentExpire = redisMembersTemplate.getExpire(boardKey, TimeUnit.SECONDS);
+                if (currentExpire != null && currentExpire > KEY_EXPIRE) {
+                    keyLiveTime += currentExpire;
+                }
+
+                redisMembersTemplate.expire(boardKey, keyLiveTime, TimeUnit.SECONDS);
+            }
         }
     }
 
@@ -164,8 +190,7 @@ public class PostLikesService {
     }
 
     /**
-     * Redis에서 장애가 발생했을 때, DB에서 좋아요 수를 읽어와야 한다
-     * 함수형 인터페이스를 사용해 장애 상황을 대처한다
+     * Redis에서 장애가 발생했을 때, DB에서 좋아요 수를 읽어와야 한다 함수형 인터페이스를 사용해 장애 상황을 대처한다
      */
     private <T> T withFallback(Supplier<T> primary, Supplier<T> fallback) {
         try {
@@ -204,7 +229,7 @@ public class PostLikesService {
             log.info("DB에서 가져온 좋아요 개수를 Redis에 성공적으로 업데이트했습니다");
             updateRedisLikeCount(redisKey, likeCount);
             return likeCount.size();
-        } catch(Exception e) {
+        } catch (Exception e) {
             log.warn("DB에서 가져온 좋아요 개수를 Redis에 업데이트하는 데 실패했습니다 : {}", e.getMessage());
         }
 
@@ -212,7 +237,7 @@ public class PostLikesService {
     }
 
     private void updateRedisLikeCount(String redisKey, Set<PostLikes> likeCount) {
-        for(PostLikes postLikes : likeCount) {
+        for (PostLikes postLikes : likeCount) {
             redisMembersTemplate.opsForSet().add(redisKey, postLikes.getMembers().getName());
         }
     }
