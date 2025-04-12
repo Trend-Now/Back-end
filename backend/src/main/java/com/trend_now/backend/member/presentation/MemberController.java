@@ -40,11 +40,20 @@ public class MemberController {
     private final ScrapService scrapService;
     private final PostsService postsService;
 
+    private static final String SUCCESS_GET_JWT = "테스트용 JWT 발급에 성공하였습니다.";
+
     // 연결 확인
     @GetMapping("")
     @Operation(summary = "연결 확인", description = "연결 확인 API")
     public ResponseEntity<String> connectionCheck() {
         return new ResponseEntity<>("Connection Success", HttpStatus.OK);
+    }
+
+    // 테스트용 JWT 발급 API
+    @GetMapping("test-jwt")
+    @Operation(summary = "JWT 발급", description = "테스트용 JWT 발급 API")
+    public ResponseEntity<String> getJwt() {
+        return new ResponseEntity<>(memberService.getTestJwt(), HttpStatus.OK);
     }
 
     /**

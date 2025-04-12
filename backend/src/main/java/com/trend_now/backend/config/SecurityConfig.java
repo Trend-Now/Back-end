@@ -43,7 +43,8 @@ public class SecurityConfig {
                 // todo. 비회원도 사용 가능한 API의 uri 패턴 추가
                 .authorizeHttpRequests(a -> a.requestMatchers(
                                 "/api/v1/member/login/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/boards/list", "/api/v1/news/realtime",
-                                "/api/v1/timeSync", "/api/v1/subscribe", "/api/v1/unsubscribe", "/sse-test")
+                                "/api/v1/timeSync", "/api/v1/subscribe", "/api/v1/unsubscribe", "/sse-test"
+                        , "/api/v1/member/test-jwt")
                         .permitAll().anyRequest().authenticated())
 
                 /**
