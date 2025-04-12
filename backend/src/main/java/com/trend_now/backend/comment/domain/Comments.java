@@ -25,7 +25,7 @@ public class Comments extends BaseEntity {
     private String content;
 
     @Column(nullable = false)
-    private String writer;
+    private Long writer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
