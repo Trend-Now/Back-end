@@ -5,6 +5,7 @@ import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.exception.dto.ErrorResponseDto;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -67,5 +68,15 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponseDto);
+    }
+
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<ErrorResponseDto> handleIOException(IOException exception, HttpServletRequest request) {
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "파일 업로드 중 오류가 발생했습니다.",
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponseDto);
     }
 }
