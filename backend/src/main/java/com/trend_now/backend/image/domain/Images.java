@@ -11,23 +11,24 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 @Getter
-public class S3Images extends S3File {
+public class Images extends S3File {
 
     private String imageUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
+    @Setter
     private Posts posts;
 
-    public S3Images(String s3key, String imageUrl, Posts posts) {
+    public Images(String s3key, String imageUrl) {
         super(s3key);
         this.imageUrl = imageUrl;
-        this.posts = posts;
     }
 }
