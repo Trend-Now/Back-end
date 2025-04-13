@@ -2,6 +2,7 @@ package com.trend_now.backend.post.presentation;
 
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostLikesService;
+import com.trend_now.backend.post.dto.PostLikesIncrementDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +36,10 @@ public class PostLikesController {
 
         log.info("좋아요를 증가시키는 컨트롤러 메서드가 호출되었습니다.");
 
-        postLikesService.increaseLikeLock(boardName, boardId, postId, member.getName());
+        PostLikesIncrementDto postLikesIncrementDto = PostLikesIncrementDto.of(member.getName(),
+                boardName, boardId, postId);
+
+        postLikesService.increaseLikeLock(postLikesIncrementDto);
 
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_INCREMENT_POSTLIKES_MESSAGE);
     }

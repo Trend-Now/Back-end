@@ -10,6 +10,7 @@ import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.application.PostLikesService;
 import com.trend_now.backend.post.domain.Posts;
+import com.trend_now.backend.post.dto.PostLikesIncrementDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -112,8 +113,10 @@ public class PostLikesServiceTest {
                 REDIS_LIKE_MEMBER_KEY_PREFIX + boards.getId() + REDIS_LIKE_BOARD_KEY_DELIMITER
                         + posts.getId();
         for (int i = 0; i < 5; i++) {
-            postLikesService.increaseLikeLock(boards.getName(), boards.getId(), posts.getId(),
-                    members.get(i).getName());
+            PostLikesIncrementDto postLikesIncrementDto = PostLikesIncrementDto.of(
+                    members.get(i).getName(), boards.getName(), boards.getId(),
+                    posts.getId());
+            postLikesService.increaseLikeLock(postLikesIncrementDto);
         }
         postLikesService.syncLikesToDatabase();
 
@@ -131,8 +134,10 @@ public class PostLikesServiceTest {
     public void Redis_DB_동기화() throws Exception {
         //given
         for (int i = 0; i < 10; i++) {
-            postLikesService.increaseLikeLock(boards.getName(), boards.getId(), posts.getId(),
-                    members.get(i).getName());
+            PostLikesIncrementDto postLikesIncrementDto = PostLikesIncrementDto.of(
+                    members.get(i).getName(), boards.getName(), boards.getId(),
+                    posts.getId());
+            postLikesService.increaseLikeLock(postLikesIncrementDto);
         }
         postLikesService.syncLikesToDatabase();
 

@@ -5,6 +5,7 @@ import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.domain.PostLikes;
 import com.trend_now.backend.post.domain.Posts;
+import com.trend_now.backend.post.dto.PostLikesIncrementDto;
 import com.trend_now.backend.post.repository.PostLikesRepository;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.ArrayList;
@@ -74,7 +75,12 @@ public class PostLikesService {
     /**
      * 좋아요의 개수로 게시판의 시간이 결정되기 때문에 '좋아요의 개수'는 매우 중요하다 여러 사용자가 동시에 좋아요 버튼을 누르더라도 좋아요가 올바르게 눌려야 한다
      */
-    public void increaseLikeLock(String boardName, Long boardId, Long postId, String name) {
+    public void increaseLikeLock(PostLikesIncrementDto postLikesIncrementDto) {
+        String boardName = postLikesIncrementDto.getBoardName();
+        Long boardId = postLikesIncrementDto.getBoardId();
+        Long postId = postLikesIncrementDto.getPostId();
+        String name = postLikesIncrementDto.getMemberName();
+
         String lockName =
                 REDIS_LIKE_LOCK_PREFIX + boardId + REDIS_LIKE_BOARD_KEY_DELIMITER + postId;
         redissonConfig.execute(lockName, WAIT_MILLI_SEC, RELEASE_MILLI_SEC,

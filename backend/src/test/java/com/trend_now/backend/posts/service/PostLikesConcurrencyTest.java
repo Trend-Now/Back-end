@@ -10,6 +10,7 @@ import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.application.PostLikesService;
 import com.trend_now.backend.post.domain.Posts;
+import com.trend_now.backend.post.dto.PostLikesIncrementDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -102,11 +103,11 @@ public class PostLikesConcurrencyTest {
         //when
         for (int i = 0; i < threadCount; i++) {
             int idx = i;
+            PostLikesIncrementDto postLikesIncrementDto = PostLikesIncrementDto.of(
+                    members.get(idx).getName(), boards.getName(), boards.getId(), posts.getId());
             executorService.submit(() -> {
                 try {
-                    postLikesService.increaseLikeLock(boards.getName(), boards.getId(),
-                            posts.getId(),
-                            members.get(idx).getName());
+                    postLikesService.increaseLikeLock(postLikesIncrementDto);
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
