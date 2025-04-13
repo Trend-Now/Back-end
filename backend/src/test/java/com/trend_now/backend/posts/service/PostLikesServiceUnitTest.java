@@ -1,6 +1,7 @@
 package com.trend_now.backend.posts.service;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -166,13 +167,13 @@ public class PostLikesServiceUnitTest {
                 false);
 
         when(postsRepository.findById(postId)).thenReturn(Optional.of(posts));
-        when(memberRepository.findById(memberId)).thenReturn(Optional.of(members));
 
         //when
         postLikesService.syncLikesToDatabase();
 
         //then
-        verify(postLikesRepository, times(1)).save(any(PostLikes.class));
+        verify(postLikesRepository, times(1)).saveAll(anyList());
+        verify(postLikesRepository, never()).delete(any());
     }
 
     @Test

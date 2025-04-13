@@ -40,9 +40,6 @@ public class PostLikesConcurrencyTest {
     private static final String REDIS_LIKE_MEMBER_KEY_PREFIX = "post_like_member:";
     private static final String REDIS_LIKE_BOARD_KEY_DELIMITER = ":";
 
-    @PersistenceContext
-    private EntityManager em;
-
     @Autowired
     private PostLikesService postLikesService;
 
@@ -107,7 +104,8 @@ public class PostLikesConcurrencyTest {
             int idx = i;
             executorService.submit(() -> {
                 try {
-                    postLikesService.increaseLikeLock(boards.getName(), boards.getId(), posts.getId(),
+                    postLikesService.increaseLikeLock(boards.getName(), boards.getId(),
+                            posts.getId(),
                             members.get(idx).getName());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -121,7 +119,8 @@ public class PostLikesConcurrencyTest {
 
         //then
         int likeCount = redisMembersTemplate.opsForSet()
-                .size(REDIS_LIKE_MEMBER_KEY_PREFIX + boards.getId() + REDIS_LIKE_BOARD_KEY_DELIMITER + posts.getId())
+                .size(REDIS_LIKE_MEMBER_KEY_PREFIX + boards.getId() + REDIS_LIKE_BOARD_KEY_DELIMITER
+                        + posts.getId())
                 .intValue();
         assertThat(likeCount).isEqualTo(100);
     }
