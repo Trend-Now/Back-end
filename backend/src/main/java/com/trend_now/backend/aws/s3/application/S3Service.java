@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +19,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class S3Service {
 
     private final S3Client s3Client;
@@ -27,12 +29,14 @@ public class S3Service {
     private String bucketName;
 
     /**
-     * S3에 파일을 업로드하는 메서드 s3Key = prefix/현재시간/UUID_파일이름
+     * S3에 파일을 업로드하는 메서드
+     * @param file 업로드할 파일
+     * @param prefix S3에 저장할 경로의 최상위 경로
+     * @param filename 파일 이름
+     * @return S3에 저장된 파일의 key
      */
-    public String uploadFile(MultipartFile file, String prefix, String filename)
-        throws IOException {
+    public String uploadFile(MultipartFile file, String prefix, String filename) throws IOException {
         String s3Key = generateS3Key(prefix, filename);
-
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
             .bucket(bucketName)
             .key(s3Key)
@@ -44,11 +48,18 @@ public class S3Service {
             RequestBody.fromInputStream(file.getInputStream(), file.getSize())
         );
         return s3Key;
-//        return "https://" + bucketName + ".s3.amazonaws.com/" + s3Key;
     }
 
     /**
-     * S3에 HTTP 요청을 보내서 여러 파일을 한 번에 삭제하는 메서드
+     * S3 단일 파일을 삭제하는 메서드
+     * @param s3Key 삭제할 S3 객체 key
+     */
+    public void deleteFile(String s3Key) {
+        s3Client.deleteObject(builder -> builder.bucket(bucketName).key(s3Key));
+    }
+
+    /**
+     * S3 여러 파일을 한 번에 삭제하는 메서드
      * @param s3Keys 삭제할 S3 객체 key 목록
      */
     public void deleteFiles(List<String> s3Keys) {
@@ -71,7 +82,11 @@ public class S3Service {
         s3Client.deleteObjects(request);
     }
 
+    /**
+     * S3에 저장할 파일의 key를 생성하는 메서드
+     * prefix/현재시간/UUID/파일이름
+     */
     private String generateS3Key(String prefix, String filename) {
-        return prefix + "/" + LocalDate.now() + "/" + UUID.randomUUID() + "_" + filename;
+        return prefix + LocalDate.now() + "/" + UUID.randomUUID() + "_" + filename;
     }
 }
