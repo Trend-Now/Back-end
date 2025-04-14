@@ -1,6 +1,7 @@
 package com.trend_now.backend.image.presentation;
 
 import com.trend_now.backend.image.application.ImagesService;
+import com.trend_now.backend.image.dto.ImageUploadRequestDto;
 import com.trend_now.backend.image.dto.ImageUrlResponseDto;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class ImagesController {
     @PostMapping("/upload")
     public ResponseEntity<ImageUrlResponseDto> uploadImage(
         @RequestPart("images") List<MultipartFile> images) {
-        List<String> imageUrls = imagesService.uploadImage(images, POSTS_IMAGE_PREFIX);
+        List<String> imageUrls = imagesService.uploadImage(ImageUploadRequestDto.of(images, POSTS_IMAGE_PREFIX));
         ImageUrlResponseDto response = ImageUrlResponseDto.of(imageUrls);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

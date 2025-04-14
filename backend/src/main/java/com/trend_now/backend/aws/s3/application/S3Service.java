@@ -1,5 +1,6 @@
 package com.trend_now.backend.aws.s3.application;
 
+import com.trend_now.backend.exception.CustomException.S3FileUploadException;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
@@ -24,6 +25,8 @@ public class S3Service {
 
     private final S3Client s3Client;
 
+    private final String S3_FILE_UPLOAD_FAIL = "S3 파일 업로드에 실패했습니다.";
+
     @Getter
     @Value("${cloud.aws.s3.bucket}")
     private String bucketName;
@@ -35,7 +38,7 @@ public class S3Service {
      * @param filename 파일 이름
      * @return S3에 저장된 파일의 key
      */
-    public String uploadFile(MultipartFile file, String prefix, String filename) throws IOException {
+    public String uploadFile(MultipartFile file, String prefix, String filename) {
         String s3Key = generateS3Key(prefix, filename);
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
             .bucket(bucketName)
@@ -43,10 +46,14 @@ public class S3Service {
             .contentType(file.getContentType())
             .build();
 
-        s3Client.putObject(
-            putObjectRequest,
-            RequestBody.fromInputStream(file.getInputStream(), file.getSize())
-        );
+        try {
+            s3Client.putObject(
+                putObjectRequest,
+                RequestBody.fromInputStream(file.getInputStream(), file.getSize())
+            );
+        } catch (IOException e) {
+            throw new S3FileUploadException(S3_FILE_UPLOAD_FAIL);
+        }
         return s3Key;
     }
 

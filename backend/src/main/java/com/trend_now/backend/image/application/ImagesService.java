@@ -2,6 +2,7 @@ package com.trend_now.backend.image.application;
 
 import com.trend_now.backend.aws.s3.application.S3Service;
 import com.trend_now.backend.image.domain.Images;
+import com.trend_now.backend.image.dto.ImageUploadRequestDto;
 import com.trend_now.backend.image.repository.ImagesRepository;
 import com.trend_now.backend.post.domain.Posts;
 import java.io.IOException;
@@ -23,19 +24,16 @@ public class ImagesService {
      * S3와 DB에 저장 후 이미지 URL List 반환
      */
     @Transactional
-    public List<String> uploadImage(List<MultipartFile> images, String prefix) {
-        return images.stream()
+    public List<String> uploadImage(ImageUploadRequestDto imageUploadRequestDto) {
+        String prefix = imageUploadRequestDto.getPrefix();
+        return imageUploadRequestDto.getImages().stream()
             .map(image -> {
-                try {
-                    // S3에 업로드
-                    String s3Key = s3Service.uploadFile(image, prefix, image.getOriginalFilename());
-                    String imageUrl = generateImageUrl(s3Key);
-                    // DB에 저장
-                    imagesRepository.save(new Images(s3Key, imageUrl));
-                    return imageUrl;
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                // S3에 업로드
+                String s3Key = s3Service.uploadFile(image, prefix, image.getOriginalFilename());
+                String imageUrl = generateImageUrl(s3Key);
+                // DB에 저장
+                imagesRepository.save(new Images(s3Key, imageUrl));
+                return imageUrl;
             })
             .toList();
     }

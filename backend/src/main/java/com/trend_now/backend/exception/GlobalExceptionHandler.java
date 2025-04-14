@@ -2,6 +2,7 @@ package com.trend_now.backend.exception;
 
 import com.trend_now.backend.exception.CustomException.DuplicateException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.CustomException.S3FileUploadException;
 import com.trend_now.backend.exception.dto.ErrorResponseDto;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
@@ -70,11 +71,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponseDto);
     }
 
-    @ExceptionHandler(IOException.class)
-    public ResponseEntity<ErrorResponseDto> handleIOException(IOException exception, HttpServletRequest request) {
+    /**
+     * S3 파일 업로드 중 에러가 발생하면 InternalServerError(500) 상태코드와 함께 에러 메시지를 반환한다.
+     */
+    @ExceptionHandler(S3FileUploadException.class)
+    public ResponseEntity<ErrorResponseDto> handleS3FileUploadException(S3FileUploadException exception, HttpServletRequest request) {
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "파일 업로드 중 오류가 발생했습니다.",
+                exception.getMessage(),
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponseDto);
