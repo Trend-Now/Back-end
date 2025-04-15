@@ -61,6 +61,7 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
 	implementation 'org.springframework:spring-messaging'
+	implementation 'org.redisson:redisson-spring-boot-starter:3.27.0'
 
 	// s3
 	implementation 'software.amazon.awssdk:s3:2.25.26'
