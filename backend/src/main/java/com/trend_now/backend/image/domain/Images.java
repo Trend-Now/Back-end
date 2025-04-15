@@ -1,12 +1,9 @@
-package com.trend_now.backend.post.domain;
+package com.trend_now.backend.image.domain;
 
-import com.trend_now.backend.config.domain.BaseEntity;
-import jakarta.persistence.Column;
+import com.trend_now.backend.aws.s3.domain.S3File;
+import com.trend_now.backend.post.domain.Posts;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
@@ -14,22 +11,24 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 @Getter
-public class Images extends BaseEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "image_id")
-    private Long id;
+public class Images extends S3File {
 
     private String imageUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
+    @Setter
     private Posts posts;
+
+    public Images(String s3key, String imageUrl) {
+        super(s3key);
+        this.imageUrl = imageUrl;
+    }
 }
