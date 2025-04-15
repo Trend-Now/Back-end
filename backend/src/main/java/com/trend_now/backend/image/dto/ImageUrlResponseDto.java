@@ -7,9 +7,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class ImageUrlResponseDto {
-    List<String> imageUrls;
+    private String message;
+    private List<String> imageUrls;
 
-    public static ImageUrlResponseDto of(List<String> imageUrls) {
-        return new ImageUrlResponseDto(imageUrls);
+    public static ImageUrlResponseDto of(String message, List<String> imageUrls) {
+        return new ImageUrlResponseDto(message, imageUrls);
     }
 }

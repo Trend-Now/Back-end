@@ -22,6 +22,7 @@ public class ImagesController {
     private final ImagesService imagesService;
 
     private final String POSTS_IMAGE_PREFIX = "posts/";
+    private final String IMAGE_UPLOAD_SUCCESS_MESSAGE = "이미지 업로드 성공";
 
     /**
      * S3에 이미지 업로드 후 DB에 저장하고 이미지 URL 반환
@@ -31,7 +32,7 @@ public class ImagesController {
     public ResponseEntity<ImageUrlResponseDto> uploadImage(
         @RequestPart("images") List<MultipartFile> images) {
         List<String> imageUrls = imagesService.uploadImage(ImageUploadRequestDto.of(images, POSTS_IMAGE_PREFIX));
-        ImageUrlResponseDto response = ImageUrlResponseDto.of(imageUrls);
+        ImageUrlResponseDto response = ImageUrlResponseDto.of(IMAGE_UPLOAD_SUCCESS_MESSAGE, imageUrls);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
