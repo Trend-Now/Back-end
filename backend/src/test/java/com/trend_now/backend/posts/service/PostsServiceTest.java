@@ -10,8 +10,8 @@ import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.application.PostsService;
-import com.trend_now.backend.post.domain.Post;
 import com.trend_now.backend.post.domain.Posts;
+import com.trend_now.backend.post.dto.PostListDto;
 import com.trend_now.backend.post.dto.PostsDeleteDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
@@ -77,7 +77,7 @@ public class PostsServiceTest {
         boardRepository.save(boards);
 
         for (int i = 1; i <= 10; i++) {
-            PostsSaveDto postsSaveDto = PostsSaveDto.of(boards.getId(), "title" + i, "content" + i);
+            PostsSaveDto postsSaveDto = PostsSaveDto.of(boards.getId(), "title" + i, "content" + i, null);
             postsService.savePosts(postsSaveDto, members);
         }
 
@@ -95,7 +95,7 @@ public class PostsServiceTest {
     @DisplayName("회원은 게시글을 작성할 수 있다.")
     public void 게시글_작성() throws Exception {
         //given
-        PostsSaveDto postsSaveDto = PostsSaveDto.of(boards.getId(), "testTitle", "testContent");
+        PostsSaveDto postsSaveDto = PostsSaveDto.of(boards.getId(), "testTitle", "testContent", null);
 
         //when
         Long savePosts = postsService.savePosts(postsSaveDto, members);
@@ -120,7 +120,7 @@ public class PostsServiceTest {
         PostsPagingRequestDto requestDto = new PostsPagingRequestDto(boards.getId(), page, size);
 
         //when
-        Page<PostsInfoDto> result = postsService.findAllPostsPagingByBoardId(requestDto);
+        Page<PostListDto> result = postsService.findAllPostsPagingByBoardId(requestDto);
 
         //then
         assertThat(result).isNotNull();
