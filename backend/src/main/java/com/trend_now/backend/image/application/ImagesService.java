@@ -1,16 +1,16 @@
 package com.trend_now.backend.image.application;
 
 import com.trend_now.backend.aws.s3.application.S3Service;
+import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.image.domain.Images;
+import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.image.dto.ImageUploadRequestDto;
 import com.trend_now.backend.image.repository.ImagesRepository;
 import com.trend_now.backend.post.domain.Posts;
-import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -52,11 +52,19 @@ public class ImagesService {
         s3Service.deleteFiles(s3Keys);
     }
 
+    public Images findImageById(Long id) {
+        return imagesRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("해당 이미지를 찾을 수 없습니다."));
+    }
+
     /**
      * 게시글 이미지 조회
      */
-    public List<Images> findPostImages(Posts post) {
-        return imagesRepository.findAllByPosts_Id(post.getId());
+    public List<ImageInfoDto> findImagesByPost(Posts post) {
+        List<Images> images = imagesRepository.findAllByPosts_Id(post.getId());
+        return images.stream().map(
+            image -> ImageInfoDto.of(image.getId(), image.getImageUrl())
+        ).toList();
     }
 
     /**
