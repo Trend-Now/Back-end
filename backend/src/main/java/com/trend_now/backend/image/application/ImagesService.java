@@ -24,7 +24,7 @@ public class ImagesService {
      * S3와 DB에 저장 후 이미지 URL List 반환
      */
     @Transactional
-    public List<String> uploadImage(ImageUploadRequestDto imageUploadRequestDto) {
+    public List<ImageInfoDto> uploadImage(ImageUploadRequestDto imageUploadRequestDto) {
         String prefix = imageUploadRequestDto.getPrefix();
         return imageUploadRequestDto.getImages().stream()
             .map(image -> {
@@ -32,8 +32,8 @@ public class ImagesService {
                 String s3Key = s3Service.uploadFile(image, prefix, image.getOriginalFilename());
                 String imageUrl = generateImageUrl(s3Key);
                 // DB에 저장
-                imagesRepository.save(new Images(s3Key, imageUrl));
-                return imageUrl;
+                Long id = imagesRepository.save(new Images(s3Key, imageUrl)).getId();
+                return ImageInfoDto.of(id, imageUrl);
             })
             .toList();
     }

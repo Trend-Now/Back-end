@@ -1,6 +1,7 @@
 package com.trend_now.backend.image.presentation;
 
 import com.trend_now.backend.image.application.ImagesService;
+import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.image.dto.ImageUploadRequestDto;
 import com.trend_now.backend.image.dto.ImageUrlResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,8 +32,9 @@ public class ImagesController {
     @Operation(summary = "이미지 업로드", description = "S3 저장소에 이미지를 업로드 합니다.")
     public ResponseEntity<ImageUrlResponseDto> uploadImage(
         @RequestPart("images") List<MultipartFile> images) {
-        List<String> imageUrls = imagesService.uploadImage(ImageUploadRequestDto.of(images, POSTS_IMAGE_PREFIX));
-        ImageUrlResponseDto response = ImageUrlResponseDto.of(IMAGE_UPLOAD_SUCCESS_MESSAGE, imageUrls);
+        List<ImageInfoDto> imageInfoDtoList = imagesService.uploadImage(
+            ImageUploadRequestDto.of(images, POSTS_IMAGE_PREFIX));
+        ImageUrlResponseDto response = ImageUrlResponseDto.of(IMAGE_UPLOAD_SUCCESS_MESSAGE, imageInfoDtoList);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

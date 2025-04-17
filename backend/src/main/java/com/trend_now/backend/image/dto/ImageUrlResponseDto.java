@@ -8,9 +8,9 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ImageUrlResponseDto {
     private String message;
-    private List<String> imageUrls;
+    private List<ImageInfoDto> imageUploadDto;
 
-    public static ImageUrlResponseDto of(String message, List<String> imageUrls) {
-        return new ImageUrlResponseDto(message, imageUrls);
+    public static ImageUrlResponseDto of(String message, List<ImageInfoDto> ImageInfoDtoList) {
+        return new ImageUrlResponseDto(message, ImageInfoDtoList);
     }
 }
