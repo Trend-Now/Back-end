@@ -1,19 +1,17 @@
 package com.trend_now.backend.comment.domain;
 
 import com.trend_now.backend.config.domain.BaseEntity;
+import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 @Getter
+@ToString
 public class Comments extends BaseEntity {
 
     @Id
@@ -24,8 +22,9 @@ public class Comments extends BaseEntity {
     @Column(nullable = false)
     private String content;
 
-    @Column(nullable = false)
-    private Long writer;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private Members members;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
