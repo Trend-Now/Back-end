@@ -2,6 +2,7 @@ package com.trend_now.backend.comment.application;
 
 import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.dto.BoardSaveDto;
+import com.trend_now.backend.comment.data.vo.DeleteComments;
 import com.trend_now.backend.comment.data.vo.SaveComments;
 import com.trend_now.backend.comment.domain.BoardTtlStatus;
 import com.trend_now.backend.comment.domain.Comments;
@@ -56,5 +57,22 @@ public class CommentsService {
                 .posts(posts)
                 .boardTtlStatus(boardTtlStatus)
                 .build());
+    }
+
+    /**
+     * 댓글 삭제 조건
+     * - 본인 댓글만 삭제 가능
+     * - 댓글은 BOARD_TTL 만료 시간 안에서만 삭제가 가능
+     */
+    @Transactional
+    public void deleteCommentsByCommentId(Members member, DeleteComments deleteComments) {
+        // 회원 확인
+        if(member == null) {
+            throw new NotFoundException(NOT_EXIST_Members);
+        }
+
+
+
+
     }
 }

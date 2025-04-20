@@ -1,6 +1,7 @@
 package com.trend_now.backend.comment.presentation;
 
 import com.trend_now.backend.comment.application.CommentsService;
+import com.trend_now.backend.comment.data.vo.DeleteComments;
 import com.trend_now.backend.comment.data.vo.FindAllComments;
 import com.trend_now.backend.comment.data.vo.SaveComments;
 import com.trend_now.backend.comment.domain.Comments;
@@ -24,6 +25,7 @@ import java.util.List;
 public class CommentsController {
 
     private static final String SUCCESS_SAVE_COMMENT = "댓글 작성에 성공했습니다.";
+    private static final String SUCCESS_DELETE_COMMENT = "댓글 삭제에 성공했습니다.";
 
     private final CommentsService commentsService;
     private final CommentsRepository commentsRepository;
@@ -40,5 +42,13 @@ public class CommentsController {
     @GetMapping("/{postId}")
     public ResponseEntity<List<FindAllComments>> findAllCommentsByPostId(@PathVariable Long postId) {
         return ResponseEntity.status(HttpStatus.OK).body(commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId));
+    }
+
+    @Operation(summary = "댓글 삭제", description = "게시글에 댓글을 삭제합니다.")
+    @GetMapping("/{commentId}")
+    public ResponseEntity<String> deleteCommentsByCommentId(@AuthenticationPrincipal(expression = "members") Members member
+            , @RequestBody DeleteComments deleteComments) {
+        commentsService.deleteCommentsByCommentId(member, deleteComments);
+        return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_COMMENT);
     }
 }
