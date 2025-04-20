@@ -23,7 +23,7 @@ public class CommentsController {
     private final CommentsService commentsService;
 
     @Operation(summary = "댓글 저장", description = "게시글에 댓글을 작성합니다.")
-    @PostMapping("/comment")
+    @PostMapping()
     public ResponseEntity<String> saveComments(@AuthenticationPrincipal(expression = "members") Members member
             , @RequestBody SaveComments saveComments) {
         commentsService.saveComments(member, saveComments);
