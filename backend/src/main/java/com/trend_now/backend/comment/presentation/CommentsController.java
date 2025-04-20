@@ -1,7 +1,10 @@
 package com.trend_now.backend.comment.presentation;
 
 import com.trend_now.backend.comment.application.CommentsService;
+import com.trend_now.backend.comment.data.vo.FindAllComments;
 import com.trend_now.backend.comment.data.vo.SaveComments;
+import com.trend_now.backend.comment.domain.Comments;
+import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.member.domain.Members;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/comments")
@@ -21,6 +26,7 @@ public class CommentsController {
     private static final String SUCCESS_SAVE_COMMENT = "댓글 작성에 성공했습니다.";
 
     private final CommentsService commentsService;
+    private final CommentsRepository commentsRepository;
 
     @Operation(summary = "댓글 저장", description = "게시글에 댓글을 작성합니다.")
     @PostMapping()
@@ -28,5 +34,11 @@ public class CommentsController {
             , @RequestBody SaveComments saveComments) {
         commentsService.saveComments(member, saveComments);
         return ResponseEntity.status(HttpStatus.CREATED).body(SUCCESS_SAVE_COMMENT);
+    }
+
+    @Operation(summary = "댓글 조회", description = "게시글에 댓글을 조회합니다.")
+    @GetMapping("/{postId}")
+    public ResponseEntity<List<FindAllComments>> findAllCommentsByPostId(@PathVariable Long postId) {
+        return ResponseEntity.status(HttpStatus.OK).body(commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId));
     }
 }
