@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentsService {
 
     private static final String NOT_EXIST_POSTS = "선택하신 게시글이 존재하지 않습니다.";
+    private static final String NOT_EXIST_Members = "회원이 아닙니다.";
     private static final String BOARD_KEY_DELIMITER  = ":";
 
     private final CommentsRepository commentsRepository;
@@ -34,6 +35,11 @@ public class CommentsService {
      */
     @Transactional
     public void saveComments(Members member, SaveComments saveComments) {
+        // 회원 확인
+        if(member == null) {
+            throw new NotFoundException(NOT_EXIST_Members);
+        }
+
         Posts posts = postsRepository.findById(saveComments.getPostId())
                 .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS)
                 );
@@ -46,7 +52,7 @@ public class CommentsService {
 
         commentsRepository.save(Comments.builder()
                 .content(saveComments.getContent())
-                .writer(member.getId())
+                .members(member)
                 .posts(posts)
                 .boardTtlStatus(boardTtlStatus)
                 .build());
