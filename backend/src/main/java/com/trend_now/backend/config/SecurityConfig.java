@@ -4,6 +4,7 @@ import com.trend_now.backend.config.auth.JwtTokenFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -45,7 +46,10 @@ public class SecurityConfig {
                                 "/api/v1/member/login/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/boards/list", "/api/v1/news/realtime",
                                 "/api/v1/timeSync", "/api/v1/subscribe", "/api/v1/unsubscribe", "/sse-test"
                         , "/api/v1/member/test-jwt")
-                        .permitAll().anyRequest().authenticated())
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/comments/*")
+                        .permitAll()
+                        .anyRequest().authenticated())
 
                 /**
                  *  UsernamePasswordAuthenticationFilter는 Spring Security에서 제공하는 로그인 폼을 의미한다.
