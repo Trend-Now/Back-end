@@ -14,11 +14,10 @@ import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostListDto;
-import com.trend_now.backend.post.dto.PostsDeleteDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
-import com.trend_now.backend.post.dto.PostsUpdateDto;
+import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -43,8 +42,7 @@ public class PostsService {
     private final PostLikesService postLikesService;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
-    public List<PostListDto> findAllPostsPagingByBoardId(
-        PostsPagingRequestDto postsPagingRequestDto) {
+    public List<PostListDto> findAllPostsPagingByBoardId(PostsPagingRequestDto postsPagingRequestDto) {
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
             postsPagingRequestDto.getSize());
@@ -54,6 +52,16 @@ public class PostsService {
             postsPagingRequestDto.getBoardId(), pageable);
         // 게시글 목록을 PostListDto로 변환
         return postListDtoPage.getContent();
+    }
+
+    //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
+    public PostsInfoDto findPostsById(Long boardId, Long postId) {
+        Posts posts = postsRepository.findById(postId)
+            .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
+        List<ImageInfoDto> imagesByPost = imagesService.findImagesByPost(posts);
+        int postLikesCount = postLikesService.getPostLikesCount(boardId, postId);
+
+        return PostsInfoDto.of(posts, postLikesCount, imagesByPost);
     }
 
     //게시글 작성 - 가변 타이머 작동 중에만 가능
@@ -83,39 +91,44 @@ public class PostsService {
         return posts.getId();
     }
 
-    //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
-    public PostsInfoDto findPostsById(Long postId) {
-        Posts posts = postsRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
-        List<ImageInfoDto> imagesByPost = imagesService.findImagesByPost(posts);
-
-        return PostsInfoDto.of(posts, imagesByPost);
-    }
-
     //게시글 수정 - 가변 타이머 작동 중에만 가능
     @Transactional
-    public void updatePostsById(PostsUpdateDto postsUpdateDto, Long memberId) {
-        Posts posts = postsRepository.findById(postsUpdateDto.getPostId())
+    public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long postId, Long memberId) {
+        Posts posts = postsRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
 
         if (posts.isNotSameId(memberId)) {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
         }
-
-        posts.changePosts(postsUpdateDto.getTitle(), postsUpdateDto.getContent());
+        // 삭제된 이미지 서버에서 삭제
+        imagesService.deleteImageByIdList(postsUpdateRequestDto.getDeleteImageIdList());
+        // 새로 추가된 이미지 연관관계 설정
+        if (postsUpdateRequestDto.getNewImageIdList() != null) {
+            postsUpdateRequestDto.getNewImageIdList().forEach(
+                imageId -> {
+                    Images image = imagesService.findImageById(imageId);
+                    image.setPosts(posts);
+                }
+            );
+        }
+        // 제목, 내용 업데이트
+        posts.changePosts(postsUpdateRequestDto.getTitle(), postsUpdateRequestDto.getContent());
     }
 
     //게시글 삭제 - 상시 가능
     @Transactional
-    public void deletePostsById(PostsDeleteDto postsDeleteDto, Long memberId) {
-        Posts posts = postsRepository.findById(postsDeleteDto.getPostId())
+    public void deletePostsById(Long postId, Long memberId) {
+        Posts posts = postsRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
 
         if (posts.isNotSameId(memberId)) {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
         }
-
-        postsRepository.deleteById(postsDeleteDto.getPostId());
+        // TODO: 해당 게시글에 연관된 댓글 삭제
+        // 게시글에 등록된 이미지 삭제
+        imagesService.deleteImageByPostId(posts.getId());
+        // 게시글 삭제
+        postsRepository.deleteById(postId);
     }
 
     public List<PostListDto> getPostsByMemberId(Long memberId, int page, int size) {
