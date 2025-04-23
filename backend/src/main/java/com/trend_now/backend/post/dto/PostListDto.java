@@ -16,19 +16,19 @@ public class PostListDto {
     private String writer;
     private int viewCount;
     private int likeCount;
-    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     // Repository에서 PostListDto를 생성할 때 사용
-    public PostListDto(Long id, String title, String writer, int viewCount, LocalDateTime createdAt) {
+    public PostListDto(Long id, String title, String writer, int viewCount, LocalDateTime updatedAt) {
         this.postId = id;
         this.title = title;
         this.writer = writer;
         this.viewCount = viewCount;
-        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     public static PostListDto of(Posts posts, int likeCount) {
         return new PostListDto(posts.getId(), posts.getTitle(), posts.getWriter(),
-            posts.getViewCount(), likeCount, posts.getCreatedAt());
+            posts.getViewCount(), likeCount, posts.getUpdatedAt());
     }
 }
