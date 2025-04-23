@@ -1,6 +1,7 @@
 package com.trend_now.backend.post.dto;
 
 import jakarta.validation.constraints.NotEmpty;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -17,10 +18,9 @@ public class PostsUpdateDto {
     @NotEmpty(message = "내용을 입력해주세요.")
     private String content;
 
-    @NotEmpty(message = "작성자을 입력해주세요.")
-    private String writer;
+    private List<Long> updateImageIds;
 
-    public static PostsUpdateDto of(Long postId, String title, String content, String writer) {
-        return new PostsUpdateDto(postId, title, content, writer);
+    public static PostsUpdateDto of(Long postId, String title, String content, List<Long> updateImageIds) {
+        return new PostsUpdateDto(postId, title, content, updateImageIds);
     }
 }

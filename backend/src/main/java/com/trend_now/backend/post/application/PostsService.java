@@ -43,21 +43,23 @@ public class PostsService {
     private final PostLikesService postLikesService;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
-    public Page<PostListDto> findAllPostsPagingByBoardId(
+    public List<PostListDto> findAllPostsPagingByBoardId(
         PostsPagingRequestDto postsPagingRequestDto) {
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
             postsPagingRequestDto.getSize());
 
         // boardsId에 속하는 게시글 조회
-        return postsRepository.findAllByBoardsId(
+        Page<PostListDto> postListDtoPage = postsRepository.findAllByBoardsId(
             postsPagingRequestDto.getBoardId(), pageable);
+        // 게시글 목록을 PostListDto로 변환
+        return postListDtoPage.getContent();
     }
 
     //게시글 작성 - 가변 타이머 작동 중에만 가능
     @Transactional
-    public Long savePosts(PostsSaveDto postsSaveDto, Members members) {
-        Boards findBoards = boardRepository.findById(postsSaveDto.getBoardId())
+    public Long savePosts(PostsSaveDto postsSaveDto, Members members, Long boardId) {
+        Boards findBoards = boardRepository.findById(boardId)
             .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_BOARD));
 
         Posts posts = Posts.builder()
@@ -92,11 +94,11 @@ public class PostsService {
 
     //게시글 수정 - 가변 타이머 작동 중에만 가능
     @Transactional
-    public void updatePostsById(PostsUpdateDto postsUpdateDto) {
+    public void updatePostsById(PostsUpdateDto postsUpdateDto, Long memberId) {
         Posts posts = postsRepository.findById(postsUpdateDto.getPostId())
             .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
 
-        if (!posts.isSameWriter(postsUpdateDto.getWriter())) {
+        if (posts.isNotSameId(memberId)) {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
         }
 
@@ -105,24 +107,24 @@ public class PostsService {
 
     //게시글 삭제 - 상시 가능
     @Transactional
-    public void deletePostsById(PostsDeleteDto postsDeleteDto) {
+    public void deletePostsById(PostsDeleteDto postsDeleteDto, Long memberId) {
         Posts posts = postsRepository.findById(postsDeleteDto.getPostId())
             .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
 
-        if (!posts.isSameWriter(postsDeleteDto.getWriter())) {
+        if (posts.isNotSameId(memberId)) {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
         }
 
         postsRepository.deleteById(postsDeleteDto.getPostId());
     }
 
-    public Page<PostListDto> getPostsByMemberId(Long memberId, int page, int size) {
+    public List<PostListDto> getPostsByMemberId(Long memberId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Posts> posts = postsRepository.findByMembers_Id(memberId, pageable);
-        return posts.map(post -> {
+        return posts.getContent().stream().map(post -> {
             int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
                 post.getId());
             return PostListDto.of(post, postLikesCount);
-        });
+        }).toList();
     }
 }

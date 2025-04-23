@@ -11,10 +11,7 @@ public class PostsDeleteDto {
     @NotEmpty(message = "게시글을 선택해주세요.")
     private Long postId;
 
-    @NotEmpty(message = "작성자을 입력해주세요.")
-    private String writer;
-
-    public static PostsDeleteDto of(Long postId, String writer) {
-        return new PostsDeleteDto(postId, writer);
+    public static PostsDeleteDto from(Long postId) {
+        return new PostsDeleteDto(postId);
     }
 }

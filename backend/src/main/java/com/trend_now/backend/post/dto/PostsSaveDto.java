@@ -12,9 +12,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class PostsSaveDto {
 
-    @NotEmpty(message = "게시판을 선택해주세요.")
-    private Long boardId;
-
     @NotEmpty(message = "제목을 입력해주세요.")
     private String title;
 
@@ -23,7 +20,7 @@ public class PostsSaveDto {
 
     private List<Long> imageIds;
 
-    public static PostsSaveDto of(Long boardId, String title, String content, List<Long> imageIds) {
-        return new PostsSaveDto(boardId, title, content, imageIds);
+    public static PostsSaveDto of(String title, String content, List<Long> imageIds) {
+        return new PostsSaveDto(title, content, imageIds);
     }
 }
