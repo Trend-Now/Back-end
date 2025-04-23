@@ -12,14 +12,14 @@ import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostListDto;
-import com.trend_now.backend.post.dto.PostsDeleteDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
-import com.trend_now.backend.post.dto.PostsUpdateDto;
+import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -77,8 +76,8 @@ public class PostsServiceTest {
         boardRepository.save(boards);
 
         for (int i = 1; i <= 10; i++) {
-            PostsSaveDto postsSaveDto = PostsSaveDto.of(boards.getId(), "title" + i, "content" + i, null);
-            postsService.savePosts(postsSaveDto, members);
+            PostsSaveDto postsSaveDto = PostsSaveDto.of("title" + i, "content" + i, null);
+            postsService.savePosts(postsSaveDto, members, boards.getId());
         }
 
         posts = Posts.builder()
@@ -95,13 +94,13 @@ public class PostsServiceTest {
     @DisplayName("회원은 게시글을 작성할 수 있다.")
     public void 게시글_작성() throws Exception {
         //given
-        PostsSaveDto postsSaveDto = PostsSaveDto.of(boards.getId(), "testTitle", "testContent", null);
+        PostsSaveDto postsSaveDto = PostsSaveDto.of("testTitle", "testContent", null);
 
         //when
-        Long savePosts = postsService.savePosts(postsSaveDto, members);
+        Long savePosts = postsService.savePosts(postsSaveDto, members, boards.getId());
 
         //then
-        PostsInfoDto postsInfoDto = postsService.findPostsById(savePosts);
+        PostsInfoDto postsInfoDto = postsService.findPostsById(boards.getId(), savePosts);
         assertThat(savePosts).isNotNull().isGreaterThan(0);
         assertThat(postsInfoDto.getTitle()).isEqualTo(postsSaveDto.getTitle());
         assertThat(postsInfoDto.getContent()).isEqualTo(postsSaveDto.getContent());
@@ -120,18 +119,18 @@ public class PostsServiceTest {
         PostsPagingRequestDto requestDto = new PostsPagingRequestDto(boards.getId(), page, size);
 
         //when
-        Page<PostListDto> result = postsService.findAllPostsPagingByBoardId(requestDto);
+        List<PostListDto> result = postsService.findAllPostsPagingByBoardId(requestDto);
 
         //then
         assertThat(result).isNotNull();
-        assertThat(result.getSize()).isEqualTo(size);
+        assertThat(result.size()).isEqualTo(size);
 
         int allPosts = postsRepository.findAll().size();
 
         if (page == allPosts) {
-            assertThat(result.getContent()).isEmpty();
+            assertThat(result).isEmpty();
         } else {
-            assertThat(result.getContent()).isNotEmpty();
+            assertThat(result).isNotEmpty();
         }
     }
 
@@ -139,34 +138,32 @@ public class PostsServiceTest {
     @DisplayName("작성자가 직접 작성한 게시글을 수정할 수 있다")
     public void 게시글_수정() throws Exception {
         //given
-        PostsUpdateDto postsUpdateDto = PostsUpdateDto.of(posts.getId(), "updateTitle", "updateContent",
-                members.getName());
+        PostsUpdateRequestDto postsUpdateRequestDto = PostsUpdateRequestDto.of("updateTitle", "updateContent",null, null);
 
         //when
-        postsService.updatePostsById(postsUpdateDto);
+        postsService.updatePostsById(postsUpdateRequestDto, posts.getId(), members.getId());
         em.flush();
         em.clear();
 
         //then
-        PostsInfoDto postsInfoDto = postsService.findPostsById(posts.getId());
-        assertThat(postsInfoDto.getTitle()).isEqualTo(postsUpdateDto.getTitle());
-        assertThat(postsInfoDto.getContent()).isEqualTo(postsUpdateDto.getContent());
-        assertThat(postsInfoDto.getWriter()).isEqualTo(postsUpdateDto.getWriter());
+        PostsInfoDto postsInfoDto = postsService.findPostsById(boards.getId(), posts.getId());
+        assertThat(postsInfoDto.getTitle()).isEqualTo(postsUpdateRequestDto.getTitle());
+        assertThat(postsInfoDto.getContent()).isEqualTo(postsUpdateRequestDto.getContent());
     }
 
     @Test
     @DisplayName("작성자가 직접 작성한 게시글을 삭제할 수 있다")
     public void 게시글_삭제() throws Exception {
         //given
-        PostsDeleteDto postsDeleteDto = PostsDeleteDto.of(posts.getId(), members.getName());
+        Long postId = posts.getId();
 
         //when
-        postsService.deletePostsById(postsDeleteDto);
+        postsService.deletePostsById(postId, members.getId());
         em.flush();
         em.clear();
 
         //then
-        assertThatThrownBy(() -> postsService.findPostsById(posts.getId()))
+        assertThatThrownBy(() -> postsService.findPostsById(boards.getId(), posts.getId()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
