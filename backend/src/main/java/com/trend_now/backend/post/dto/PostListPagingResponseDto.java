@@ -3,6 +3,7 @@
  */
 package com.trend_now.backend.post.dto;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.data.domain.Page;
@@ -12,9 +13,9 @@ import org.springframework.data.domain.Page;
 public class PostListPagingResponseDto {
 
     private String message;
-    private Page<PostListDto> postsInfoDtos;
+    private List<PostListDto> postsInfoListDto;
 
-    public static PostListPagingResponseDto of(String message, Page<PostListDto> postsInfoDtos) {
-        return new PostListPagingResponseDto(message, postsInfoDtos);
+    public static PostListPagingResponseDto of(String message, List<PostListDto> postsInfoListDto) {
+        return new PostListPagingResponseDto(message, postsInfoListDto);
     }
 }

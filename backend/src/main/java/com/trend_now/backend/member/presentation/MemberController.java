@@ -15,9 +15,9 @@ import com.trend_now.backend.post.dto.PostListPagingResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -86,7 +86,9 @@ public class MemberController {
      */
     @PatchMapping("/nickname")
     @Operation(summary = "닉네임 변경", description = "닉네임 변경을 요청한 사용자의 닉네임을 변경합니다.")
-    public ResponseEntity<String> updateNickname(@AuthenticationPrincipal(expression = "members") Members member, @RequestBody @Valid UpdateNicknameRequestDto nicknameRequest) {
+    public ResponseEntity<String> updateNickname(
+        @AuthenticationPrincipal(expression = "members") Members member,
+        @RequestBody @Valid UpdateNicknameRequestDto nicknameRequest) {
         memberService.updateNickname(member, nicknameRequest.nickname());
         return new ResponseEntity<>(NICKNAME_UPDATE_SUCCESS_MESSAGE, HttpStatus.OK);
     }
@@ -108,11 +110,12 @@ public class MemberController {
     @GetMapping("/scrap")
     @Operation(summary = "스크랩한 게시글 목록 조회", description = "회원이 스크랩한 게시글을 조회합니다.")
     public ResponseEntity<PostListPagingResponseDto> getMemberScrapPosts(
-            @AuthenticationPrincipal(expression = "members") Members member,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+        @AuthenticationPrincipal(expression = "members") Members member,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
 
-        Page<PostListDto> scrappedPostsByMemberId = scrapService.getScrappedPostsByMemberId(member.getId(), page, size);
+        List<PostListDto> scrappedPostsByMemberId = scrapService.getScrappedPostsByMemberId(
+            member.getId(), page, size);
         return new ResponseEntity<>(
             PostListPagingResponseDto.of(FIND_SCRAP_POSTS_SUCCESS_MESSAGE, scrappedPostsByMemberId), HttpStatus.OK);
     }
@@ -123,10 +126,10 @@ public class MemberController {
     @GetMapping("/posts")
     @Operation(summary = "회원이 작성한 게시글 목록 조회", description = "회원이 작성한 게시글을 조회합니다.")
     public ResponseEntity<PostListPagingResponseDto> getMemberPosts(
-            @AuthenticationPrincipal(expression = "members") Members member,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<PostListDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page,
+        @AuthenticationPrincipal(expression = "members") Members member,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
+        List<PostListDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page,
             size);
         return new ResponseEntity<>(
             PostListPagingResponseDto.of(FIND_MEMBER_POSTS_SUCCESS_MESSAGE, postsByMemberId), HttpStatus.OK);
