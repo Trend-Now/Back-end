@@ -39,12 +39,32 @@ public class ImagesService {
     }
 
     /**
+     * imageId List를 통해 S3와 DB에서 이미지 삭제
+     */
+    @Transactional
+    public void deleteImageByIdList(List<Long> imageId) {
+        // S3에서 이미지 삭제
+        List<String> s3Keys = imagesRepository.findS3KeyByIdIn(imageId);
+        deleteImageByS3KeyList(s3Keys);
+
+        // DB에서 이미지 삭제
+        imagesRepository.deleteAllByIdIn(imageId);
+    }
+
+    /**
      * S3에서 게시글 이미지 삭제
      */
     @Transactional
-    public void deleteImage(List<String> s3Keys) {
-        if (s3Keys == null || s3Keys.isEmpty()) return;
+    public void deleteImageByPostId(Long postId) {
+        // S3에서 이미지 삭제
+        List<String> s3Keys = imagesRepository.findS3KeyByPostsId(postId);
+        deleteImageByS3KeyList(s3Keys);
 
+        // DB에서 이미지 삭제
+        imagesRepository.deleteAllByPosts_Id(postId);
+    }
+
+    private void deleteImageByS3KeyList(List<String> s3Keys) {
         if (s3Keys.size() == 1) {
             s3Service.deleteFile(s3Keys.getFirst());
             return;
