@@ -15,11 +15,11 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                     p.title,
                     p.writer,
                     p.viewCount,
-                    p.createdAt
+                    p.updatedAt
                 )
             FROM Posts p
             WHERE p.boards.id = :boardId
-            GROUP BY p.id, p.title, p.writer, p.viewCount, p.createdAt
+            GROUP BY p.id, p.title, p.writer, p.viewCount, p.updatedAt
         """)
     Page<PostListDto> findAllByBoardsId(Long boardId, Pageable pageable);
 
