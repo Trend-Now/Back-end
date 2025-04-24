@@ -9,8 +9,8 @@
 package com.trend_now.backend.board.application;
 
 import com.trend_now.backend.board.dto.RealTimeBoardKeyExpiredEvent;
-import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
+import com.trend_now.backend.board.dto.Top10WithChange;
 import com.trend_now.backend.board.repository.SseEmitterRepository;
 import java.io.IOException;
 import java.util.Set;
@@ -43,11 +43,11 @@ public class SseEmitterService {
     }
 
     public void sendKeywordList(SignalKeywordEventDto event) {
-        SignalKeywordDto signalKeywordDto = event.getSignalKeywordDto();
+        Top10WithChange top10WithChange = event.getTop10WithChange();
         String clientId = event.getClientId();
 
         sseEmitterRepository.findById(clientId)
-                .ifPresent(sseEmitter -> send(signalKeywordDto, SIGNAL_KEYWORD_LIST_EMITTER_NAME,
+                .ifPresent(sseEmitter -> send(top10WithChange, SIGNAL_KEYWORD_LIST_EMITTER_NAME,
                         clientId, sseEmitter));
     }
 
