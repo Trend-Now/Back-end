@@ -9,12 +9,14 @@ import com.trend_now.backend.image.repository.ImagesRepository;
 import com.trend_now.backend.post.domain.Posts;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class ImagesService {
 
     private final ImagesRepository imagesRepository;
@@ -32,44 +34,15 @@ public class ImagesService {
                 String s3Key = s3Service.uploadFile(image, prefix, image.getOriginalFilename());
                 String imageUrl = generateImageUrl(s3Key);
                 // DB에 저장
-                Long id = imagesRepository.save(new Images(s3Key, imageUrl)).getId();
+                Long id = imagesRepository.save(
+                    Images.builder()
+                        .s3key(s3Key)
+                        .imageUrl(imageUrl)
+                        .build()
+                    ).getId();
                 return ImageInfoDto.of(id, imageUrl);
             })
             .toList();
-    }
-
-    /**
-     * imageId List를 통해 S3와 DB에서 이미지 삭제
-     */
-    @Transactional
-    public void deleteImageByIdList(List<Long> imageId) {
-        // S3에서 이미지 삭제
-        List<String> s3Keys = imagesRepository.findS3KeyByIdIn(imageId);
-        deleteImageByS3KeyList(s3Keys);
-
-        // DB에서 이미지 삭제
-        imagesRepository.deleteAllByIdIn(imageId);
-    }
-
-    /**
-     * S3에서 게시글 이미지 삭제
-     */
-    @Transactional
-    public void deleteImageByPostId(Long postId) {
-        // S3에서 이미지 삭제
-        List<String> s3Keys = imagesRepository.findS3KeyByPostsId(postId);
-        deleteImageByS3KeyList(s3Keys);
-
-        // DB에서 이미지 삭제
-        imagesRepository.deleteAllByPosts_Id(postId);
-    }
-
-    private void deleteImageByS3KeyList(List<String> s3Keys) {
-        if (s3Keys.size() == 1) {
-            s3Service.deleteFile(s3Keys.getFirst());
-            return;
-        }
-        s3Service.deleteFiles(s3Keys);
     }
 
     public Images findImageById(Long id) {
@@ -86,6 +59,33 @@ public class ImagesService {
             image -> ImageInfoDto.of(image.getId(), image.getImageUrl())
         ).toList();
     }
+
+    /**
+     * imageId List를 통해 S3와 DB에서 이미지 삭제
+     */
+    @Transactional
+    public void deleteImageByIdList(List<Long> imageId) {
+        // S3에서 이미지 삭제
+        List<String> s3Keys = imagesRepository.findS3KeyByIdIn(imageId);
+        s3Service.deleteByS3KeyList(s3Keys);
+
+        // DB에서 이미지 삭제
+        imagesRepository.deleteAllByIdIn(imageId);
+    }
+
+    /**
+     * S3에서 게시글 이미지 삭제
+     */
+    @Transactional
+    public void deleteImageByPostId(Long postId) {
+        // S3에서 이미지 삭제
+        List<String> s3Keys = imagesRepository.findS3KeyByPostsId(postId);
+        s3Service.deleteByS3KeyList(s3Keys);
+
+        // DB에서 이미지 삭제
+        imagesRepository.deleteAllByPosts_Id(postId);
+    }
+
 
     /**
      * 버킷이름과 s3Key를 조합하여 이미지 URL을 생성
