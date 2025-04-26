@@ -46,11 +46,7 @@ public class CommentsService {
                 .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS)
                 );
 
-        // RedisTemplate를 통해 BOARD_TTL 여부 확인
-        // key는 게시글의 이름과 게시글 식별자로 이루어진다.
-        String key = saveComments.getBoardName() + BOARD_KEY_DELIMITER + saveComments.getBoardId();
-        BoardTtlStatus boardTtlStatus = redisTemplate.hasKey(key)
-                ? BoardTtlStatus.BOARD_TTL_BEFORE : BoardTtlStatus.BOARD_TTL_AFTER;
+        BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(saveComments.getBoardName(), saveComments.getBoardId());
 
         commentsRepository.save(Comments.builder()
                 .content(saveComments.getContent())
@@ -68,12 +64,7 @@ public class CommentsService {
     @Transactional
     public void deleteCommentsByCommentId(Members member, DeleteComments deleteComments) {
         checkMemberExist(member);
-
-        // RedisTemplate를 통해 BOARD_TTL 여부 확인
-        // key는 게시글의 이름과 게시글 식별자로 이루어진다.
-        String key = deleteComments.getBoardName() + BOARD_KEY_DELIMITER + deleteComments.getBoardId();
-        BoardTtlStatus boardTtlStatus = redisTemplate.hasKey(key)
-                ? BoardTtlStatus.BOARD_TTL_BEFORE : BoardTtlStatus.BOARD_TTL_AFTER;
+        BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(deleteComments.getBoardName(), deleteComments.getBoardId());
 
         // BOARD_TTL 만료 이전의 경우에만 삭제 가능
         if(boardTtlStatus.equals(BoardTtlStatus.BOARD_TTL_BEFORE)) {
@@ -91,12 +82,7 @@ public class CommentsService {
     @Transactional
     public void updateCommentsByMembersAndCommentId(Members members, UpdateComments updateComments) {
         checkMemberExist(members);
-
-        // RedisTemplate를 통해 BOARD_TTL 여부 확인
-        // key는 게시글의 이름과 게시글 식별자로 이루어진다.
-        String key = updateComments.getBoardName() + BOARD_KEY_DELIMITER + updateComments.getBoardId();
-        BoardTtlStatus boardTtlStatus = redisTemplate.hasKey(key)
-                ? BoardTtlStatus.BOARD_TTL_BEFORE : BoardTtlStatus.BOARD_TTL_AFTER;
+        BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(updateComments.getBoardName(), updateComments.getBoardId());
 
         // BOARD_TTL 만료 이전의 경우에만 수정 가능
         if(boardTtlStatus.equals(BoardTtlStatus.BOARD_TTL_BEFORE)) {
@@ -119,5 +105,14 @@ public class CommentsService {
         if(member == null) {
             throw new NotFoundException(NOT_EXIST_MEMBERS);
         }
+    }
+
+    /**
+     * BOARD_TTL_STATUS 확인 메서드
+     */
+    private BoardTtlStatus checkBoardTtlStatus(String boardName, Long boardId) {
+        String key = boardName + BOARD_KEY_DELIMITER + boardId;
+        return redisTemplate.hasKey(key)
+                ? BoardTtlStatus.BOARD_TTL_BEFORE : BoardTtlStatus.BOARD_TTL_AFTER;
     }
 }
