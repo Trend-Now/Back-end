@@ -91,7 +91,6 @@ public class CommentsService {
 
             // 댓글 수정
             comments.update(updateComments);
-            commentsRepository.save(comments);
         } else {
             throw new BoardTtlException(BOARD_TTL_EXPIRATION);
         }
