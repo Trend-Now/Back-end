@@ -1,5 +1,6 @@
 package com.trend_now.backend.comment.domain;
 
+import com.trend_now.backend.comment.data.vo.UpdateComments;
 import com.trend_now.backend.config.domain.BaseEntity;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
@@ -34,4 +35,8 @@ public class Comments extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "board_ttl_status")
     private BoardTtlStatus boardTtlStatus;
+
+    public void update(UpdateComments updateComments) {
+        this.content = updateComments.getUpdatedComments();
+    }
 }

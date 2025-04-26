@@ -4,6 +4,7 @@ import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.comment.data.vo.DeleteComments;
 import com.trend_now.backend.comment.data.vo.SaveComments;
+import com.trend_now.backend.comment.data.vo.UpdateComments;
 import com.trend_now.backend.comment.domain.BoardTtlStatus;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
@@ -23,7 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentsService {
 
     private static final String NOT_EXIST_POSTS = "선택하신 게시글이 존재하지 않습니다.";
-    private static final String NOT_EXIST_Members = "회원이 아닙니다.";
+    private static final String NOT_EXIST_MEMBERS = "회원이 아닙니다.";
+    private static final String NOT_EXIST_COMMENTS = "댓글이 없습니다.";
     private static final String BOARD_TTL_EXPIRATION = "게시판 활성 시간이 만료되었습니다.";
     private static final String BOARD_KEY_DELIMITER  = ":";
 
@@ -40,7 +42,7 @@ public class CommentsService {
     public void saveComments(Members member, SaveComments saveComments) {
         // 회원 확인
         if(member == null) {
-            throw new NotFoundException(NOT_EXIST_Members);
+            throw new NotFoundException(NOT_EXIST_MEMBERS);
         }
 
         Posts posts = postsRepository.findById(saveComments.getPostId())
@@ -70,7 +72,7 @@ public class CommentsService {
     public void deleteCommentsByCommentId(Members member, DeleteComments deleteComments) {
         // 회원 확인
         if(member == null) {
-            throw new NotFoundException(NOT_EXIST_Members);
+            throw new NotFoundException(NOT_EXIST_MEMBERS);
         }
 
         // RedisTemplate를 통해 BOARD_TTL 여부 확인
@@ -82,6 +84,37 @@ public class CommentsService {
         // BOARD_TTL 만료 이전의 경우에만 삭제 가능
         if(boardTtlStatus.equals(BoardTtlStatus.BOARD_TTL_BEFORE)) {
             commentsRepository.deleteByIdAndMembers(deleteComments.getCommentId(), member);
+        } else {
+            throw new BoardTtlException(BOARD_TTL_EXPIRATION);
+        }
+    }
+
+    /**
+     * 댓글 수정 조건
+     * - 본인 댓글만 수정 가능
+     * - 댓글은 BOART_TTL 만료 시간 안에서만 수정 가능
+     */
+    @Transactional
+    public void updateCommentsByMembersAndCommentId(Members members, UpdateComments updateComments) {
+        // 회원 확인
+        if(members == null) {
+            throw new NotFoundException(NOT_EXIST_MEMBERS);
+        }
+
+        // RedisTemplate를 통해 BOARD_TTL 여부 확인
+        // key는 게시글의 이름과 게시글 식별자로 이루어진다.
+        String key = updateComments.getBoardName() + BOARD_KEY_DELIMITER + updateComments.getBoardId();
+        BoardTtlStatus boardTtlStatus = redisTemplate.hasKey(key)
+                ? BoardTtlStatus.BOARD_TTL_BEFORE : BoardTtlStatus.BOARD_TTL_AFTER;
+
+        // BOARD_TTL 만료 이전의 경우에만 수정 가능
+        if(boardTtlStatus.equals(BoardTtlStatus.BOARD_TTL_BEFORE)) {
+            Comments comments = commentsRepository.findByIdAndMembers(updateComments.getCommentId(), members)
+                    .orElseThrow(() -> new NotFoundException(NOT_EXIST_COMMENTS));
+
+            // 댓글 수정
+            comments.update(updateComments);
+            commentsRepository.save(comments);
         } else {
             throw new BoardTtlException(BOARD_TTL_EXPIRATION);
         }

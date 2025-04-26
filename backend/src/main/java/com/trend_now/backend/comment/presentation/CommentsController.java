@@ -4,6 +4,7 @@ import com.trend_now.backend.comment.application.CommentsService;
 import com.trend_now.backend.comment.data.vo.DeleteComments;
 import com.trend_now.backend.comment.data.vo.FindAllComments;
 import com.trend_now.backend.comment.data.vo.SaveComments;
+import com.trend_now.backend.comment.data.vo.UpdateComments;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.member.domain.Members;
@@ -26,6 +27,7 @@ public class CommentsController {
 
     private static final String SUCCESS_SAVE_COMMENT = "댓글 작성에 성공했습니다.";
     private static final String SUCCESS_DELETE_COMMENT = "댓글 삭제에 성공했습니다.";
+    private static final String SUCCESS_UPDATE_COMMENT = "댓글 수정에 성공했습니다.";
 
     private final CommentsService commentsService;
     private final CommentsRepository commentsRepository;
@@ -51,5 +53,14 @@ public class CommentsController {
             , @RequestBody DeleteComments deleteComments) {
         commentsService.deleteCommentsByCommentId(member, deleteComments);
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_COMMENT);
+    }
+
+    @Operation(summary = "댓글 수정", description = "특정 게시판의 BOARD_TTL 만료 시간 안의 댓글을 수정합니다.")
+    @PatchMapping()
+    public ResponseEntity<String> updateCommentsByMembersAndCommentId(
+            @AuthenticationPrincipal(expression = "members") Members members
+            , @RequestBody UpdateComments updateComments) {
+        commentsService.updateCommentsByMembersAndCommentId(members, updateComments);
+        return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_UPDATE_COMMENT);
     }
 }
