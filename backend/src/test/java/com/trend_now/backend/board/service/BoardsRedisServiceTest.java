@@ -37,6 +37,7 @@ public class BoardsRedisServiceTest {
 
     private static final String BOARD_RANK_KEY = "board_rank";
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
+    private static final String BOARD_THRESHOLD_KEY = "board_threshold";
     private static final String BOARD_KEY_DELIMITER = ":";
     private static final int BOARD_COUNT = 10;
     private static final long KEY_LIVE_TIME = 301L;
@@ -489,10 +490,50 @@ public class BoardsRedisServiceTest {
         //    다시 50개가 되었을 때는 시간이 추가되지 않는다
 
         //given
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        String postCount = "49";
+        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        redisTemplate.opsForValue().set(key, postCount);
+        redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getName());
 
         //when
+        boardRedisService.decrementPostCountAndExpireTime(boardId, boardSaveDto.getName());
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getName());
 
         //then
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("50");
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isGreaterThan(301L);
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isLessThan(602L);
     }
+
+    @Test
+    @DisplayName("실시간 게시판에서 게시판이 삭제되면 Set에 저장된 임계점도 사라진다")
+    public void 임계점_삭제() throws Exception {
+        //given
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        String postCount = "49";
+        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        redisTemplate.opsForValue().set(key, postCount);
+        redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getName());
+
+        //when
+        redisTemplate.delete(key);
+        boardRedisService.cleanUpExpiredKeys();
+
+        //then
+        assertThat(redisTemplate.opsForValue().get(key)).isNull();
+        assertThat(redisTemplate.opsForSet().size(BOARD_THRESHOLD_KEY)).isEqualTo(0);
+    }
+
 
 }

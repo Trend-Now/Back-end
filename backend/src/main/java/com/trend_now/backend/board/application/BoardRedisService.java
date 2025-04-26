@@ -28,6 +28,7 @@ public class BoardRedisService {
 
     private static final String BOARD_RANK_KEY = "board_rank";
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
+    private static final String BOARD_THRESHOLD_KEY = "board_threshold";
     private static final String BOARD_INITIAL_COUNT = "0";
     private static final long KEY_LIVE_TIME = 301L;
     private static final long BOARD_TIME_UP_50 = 300L;
@@ -63,6 +64,7 @@ public class BoardRedisService {
      */
     public void updatePostCountAndExpireTime(Long boardId, String boardName) {
         String key = boardName + BOARD_KEY_DELIMITER + boardId;
+
         if (redisTemplate.hasKey(key)) {
             Long currentExpireTime = redisTemplate.getExpire(key, TimeUnit.SECONDS);
             redisTemplate.opsForValue().increment(key, POSTS_INCREMENT_UNIT);
@@ -75,14 +77,28 @@ public class BoardRedisService {
             }
 
             int postCount = Integer.parseInt(postCountStr);
-            if (postCount == BOARD_TIME_UP_50_THRESHOLD) {
+            String threshold50 = boardName + BOARD_KEY_DELIMITER + boardId + BOARD_KEY_DELIMITER
+                    + BOARD_TIME_UP_50_THRESHOLD;
+            String threshold100 = boardName + BOARD_KEY_DELIMITER + boardId + BOARD_KEY_DELIMITER
+                    + (postCount / BOARD_TIME_UP_100_THRESHOLD) * BOARD_TIME_UP_100_THRESHOLD;
+
+            if (postCount == BOARD_TIME_UP_50_THRESHOLD && !Boolean.TRUE.equals(
+                    redisTemplate.opsForSet()
+                            .isMember(BOARD_THRESHOLD_KEY, threshold50))) {
                 log.info("{} 게시판의 게시글 수가 50개 도달, 시간 5분 추가!", boardName);
                 redisTemplate.expire(key, currentExpireTime + BOARD_TIME_UP_50, TimeUnit.SECONDS);
+                redisTemplate.opsForSet()
+                        .add(BOARD_THRESHOLD_KEY, threshold50);
                 log.info("{} 게시판의 증가 후 남은 시간은 {}입니다", boardName,
                         redisTemplate.getExpire(key, TimeUnit.SECONDS));
-            } else if (postCount >= BOARD_TIME_UP_100_THRESHOLD && postCount % BOARD_TIME_UP_100_THRESHOLD == 0) {
+            } else if (postCount >= BOARD_TIME_UP_100_THRESHOLD
+                    && postCount % BOARD_TIME_UP_100_THRESHOLD == 0 && !Boolean.TRUE.equals(
+                    redisTemplate.opsForSet()
+                            .isMember(BOARD_THRESHOLD_KEY, threshold100))) {
                 log.info("{} 게시판의 게시글 수가 100개 도달, 시간 10분 추가!", boardName);
                 redisTemplate.expire(key, currentExpireTime + BOARD_TIME_UP_100, TimeUnit.SECONDS);
+                redisTemplate.opsForSet()
+                        .add(BOARD_THRESHOLD_KEY, threshold100);
                 log.info("{} 게시판의 증가 후 남은 시간은 {}입니다", boardName,
                         redisTemplate.getExpire(key, TimeUnit.SECONDS));
             }
@@ -90,11 +106,11 @@ public class BoardRedisService {
     }
 
     /**
-     * 게시판에서 게시글이 삭제될 때, Redis에서 게시판의 게시글 수를 업데이트하는함수
+     * 게시판에서 게시글이 삭제될 때, Redis에서 게시판의 게시글 수를 업데이트하는 함수
      */
     public void decrementPostCountAndExpireTime(Long boardId, String boardName) {
         String key = boardName + BOARD_KEY_DELIMITER + boardId;
-        if(redisTemplate.hasKey(key)) {
+        if (redisTemplate.hasKey(key)) {
             Long currentExpireTime = redisTemplate.getExpire(key, TimeUnit.SECONDS);
             redisTemplate.opsForValue().decrement(key, POSTS_INCREMENT_UNIT);
             redisTemplate.expire(key, currentExpireTime, TimeUnit.SECONDS);
@@ -116,6 +132,18 @@ public class BoardRedisService {
         allRankKey.stream()
                 .filter(key -> !Boolean.TRUE.equals(redisTemplate.hasKey(key)))
                 .forEach(key -> redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, key));
+
+        Set<String> thresholdSet = redisTemplate.opsForSet().members(BOARD_THRESHOLD_KEY);
+        if (thresholdSet == null || thresholdSet.isEmpty()) {
+            return;
+        }
+
+        thresholdSet.stream()
+                .filter(key -> {
+                    String boardKey = key.substring(0, key.lastIndexOf(BOARD_KEY_DELIMITER));
+                    return !Boolean.TRUE.equals(redisTemplate.hasKey(boardKey));
+                })
+                .forEach(key -> redisTemplate.opsForSet().remove(BOARD_THRESHOLD_KEY, key));
     }
 
     public boolean isRealTimeBoard(BoardSaveDto boardSaveDto) {
