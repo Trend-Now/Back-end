@@ -463,10 +463,23 @@ public class BoardsRedisServiceTest {
         //    같은 게시판의 게시글이 삭제되어 49개가 되어도 추가된 시간은 유지된다
 
         //given
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        String postCount = "50";
+        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        redisTemplate.opsForValue().set(key, postCount);
+        redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
 
         //when
+        boardRedisService.decrementPostCountAndExpireTime(boardId, boardSaveDto.getName());
 
         //then
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("49");
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isLessThan(301L);
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isGreaterThan(0L);
     }
 
     @Test

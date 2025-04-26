@@ -89,6 +89,18 @@ public class BoardRedisService {
         }
     }
 
+    /**
+     * 게시판에서 게시글이 삭제될 때, Redis에서 게시판의 게시글 수를 업데이트하는함수
+     */
+    public void decrementPostCountAndExpireTime(Long boardId, String boardName) {
+        String key = boardName + BOARD_KEY_DELIMITER + boardId;
+        if(redisTemplate.hasKey(key)) {
+            Long currentExpireTime = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().decrement(key, POSTS_INCREMENT_UNIT);
+            redisTemplate.expire(key, currentExpireTime, TimeUnit.SECONDS);
+        }
+    }
+
     public void setRankValidListTime() {
         String validTime = Long.toString(
                 LocalTime.now().plusSeconds(KEY_LIVE_TIME).toSecondOfDay());

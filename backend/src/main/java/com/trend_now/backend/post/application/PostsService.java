@@ -101,6 +101,8 @@ public class PostsService {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
         }
 
+        boardRedisService.decrementPostCountAndExpireTime(posts.getBoards().getId(), posts.getBoards().getName());
+
         postsRepository.deleteById(postsDeleteDto.getPostId());
     }
 
