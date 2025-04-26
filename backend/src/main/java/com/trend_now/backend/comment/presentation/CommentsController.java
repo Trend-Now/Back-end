@@ -44,9 +44,10 @@ public class CommentsController {
         return ResponseEntity.status(HttpStatus.OK).body(commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId));
     }
 
-    @Operation(summary = "댓글 삭제", description = "게시글에 댓글을 삭제합니다.")
-    @GetMapping("/{commentId}")
-    public ResponseEntity<String> deleteCommentsByCommentId(@AuthenticationPrincipal(expression = "members") Members member
+    @Operation(summary = "댓글 삭제", description = "특정 게시판의 BOARD_TTL 만료 시간 안의 댓글을 삭제합니다.")
+    @DeleteMapping()
+    public ResponseEntity<String> deleteCommentsByCommentId(
+            @AuthenticationPrincipal(expression = "members") Members member
             , @RequestBody DeleteComments deleteComments) {
         commentsService.deleteCommentsByCommentId(member, deleteComments);
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_COMMENT);

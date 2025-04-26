@@ -13,4 +13,5 @@ public class DeleteComments {
     private final Long postId;
     private final Long boardId;
     private final String boardName;
+    private final Long commentId;
 }
