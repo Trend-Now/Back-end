@@ -40,10 +40,7 @@ public class CommentsService {
      */
     @Transactional
     public void saveComments(Members member, SaveComments saveComments) {
-        // 회원 확인
-        if(member == null) {
-            throw new NotFoundException(NOT_EXIST_MEMBERS);
-        }
+        checkMemberExist(member);
 
         Posts posts = postsRepository.findById(saveComments.getPostId())
                 .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS)
@@ -70,10 +67,7 @@ public class CommentsService {
      */
     @Transactional
     public void deleteCommentsByCommentId(Members member, DeleteComments deleteComments) {
-        // 회원 확인
-        if(member == null) {
-            throw new NotFoundException(NOT_EXIST_MEMBERS);
-        }
+        checkMemberExist(member);
 
         // RedisTemplate를 통해 BOARD_TTL 여부 확인
         // key는 게시글의 이름과 게시글 식별자로 이루어진다.
@@ -96,10 +90,7 @@ public class CommentsService {
      */
     @Transactional
     public void updateCommentsByMembersAndCommentId(Members members, UpdateComments updateComments) {
-        // 회원 확인
-        if(members == null) {
-            throw new NotFoundException(NOT_EXIST_MEMBERS);
-        }
+        checkMemberExist(members);
 
         // RedisTemplate를 통해 BOARD_TTL 여부 확인
         // key는 게시글의 이름과 게시글 식별자로 이루어진다.
@@ -117,6 +108,16 @@ public class CommentsService {
             commentsRepository.save(comments);
         } else {
             throw new BoardTtlException(BOARD_TTL_EXPIRATION);
+        }
+    }
+
+    /**
+     * 사용자 인증 객체 Members 가 존재하는 지 확인하는 메서드
+     */
+    private void checkMemberExist(Members member) {
+        // 회원 확인
+        if(member == null) {
+            throw new NotFoundException(NOT_EXIST_MEMBERS);
         }
     }
 }
