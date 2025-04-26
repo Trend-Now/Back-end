@@ -6,6 +6,7 @@
  */
 package com.trend_now.backend.post.application;
 
+import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.member.domain.Members;
@@ -35,6 +36,7 @@ public class PostsService {
 
     private final PostsRepository postsRepository;
     private final BoardRepository boardRepository;
+    private final BoardRedisService boardRedisService;
 
     //게시글 조회 - 가변 타이머 작동 중에만 가능
     public Page<PostsInfoDto> findAllPostsPagingByBoardId(
@@ -61,6 +63,8 @@ public class PostsService {
                 .members(members)
                 .boards(findBoards)
                 .build();
+
+        boardRedisService.updatePostCountAndExpireTime(findBoards.getId(), findBoards.getName());
 
         postsRepository.save(posts);
         return posts.getId();
@@ -104,7 +108,8 @@ public class PostsService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Posts> posts = postsRepository.findByMembers_Id(memberId, pageable);
         return posts.stream()
-                .map(post -> new PostsInfoDto(post.getTitle(), post.getWriter(), post.getContent(), post.getViewCount()))
+                .map(post -> new PostsInfoDto(post.getTitle(), post.getWriter(), post.getContent(),
+                        post.getViewCount()))
                 .toList();
     }
 }

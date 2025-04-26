@@ -361,4 +361,93 @@ public class BoardsRedisServiceTest {
                 expectedBoardName);
     }
 
+    @Test
+    @DisplayName("게시판이 처음 만들어질 때 게시글의 수는 0개이다")
+    public void 게시판_초기생성_게시글_0개() throws Exception {
+        //given
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+
+        //when
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        //then
+        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("0");
+    }
+
+
+    @Test
+    @DisplayName("게시판의 게시글 수가 50개 이상이 되면 게시판의 시간이 5분 추가된다")
+    public void 게시글50개_게시판5분추가() throws Exception {
+        //given
+        //게시판의 게시글 수가 49개인 게시판이 주어졌을 때
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        String postCount = "49";
+        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        redisTemplate.opsForValue().set(key, postCount);
+        redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
+
+        //when
+        //게시판에 게시글이 1개 등록된다면
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getName());
+
+        //then
+        //원래 게시판의 시간에 5분이 증가한다
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("50");
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isGreaterThan(301L);
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isLessThan(602L);
+    }
+
+    @Test
+    @DisplayName("게시판의 게시글 수가 100개 이상이 되면 게시판의 시간이 10분 추가된다")
+    public void 게시글100개_게시판10분추가() throws Exception {
+        //given
+
+        //when
+
+        //then
+    }
+
+    @Test
+    @DisplayName("게시판의 게시글 수가 100개 이상이 되고, 그 다음 100개부터는 100개마다 시간이 10분 추가된다")
+    public void 게시글100개마다_게시판10분추가() throws Exception {
+        //given
+
+        //when
+
+        //then
+    }
+
+    @Test
+    @DisplayName("게시판에서 게시글이 삭제되어 임계점을 넘지 못해도 추가된 시간은 유지된다")
+    public void 게시글삭제_추가된시간유지() throws Exception {
+        //ex) 게시판의 게시글이 50개가 되어 시간이 5분 추가되었고,
+        //    같은 게시판의 게시글이 삭제되어 49개가 되어도 추가된 시간은 유지된다
+
+        //given
+
+        //when
+
+        //then
+    }
+
+    @Test
+    @DisplayName("같은 임계점을 두 번 달성해도 시간은 한 번만 추가된다")
+    public void 동일임계점_시간추가한번() throws Exception {
+        //ex) 50개가 되어 5분이 추가되었는데, 게시글이 삭제되어 49개가 되었다가
+        //    다시 50개가 되었을 때는 시간이 추가되지 않는다
+
+        //given
+
+        //when
+
+        //then
+    }
+
 }
