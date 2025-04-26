@@ -48,7 +48,7 @@ public class CommentsController {
 
     @Operation(summary = "댓글 삭제", description = "특정 게시판의 BOARD_TTL 만료 시간 안의 댓글을 삭제합니다.")
     @DeleteMapping()
-    public ResponseEntity<String> deleteCommentsByCommentId(
+    public ResponseEntity<String> deleteCommentsByMembersAndCommentId(
             @AuthenticationPrincipal(expression = "members") Members member
             , @RequestBody DeleteComments deleteComments) {
         commentsService.deleteCommentsByCommentId(member, deleteComments);
