@@ -8,6 +8,7 @@ import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.data.vo.DeleteComments;
 import com.trend_now.backend.comment.data.vo.SaveComments;
+import com.trend_now.backend.comment.data.vo.UpdateComments;
 import com.trend_now.backend.comment.domain.BoardTtlStatus;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
@@ -211,5 +212,65 @@ class CommentsServiceTest {
         System.out.println("commentsList >>> " + commentsList.toString());
         assertThat(commentsList.size()).isEqualTo(1);
         assertThat(commentsList.get(0)).isEqualTo(comments2);
+    }
+
+    @Test
+    @DisplayName("BOARD_TTL 존재 여부에 따라 댓글 수정이 결정된다")
+    void BOARD_TTL_여부에_따라_댓글_수정_결정() {
+        // given
+        // redis에 게시판 저장 및 댓글 2개 저장
+        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
+        redisTemplate.opsForValue().set(key, "실시간 게시판");
+
+        SaveComments testSaveComments = SaveComments.builder()
+                .postId(testPost.getId())
+                .boardId(testPost.getId())
+                .boardName(testBoards.getName())
+                .content("testContent")
+                .build();
+
+        commentsService.saveComments(testMembers, testSaveComments);
+        commentsService.saveComments(testMembers, testSaveComments);
+
+        List<Comments> commentsList = commentsRepository.findAll();
+        Comments comments1 = commentsList.get(0);
+        Comments comments2 = commentsList.get(1);
+
+        UpdateComments updateComments1 = UpdateComments.builder()
+                .postId(testPost.getId())
+                .boardId(testBoards.getId())
+                .boardName(testSaveComments.getBoardName())
+                .commentId(comments1.getId())
+                .updatedComments("test updated comments1")
+                .build();
+
+        UpdateComments updateComments2 = UpdateComments.builder()
+                .postId(testPost.getId())
+                .boardId(testBoards.getId())
+                .boardName(testSaveComments.getBoardName())
+                .commentId(comments1.getId())
+                .updatedComments("test updated comments2")
+                .build();
+
+
+        // when & then
+        // 하나는 BOARD_TTL 전에 수정하여 수정됨을 확인 & 나머지 하나는 BOARD_TTL 후에 수정하지만 수정안됨을 확인
+        commentsService.updateCommentsByMembersAndCommentId(testMembers, updateComments1);
+
+        // Redis에서 키 삭제하여 TTL 없는 상태로 만듦
+        redisTemplate.delete(key);
+
+        assertThatThrownBy(() -> commentsService.updateCommentsByMembersAndCommentId(testMembers, updateComments2))
+                .isInstanceOf(BoardTtlException.class)
+                .hasMessage("게시판 활성 시간이 만료되었습니다.");
+
+        commentsList = commentsRepository.findAll();
+        System.out.println("commentsList >>> " + commentsList.toString());
+        assertThat(commentsList.size()).isEqualTo(2);
+
+        // 댓글1은 수정이 되고, 댓글2는 수정이 안됨을 확인
+        assertThat(commentsList.get(0).getContent()).isEqualTo("test updated comments1");
+        assertThat(commentsList.get(1).getContent()).isEqualTo("testContent");
+
     }
 }
