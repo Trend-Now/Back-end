@@ -408,10 +408,26 @@ public class BoardsRedisServiceTest {
     @DisplayName("게시판의 게시글 수가 100개 이상이 되면 게시판의 시간이 10분 추가된다")
     public void 게시글100개_게시판10분추가() throws Exception {
         //given
+        //게시판의 게시글 수가 99개인 게시판이 주어졌을 때
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        String postCount = "99";
+        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        redisTemplate.opsForValue().set(key, postCount);
+        redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
 
         //when
+        //게시판에 게시글이 1개 등록된다면
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getName());
 
         //then
+        //원래 게시판의 시간에 10분이 증가한다
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("100");
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isGreaterThan(301L);
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isLessThan(901L);
     }
 
     @Test

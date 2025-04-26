@@ -31,8 +31,10 @@ public class BoardRedisService {
     private static final String BOARD_INITIAL_COUNT = "0";
     private static final long KEY_LIVE_TIME = 301L;
     private static final long BOARD_TIME_UP_50 = 300L;
+    private static final long BOARD_TIME_UP_100 = 600L;
     private static final int KEY_EXPIRE = 0;
-    private static final String BOARD_TIME_UP_50_THRESHOLD = "50";
+    private static final int BOARD_TIME_UP_50_THRESHOLD = 50;
+    private static final int BOARD_TIME_UP_100_THRESHOLD = 100;
 
     private static final String BOARD_KEY_DELIMITER = ":";
     private static final int BOARD_KEY_PARTS_LENGTH = 2;
@@ -66,9 +68,21 @@ public class BoardRedisService {
             redisTemplate.opsForValue().increment(key, POSTS_INCREMENT_UNIT);
             redisTemplate.expire(key, currentExpireTime, TimeUnit.SECONDS);
             log.info("{} 게시판의 증가하기 전 남은 시간은 {}입니다", boardName, currentExpireTime);
-            if (redisTemplate.opsForValue().get(key).equals(BOARD_TIME_UP_50_THRESHOLD)) {
-                log.info("{} 게시판의 게시글 수는 {}개 입니다", boardName, redisTemplate.opsForValue().get(key));
+
+            String postCountStr = redisTemplate.opsForValue().get(key);
+            if (postCountStr == null) {
+                return;
+            }
+
+            int postCount = Integer.parseInt(postCountStr);
+            if (postCount == BOARD_TIME_UP_50_THRESHOLD) {
+                log.info("{} 게시판의 게시글 수가 50개 도달, 시간 5분 추가!", boardName);
                 redisTemplate.expire(key, currentExpireTime + BOARD_TIME_UP_50, TimeUnit.SECONDS);
+                log.info("{} 게시판의 증가 후 남은 시간은 {}입니다", boardName,
+                        redisTemplate.getExpire(key, TimeUnit.SECONDS));
+            } else if (postCount == BOARD_TIME_UP_100_THRESHOLD) {
+                log.info("{} 게시판의 게시글 수가 100개 도달, 시간 10분 추가!", boardName);
+                redisTemplate.expire(key, currentExpireTime + BOARD_TIME_UP_100, TimeUnit.SECONDS);
                 log.info("{} 게시판의 증가 후 남은 시간은 {}입니다", boardName,
                         redisTemplate.getExpire(key, TimeUnit.SECONDS));
             }
