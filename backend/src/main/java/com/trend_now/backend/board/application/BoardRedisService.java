@@ -80,7 +80,7 @@ public class BoardRedisService {
                 redisTemplate.expire(key, currentExpireTime + BOARD_TIME_UP_50, TimeUnit.SECONDS);
                 log.info("{} 게시판의 증가 후 남은 시간은 {}입니다", boardName,
                         redisTemplate.getExpire(key, TimeUnit.SECONDS));
-            } else if (postCount == BOARD_TIME_UP_100_THRESHOLD) {
+            } else if (postCount >= BOARD_TIME_UP_100_THRESHOLD && postCount % BOARD_TIME_UP_100_THRESHOLD == 0) {
                 log.info("{} 게시판의 게시글 수가 100개 도달, 시간 10분 추가!", boardName);
                 redisTemplate.expire(key, currentExpireTime + BOARD_TIME_UP_100, TimeUnit.SECONDS);
                 log.info("{} 게시판의 증가 후 남은 시간은 {}입니다", boardName,
