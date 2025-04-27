@@ -2,13 +2,9 @@ package com.trend_now.backend.post.dto;
 
 import com.trend_now.backend.post.domain.Posts;
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-@Builder
-@AllArgsConstructor
 public class PostListDto {
 
     private Long postId;
@@ -18,8 +14,14 @@ public class PostListDto {
     private int likeCount;
     private LocalDateTime updatedAt;
 
+    public static PostListDto of(Posts posts, int likeCount) {
+        return new PostListDto(posts.getId(), posts.getTitle(), posts.getWriter(),
+            posts.getViewCount(), likeCount, posts.getUpdatedAt());
+    }
+
     // Repository에서 PostListDto를 생성할 때 사용
-    public PostListDto(Long id, String title, String writer, int viewCount, LocalDateTime updatedAt) {
+    public PostListDto(Long id, String title, String writer, int viewCount,
+        LocalDateTime updatedAt) {
         this.postId = id;
         this.title = title;
         this.writer = writer;
@@ -27,8 +29,12 @@ public class PostListDto {
         this.updatedAt = updatedAt;
     }
 
-    public static PostListDto of(Posts posts, int likeCount) {
-        return new PostListDto(posts.getId(), posts.getTitle(), posts.getWriter(),
-            posts.getViewCount(), likeCount, posts.getUpdatedAt());
+    private PostListDto(Long postId, String title, String writer, int viewCount, int likeCount, LocalDateTime updatedAt) {
+        this.postId = postId;
+        this.title = title;
+        this.writer = writer;
+        this.viewCount = viewCount;
+        this.likeCount = likeCount;
+        this.updatedAt = updatedAt;
     }
 }

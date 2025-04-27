@@ -48,7 +48,7 @@ public class PostsController {
         @RequestParam(required = false, defaultValue = "0") int page,
         @RequestParam(required = false, defaultValue = "10") int size) {
 
-        PostsPagingRequestDto postsPagingRequestDto = new PostsPagingRequestDto(boardId, page,
+        PostsPagingRequestDto postsPagingRequestDto = PostsPagingRequestDto.of(boardId, page,
             size);
 
         List<PostListDto> postList = postsService.findAllPostsPagingByBoardId(postsPagingRequestDto);

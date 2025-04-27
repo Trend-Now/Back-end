@@ -1,16 +1,17 @@
 package com.trend_now.backend.post.dto;
 
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@AllArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class PostInfoResponseDto {
-    private String message;
-    private PostsInfoDto postInfoDto;
+
+    private final String message;
+    private final PostsInfoDto postInfoDto;
 
     public static PostInfoResponseDto of(String message, PostsInfoDto postInfoDto) {
         return new PostInfoResponseDto(message, postInfoDto);
     }
-
 }

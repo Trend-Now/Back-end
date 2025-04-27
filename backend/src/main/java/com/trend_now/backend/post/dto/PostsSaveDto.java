@@ -5,20 +5,21 @@ package com.trend_now.backend.post.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 @Data
-@AllArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class PostsSaveDto {
 
     @NotEmpty(message = "제목을 입력해주세요.")
-    private String title;
+    private final String title;
 
     @NotEmpty(message = "내용을 입력해주세요.")
-    private String content;
+    private final String content;
 
-    private List<Long> imageIds;
+    private final List<Long> imageIds;
 
     public static PostsSaveDto of(String title, String content, List<Long> imageIds) {
         return new PostsSaveDto(title, content, imageIds);
