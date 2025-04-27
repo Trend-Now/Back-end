@@ -81,30 +81,28 @@ public class SignalKeywordService {
             }
         }
 
-        Set<String> currentKeywordSet = new HashSet<>();
-
         for (Top10 currentKeyword : currentKeywordList) {
             String keyword = currentKeyword.getKeyword();
             int currentRank = currentKeyword.getRank();
-            currentKeywordSet.add(keyword);
 
             if (previousRankMap.containsKey(keyword)) {
-                int previousRank = previousRankMap.get(keyword);
+                Integer previousRank = previousRankMap.get(keyword);
                 RankChangeType changeType;
 
-                if (currentRank < previousRank) {
-                    changeType = RankChangeType.UP;
-                } else if (currentRank > previousRank) {
-                    changeType = RankChangeType.DOWN;
+                if (previousRank != null) {
+                    if (currentRank < previousRank) {
+                        changeType = RankChangeType.UP;
+                    } else if (currentRank > previousRank) {
+                        changeType = RankChangeType.DOWN;
+                    } else {
+                        changeType = RankChangeType.SAME;
+                    }
                 } else {
-                    changeType = RankChangeType.SAME;
+                    changeType = RankChangeType.NEW;
                 }
 
                 keywordDiffList.add(
                         new Top10WithDiff(currentRank, keyword, changeType, previousRank));
-            } else {
-                keywordDiffList.add(
-                        new Top10WithDiff(currentRank, keyword, RankChangeType.NEW, null));
             }
         }
 
