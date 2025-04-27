@@ -101,10 +101,14 @@ public class PostsService {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
         }
         // 삭제된 이미지 서버에서 삭제
-        imagesService.deleteImageByIdList(postsUpdateRequestDto.getDeleteImageIdList());
+        List<Long> deleteImageIdList = postsUpdateRequestDto.getDeleteImageIdList();
+        if (deleteImageIdList != null && !deleteImageIdList.isEmpty()) {
+            imagesService.deleteImageByIdList(deleteImageIdList);
+        }
         // 새로 추가된 이미지 연관관계 설정
-        if (postsUpdateRequestDto.getNewImageIdList() != null) {
-            postsUpdateRequestDto.getNewImageIdList().forEach(
+        List<Long> newImageIdList = postsUpdateRequestDto.getNewImageIdList();
+        if (newImageIdList != null && !newImageIdList.isEmpty()) {
+            newImageIdList.forEach(
                 imageId -> {
                     Images image = imagesService.findImageById(imageId);
                     image.setPosts(posts);

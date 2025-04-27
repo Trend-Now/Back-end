@@ -78,12 +78,14 @@ public class ImagesService {
      */
     @Transactional
     public void deleteImageByPostId(Long postId) {
-        // S3에서 이미지 삭제
         List<String> s3Keys = imagesRepository.findS3KeyByPostsId(postId);
-        s3Service.deleteByS3KeyList(s3Keys);
+        if (s3Keys != null && !s3Keys.isEmpty()) {
+            // S3에서 이미지 삭제
+            s3Service.deleteByS3KeyList(s3Keys);
+            // DB에서 이미지 삭제
+            imagesRepository.deleteAllByPosts_Id(postId);
+        }
 
-        // DB에서 이미지 삭제
-        imagesRepository.deleteAllByPosts_Id(postId);
     }
 
 

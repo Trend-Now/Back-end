@@ -116,7 +116,7 @@ public class PostsServiceTest {
     @DisplayName("게시판별 게시글 페이징 조회")
     public void 게시글_페이징_조회(int page, int size) {
         //given
-        PostsPagingRequestDto requestDto = new PostsPagingRequestDto(boards.getId(), page, size);
+        PostsPagingRequestDto requestDto = PostsPagingRequestDto.of(boards.getId(), page, size);
 
         //when
         List<PostListDto> result = postsService.findAllPostsPagingByBoardId(requestDto);
