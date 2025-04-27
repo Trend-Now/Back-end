@@ -20,7 +20,7 @@ public interface ImagesRepository extends JpaRepository<Images, Long> {
     @Query("SELECT i.s3key FROM Images i WHERE i.posts IS NULL")
     List<String> findS3KeyByPostsIsNull();
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM Images i WHERE i.id IN :ids")
     void deleteAllByIdIn(List<Long> ids);
 
