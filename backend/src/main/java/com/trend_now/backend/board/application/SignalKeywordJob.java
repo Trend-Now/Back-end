@@ -4,6 +4,7 @@ import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10;
+import com.trend_now.backend.board.dto.Top10WithChange;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -34,6 +35,8 @@ public class SignalKeywordJob implements Job {
         try {
             SignalKeywordDto signalKeywordDto = signalKeywordService.fetchRealTimeKeyword().block();
             boardRedisService.cleanUpExpiredKeys();
+            Top10WithChange top10WithChange = signalKeywordService.calculateRankChange(
+                    signalKeywordDto);
             for (int i = 0; i < signalKeywordDto.getTop10().size(); i++) {
 
                 /**
@@ -60,7 +63,7 @@ public class SignalKeywordJob implements Job {
             for (String clientId : allClientId) {
                 log.info("스케줄러에서 clientId: {}에게 이벤트 발행", clientId);
                 SignalKeywordEventDto event = new SignalKeywordEventDto(clientId,
-                        SIGNAL_KEYWORD_LIST_EVENT_MESSAGE, signalKeywordDto);
+                        SIGNAL_KEYWORD_LIST_EVENT_MESSAGE, top10WithChange);
                 redisPublisher.publishSignalKeywordEvent(event);
             }
         } catch (Exception e) {

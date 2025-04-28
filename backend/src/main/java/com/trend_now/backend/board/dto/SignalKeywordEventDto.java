@@ -13,5 +13,5 @@ public class SignalKeywordEventDto {
 
     private String clientId;
     private String message;
-    private SignalKeywordDto signalKeywordDto;
+    private Top10WithChange top10WithChange;
 }
