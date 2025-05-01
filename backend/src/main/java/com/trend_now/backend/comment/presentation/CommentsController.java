@@ -7,6 +7,7 @@ import com.trend_now.backend.comment.data.vo.SaveComments;
 import com.trend_now.backend.comment.data.vo.UpdateComments;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
+import com.trend_now.backend.common.Util;
 import com.trend_now.backend.member.domain.Members;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,6 +37,7 @@ public class CommentsController {
     @PostMapping()
     public ResponseEntity<String> saveComments(@AuthenticationPrincipal(expression = "members") Members member
             , @RequestBody SaveComments saveComments) {
+        Util.checkMemberExist(member);
         commentsService.saveComments(member, saveComments);
         return ResponseEntity.status(HttpStatus.CREATED).body(SUCCESS_SAVE_COMMENT);
     }
@@ -51,6 +53,7 @@ public class CommentsController {
     public ResponseEntity<String> deleteCommentsByMembersAndCommentId(
             @AuthenticationPrincipal(expression = "members") Members member
             , @RequestBody DeleteComments deleteComments) {
+        Util.checkMemberExist(member);
         commentsService.deleteCommentsByCommentId(member, deleteComments);
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_COMMENT);
     }
@@ -60,6 +63,7 @@ public class CommentsController {
     public ResponseEntity<String> updateCommentsByMembersAndCommentId(
             @AuthenticationPrincipal(expression = "members") Members members
             , @RequestBody UpdateComments updateComments) {
+        Util.checkMemberExist(members);
         commentsService.updateCommentsByMembersAndCommentId(members, updateComments);
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_UPDATE_COMMENT);
     }

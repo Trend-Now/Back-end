@@ -1,13 +1,12 @@
 package com.trend_now.backend.comment.application;
 
-import com.trend_now.backend.board.application.BoardRedisService;
-import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.comment.data.vo.DeleteComments;
 import com.trend_now.backend.comment.data.vo.SaveComments;
 import com.trend_now.backend.comment.data.vo.UpdateComments;
 import com.trend_now.backend.comment.domain.BoardTtlStatus;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
+import com.trend_now.backend.common.Util;
 import com.trend_now.backend.exception.CustomException.BoardTtlException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
@@ -24,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentsService {
 
     private static final String NOT_EXIST_POSTS = "선택하신 게시글이 존재하지 않습니다.";
-    private static final String NOT_EXIST_MEMBERS = "회원이 아닙니다.";
     private static final String NOT_EXIST_COMMENTS = "댓글이 없습니다.";
     private static final String BOARD_TTL_EXPIRATION = "게시판 활성 시간이 만료되었습니다.";
     private static final String BOARD_KEY_DELIMITER  = ":";
@@ -40,8 +38,6 @@ public class CommentsService {
      */
     @Transactional
     public void saveComments(Members member, SaveComments saveComments) {
-        checkMemberExist(member);
-
         Posts posts = postsRepository.findById(saveComments.getPostId())
                 .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS)
                 );
@@ -63,7 +59,6 @@ public class CommentsService {
      */
     @Transactional
     public void deleteCommentsByCommentId(Members member, DeleteComments deleteComments) {
-        checkMemberExist(member);
         BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(deleteComments.getBoardName(), deleteComments.getBoardId());
 
         // BOARD_TTL 만료 이전의 경우에만 삭제 가능
@@ -81,7 +76,6 @@ public class CommentsService {
      */
     @Transactional
     public void updateCommentsByMembersAndCommentId(Members members, UpdateComments updateComments) {
-        checkMemberExist(members);
         BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(updateComments.getBoardName(), updateComments.getBoardId());
 
         // BOARD_TTL 만료 이전의 경우에만 수정 가능
@@ -93,16 +87,6 @@ public class CommentsService {
             comments.update(updateComments);
         } else {
             throw new BoardTtlException(BOARD_TTL_EXPIRATION);
-        }
-    }
-
-    /**
-     * 사용자 인증 객체 Members 가 존재하는 지 확인하는 메서드
-     */
-    private void checkMemberExist(Members member) {
-        // 회원 확인
-        if(member == null) {
-            throw new NotFoundException(NOT_EXIST_MEMBERS);
         }
     }
 
