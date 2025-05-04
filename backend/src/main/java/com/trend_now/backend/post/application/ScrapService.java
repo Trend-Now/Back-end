@@ -1,8 +1,7 @@
 package com.trend_now.backend.post.application;
 
 import com.trend_now.backend.post.domain.Posts;
-import com.trend_now.backend.post.domain.Scraps;
-import com.trend_now.backend.post.dto.PostsInfoDto;
+import com.trend_now.backend.post.dto.PostListDto;
 import com.trend_now.backend.post.repository.ScrapRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -18,19 +17,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class ScrapService {
 
     private final ScrapRepository scrapRepository;
+    private final PostLikesService postLikesService;
 
-    public List<PostsInfoDto> getScrappedPostsByMemberId(Long memberId, int page, int size) {
+    public List<PostListDto> getScrappedPostsByMemberId(Long memberId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Scraps> scraps = scrapRepository.findScrapsByMembers_Id(memberId, pageable);
-        return scraps.stream()
-            .map(scrap -> {
-                Posts posts = scrap.getPosts();
-                return PostsInfoDto.builder()
-                    .title(posts.getTitle())
-                    .writer(posts.getWriter())
-                    .viewCount(posts.getViewCount())
-                    .build();
-            })
-            .toList();
+        Page<Posts> scrapPosts = scrapRepository.findScrapPostsByMemberId(memberId, pageable);
+
+        return scrapPosts.getContent().stream().map(post -> {
+            // 게시글 좋아요 개수 조회
+            int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(), post.getId());
+            return PostListDto.of(post, postLikesCount);
+        }).toList();
     }
 }

@@ -1,16 +1,17 @@
 package com.trend_now.backend.image.dto;
 
 import java.util.List;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@AllArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class ImageUrlResponseDto {
-    private String message;
-    private List<String> imageUrls;
+    private final String message;
+    private final List<ImageInfoDto> imageUploadDto;
 
-    public static ImageUrlResponseDto of(String message, List<String> imageUrls) {
-        return new ImageUrlResponseDto(message, imageUrls);
+    public static ImageUrlResponseDto of(String message, List<ImageInfoDto> ImageInfoDtoList) {
+        return new ImageUrlResponseDto(message, ImageInfoDtoList);
     }
 }

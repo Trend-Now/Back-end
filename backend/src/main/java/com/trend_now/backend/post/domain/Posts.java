@@ -52,8 +52,8 @@ public class Posts extends BaseEntity {
     @JoinColumn(name = "member_id")
     private Members members;
 
-    public boolean isSameWriter(String writer) {
-        return this.writer.equals(writer);
+    public boolean isNotSameId(Long id) {
+        return !this.members.getId().equals(id);
     }
 
     public void changePosts(String title, String content) {

@@ -57,6 +57,14 @@ public class S3Service {
         return s3Key;
     }
 
+    public void deleteByS3KeyList(List<String> s3Keys) {
+        if (s3Keys.size() == 1) {
+            deleteFile(s3Keys.getFirst());
+            return;
+        }
+        deleteFiles(s3Keys);
+    }
+
     /**
      * S3 단일 파일을 삭제하는 메서드
      * @param s3Key 삭제할 S3 객체 key
