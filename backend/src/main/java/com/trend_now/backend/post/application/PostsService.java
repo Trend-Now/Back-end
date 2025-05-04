@@ -48,10 +48,14 @@ public class PostsService {
             postsPagingRequestDto.getSize());
 
         // boardsId에 속하는 게시글 조회
-        Page<PostListDto> postListDtoPage = postsRepository.findAllByBoardsId(
-            postsPagingRequestDto.getBoardId(), pageable);
+        Page<Posts> postsPage = postsRepository.findAllByBoards_Id(postsPagingRequestDto.getBoardId(), pageable);
         // 게시글 목록을 PostListDto로 변환
-        return postListDtoPage.getContent();
+        return postsPage.getContent().stream()
+            .map(post -> {
+                int postLikesCount = postLikesService.getPostLikesCount(postsPagingRequestDto.getBoardId(),
+                    post.getId());
+                return PostListDto.of(post, postLikesCount);
+            }).toList();
     }
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
