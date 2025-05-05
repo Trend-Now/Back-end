@@ -22,7 +22,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/comments")
+@RequestMapping("/api/v1/boards/{boardId}/posts/{postId}/comments")
 @Tag(name = "Comment API", description = "댓글 관련 API")
 public class CommentsController {
 
@@ -43,7 +43,7 @@ public class CommentsController {
     }
 
     @Operation(summary = "댓글 조회", description = "게시글에 댓글을 조회합니다.")
-    @GetMapping("/{postId}")
+    @GetMapping()
     public ResponseEntity<List<FindAllComments>> findAllCommentsByPostId(@PathVariable Long postId) {
         return ResponseEntity.status(HttpStatus.OK).body(commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId));
     }
