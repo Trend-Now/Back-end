@@ -9,8 +9,8 @@ import lombok.Getter;
 @Getter
 public class DeleteCommentsDto {
 
-    private Long postId;
     private Long boardId;
+    private Long postId;
     private String boardName;
     private Long commentId;
 

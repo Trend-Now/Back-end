@@ -13,8 +13,8 @@ public class SaveCommentsDto {
      * - CommentsService에서 사용되는 BOARD_TTL 획득을 위한 key가 "boardName:boardId" 이기 때문에 데이터를 받아와야 한다.
      * - ex. 트렌드나우:4
      */
-    private Long postId;
     private Long boardId;
+    private Long postId;
     private String boardName;
     private String content;
 
