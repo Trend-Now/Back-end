@@ -1,16 +1,14 @@
 package com.trend_now.backend.comment.data.dto;
 
 import com.trend_now.backend.comment.domain.BoardTtlStatus;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Builder
+@ToString
 public class FindAllCommentsDto {
 
     private final LocalDateTime createdAt;
