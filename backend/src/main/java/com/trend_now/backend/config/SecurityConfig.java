@@ -47,7 +47,7 @@ public class SecurityConfig {
                                 "/api/v1/timeSync", "/api/v1/subscribe", "/api/v1/unsubscribe", "/sse-test"
                         , "/api/v1/member/test-jwt")
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/comments/*")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/boards/**")
                         .permitAll()
                         .anyRequest().authenticated())
 
