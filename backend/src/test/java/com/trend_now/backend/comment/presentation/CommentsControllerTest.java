@@ -4,6 +4,7 @@ import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
+import com.trend_now.backend.comment.data.vo.SaveCommentsRequest;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
@@ -82,16 +83,12 @@ class CommentsControllerTest {
     void 비회원_댓글_작성_불가능() {
         // given
         // 로그인 안한 상태로 댓글 작성을 요청
-        SaveCommentsDto saveCommentsDto = SaveCommentsDto.builder()
-                .postId(testPost.getId())
-                .boardId(testPost.getId())
-                .boardName(testBoards.getName())
-                .content("testContent")
-                .build();
+        SaveCommentsRequest saveCommentsRequest = new SaveCommentsRequest(testBoards.getName(), "testContent");
 
         // when & then
         // 유저 인증 객체 members에 대한 정보가 null 이므로 댓글 작성이 불가능해야 한다.
-        assertThatThrownBy(() -> commentsController.saveComments(null, saveCommentsDto))
+        assertThatThrownBy(() -> commentsController.saveComments(
+                testBoards.getId(), testPost.getId(), null, saveCommentsRequest))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("회원이 아닙니다.");
     }

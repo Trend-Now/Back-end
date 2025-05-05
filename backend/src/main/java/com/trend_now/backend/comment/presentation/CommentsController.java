@@ -5,6 +5,7 @@ import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
 import com.trend_now.backend.comment.data.dto.FindAllCommentsDto;
 import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
 import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
+import com.trend_now.backend.comment.data.vo.SaveCommentsRequest;
 import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.common.Util;
 import com.trend_now.backend.member.domain.Members;
@@ -33,10 +34,14 @@ public class CommentsController {
 
     @Operation(summary = "댓글 저장", description = "게시글에 댓글을 작성합니다.")
     @PostMapping()
-    public ResponseEntity<String> saveComments(@AuthenticationPrincipal(expression = "members") Members member
-            , @RequestBody SaveCommentsDto saveCommentsDto) {
+    public ResponseEntity<String> saveComments(
+            @PathVariable Long boardId
+            , @PathVariable Long postId
+            , @AuthenticationPrincipal(expression = "members") Members member
+            , @RequestBody SaveCommentsRequest saveCommentsRequest) {
         Util.checkMemberExist(member);
-        commentsService.saveComments(member, saveCommentsDto);
+        commentsService.saveComments(member, SaveCommentsDto.of(
+                boardId, postId, saveCommentsRequest.getBoardName(), saveCommentsRequest.getContent()));
         return ResponseEntity.status(HttpStatus.CREATED).body(SUCCESS_SAVE_COMMENT);
     }
 

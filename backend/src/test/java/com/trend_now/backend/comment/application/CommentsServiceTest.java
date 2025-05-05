@@ -96,25 +96,6 @@ class CommentsServiceTest {
     }
 
     @Test
-    @DisplayName("회원만 댓글 작성이 가능하다")
-    void 비회원_댓글_작성_불가능() {
-        // given
-        // 로그인 안한 상태로 댓글 작성을 요청
-        SaveCommentsDto saveCommentsDto = SaveCommentsDto.builder()
-                .postId(testPost.getId())
-                .boardId(testPost.getId())
-                .boardName(testBoards.getName())
-                .content("testContent")
-                .build();
-
-        // when & then
-        // 유저 인증 객체 members에 대한 정보가 null 이므로 댓글 작성이 불가능해야 한다.
-        assertThatThrownBy(() -> commentsService.saveComments(null, saveCommentsDto))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessage("회원이 아닙니다.");
-    }
-
-    @Test
     @DisplayName("BOARD_TTL 존재 여부에 따라 boardTtlStatus가 다르게 저장된다")
     void BOARD_TTL_여부에_따라_boardTtlStatus가_결정() {
         // given
@@ -122,12 +103,8 @@ class CommentsServiceTest {
         String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
         redisTemplate.opsForValue().set(key, "실시간 게시판");
 
-        SaveCommentsDto testSaveCommentsDto = SaveCommentsDto.builder()
-                .postId(testPost.getId())
-                .boardId(testPost.getId())
-                .boardName(testBoards.getName())
-                .content("testContent")
-                .build();
+        SaveCommentsDto testSaveCommentsDto =
+                SaveCommentsDto.of(testBoards.getId(), testPost.getId(), testBoards.getName(), "testContent");
 
         // when
         // BOARD_TTL 존재 했을 때, 댓글을 작성
@@ -166,12 +143,8 @@ class CommentsServiceTest {
         String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
         redisTemplate.opsForValue().set(key, "실시간 게시판");
 
-        SaveCommentsDto testSaveCommentsDto = SaveCommentsDto.builder()
-                .postId(testPost.getId())
-                .boardId(testPost.getId())
-                .boardName(testBoards.getName())
-                .content("testContent")
-                .build();
+        SaveCommentsDto testSaveCommentsDto =
+                SaveCommentsDto.of(testBoards.getId(), testPost.getId(), testBoards.getName(), "testContent");
 
         commentsService.saveComments(testMembers, testSaveCommentsDto);
         commentsService.saveComments(testMembers, testSaveCommentsDto);
@@ -220,12 +193,8 @@ class CommentsServiceTest {
         String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
         redisTemplate.opsForValue().set(key, "실시간 게시판");
 
-        SaveCommentsDto testSaveCommentsDto = SaveCommentsDto.builder()
-                .postId(testPost.getId())
-                .boardId(testPost.getId())
-                .boardName(testBoards.getName())
-                .content("testContent")
-                .build();
+        SaveCommentsDto testSaveCommentsDto =
+                SaveCommentsDto.of(testBoards.getId(), testPost.getId(), testBoards.getName(), "testContent");
 
         commentsService.saveComments(testMembers, testSaveCommentsDto);
         commentsService.saveComments(testMembers, testSaveCommentsDto);
