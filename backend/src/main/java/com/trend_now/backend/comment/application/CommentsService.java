@@ -1,12 +1,11 @@
 package com.trend_now.backend.comment.application;
 
-import com.trend_now.backend.comment.data.vo.DeleteComments;
-import com.trend_now.backend.comment.data.vo.SaveComments;
-import com.trend_now.backend.comment.data.vo.UpdateComments;
+import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
+import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
+import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
 import com.trend_now.backend.comment.domain.BoardTtlStatus;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
-import com.trend_now.backend.common.Util;
 import com.trend_now.backend.exception.CustomException.BoardTtlException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
@@ -37,15 +36,15 @@ public class CommentsService {
      * - BOARD_TTL 여부에 따라 BOARD_TTL_STATUS 컬럼 값이 결정
      */
     @Transactional
-    public void saveComments(Members member, SaveComments saveComments) {
-        Posts posts = postsRepository.findById(saveComments.getPostId())
+    public void saveComments(Members member, SaveCommentsDto saveCommentsDto) {
+        Posts posts = postsRepository.findById(saveCommentsDto.getPostId())
                 .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS)
                 );
 
-        BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(saveComments.getBoardName(), saveComments.getBoardId());
+        BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(saveCommentsDto.getBoardName(), saveCommentsDto.getBoardId());
 
         commentsRepository.save(Comments.builder()
-                .content(saveComments.getContent())
+                .content(saveCommentsDto.getContent())
                 .members(member)
                 .posts(posts)
                 .boardTtlStatus(boardTtlStatus)
@@ -58,12 +57,12 @@ public class CommentsService {
      * - 댓글은 BOARD_TTL 만료 시간 안에서만 삭제가 가능
      */
     @Transactional
-    public void deleteCommentsByCommentId(Members member, DeleteComments deleteComments) {
-        BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(deleteComments.getBoardName(), deleteComments.getBoardId());
+    public void deleteCommentsByCommentId(Members member, DeleteCommentsDto deleteCommentsDto) {
+        BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(deleteCommentsDto.getBoardName(), deleteCommentsDto.getBoardId());
 
         // BOARD_TTL 만료 이전의 경우에만 삭제 가능
         if(boardTtlStatus.equals(BoardTtlStatus.BOARD_TTL_BEFORE)) {
-            commentsRepository.deleteByIdAndMembers(deleteComments.getCommentId(), member);
+            commentsRepository.deleteByIdAndMembers(deleteCommentsDto.getCommentId(), member);
         } else {
             throw new BoardTtlException(BOARD_TTL_EXPIRATION);
         }
@@ -75,16 +74,16 @@ public class CommentsService {
      * - 댓글은 BOART_TTL 만료 시간 안에서만 수정 가능
      */
     @Transactional
-    public void updateCommentsByMembersAndCommentId(Members members, UpdateComments updateComments) {
-        BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(updateComments.getBoardName(), updateComments.getBoardId());
+    public void updateCommentsByMembersAndCommentId(Members members, UpdateCommentsDto updateCommentsDto) {
+        BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(updateCommentsDto.getBoardName(), updateCommentsDto.getBoardId());
 
         // BOARD_TTL 만료 이전의 경우에만 수정 가능
         if(boardTtlStatus.equals(BoardTtlStatus.BOARD_TTL_BEFORE)) {
-            Comments comments = commentsRepository.findByIdAndMembers(updateComments.getCommentId(), members)
+            Comments comments = commentsRepository.findByIdAndMembers(updateCommentsDto.getCommentId(), members)
                     .orElseThrow(() -> new NotFoundException(NOT_EXIST_COMMENTS));
 
             // 댓글 수정
-            comments.update(updateComments);
+            comments.update(updateCommentsDto);
         } else {
             throw new BoardTtlException(BOARD_TTL_EXPIRATION);
         }

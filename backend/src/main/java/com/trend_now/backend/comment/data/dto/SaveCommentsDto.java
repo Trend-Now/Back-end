@@ -1,4 +1,4 @@
-package com.trend_now.backend.comment.data.vo;
+package com.trend_now.backend.comment.data.dto;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -8,7 +8,7 @@ import lombok.Getter;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Builder
-public class SaveComments {
+public class SaveCommentsDto {
 
     /**
      * 댓글에 게시판 식별자와 게시판 이름이 필요한 이유

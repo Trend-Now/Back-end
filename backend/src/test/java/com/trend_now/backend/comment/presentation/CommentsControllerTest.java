@@ -3,9 +3,7 @@ package com.trend_now.backend.comment.presentation;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.comment.application.CommentsService;
-import com.trend_now.backend.comment.data.vo.SaveComments;
-import com.trend_now.backend.comment.repository.CommentsRepository;
+import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
@@ -20,14 +18,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -86,7 +82,7 @@ class CommentsControllerTest {
     void 비회원_댓글_작성_불가능() {
         // given
         // 로그인 안한 상태로 댓글 작성을 요청
-        SaveComments saveComments = SaveComments.builder()
+        SaveCommentsDto saveCommentsDto = SaveCommentsDto.builder()
                 .postId(testPost.getId())
                 .boardId(testPost.getId())
                 .boardName(testBoards.getName())
@@ -95,7 +91,7 @@ class CommentsControllerTest {
 
         // when & then
         // 유저 인증 객체 members에 대한 정보가 null 이므로 댓글 작성이 불가능해야 한다.
-        assertThatThrownBy(() -> commentsController.saveComments(null, saveComments))
+        assertThatThrownBy(() -> commentsController.saveComments(null, saveCommentsDto))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("회원이 아닙니다.");
     }

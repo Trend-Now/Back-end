@@ -6,9 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.comment.data.vo.DeleteComments;
-import com.trend_now.backend.comment.data.vo.SaveComments;
-import com.trend_now.backend.comment.data.vo.UpdateComments;
+import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
+import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
+import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
 import com.trend_now.backend.comment.domain.BoardTtlStatus;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
@@ -34,8 +34,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -102,7 +100,7 @@ class CommentsServiceTest {
     void 비회원_댓글_작성_불가능() {
         // given
         // 로그인 안한 상태로 댓글 작성을 요청
-        SaveComments saveComments = SaveComments.builder()
+        SaveCommentsDto saveCommentsDto = SaveCommentsDto.builder()
                 .postId(testPost.getId())
                 .boardId(testPost.getId())
                 .boardName(testBoards.getName())
@@ -111,7 +109,7 @@ class CommentsServiceTest {
 
         // when & then
         // 유저 인증 객체 members에 대한 정보가 null 이므로 댓글 작성이 불가능해야 한다.
-        assertThatThrownBy(() -> commentsService.saveComments(null, saveComments))
+        assertThatThrownBy(() -> commentsService.saveComments(null, saveCommentsDto))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("회원이 아닙니다.");
     }
@@ -124,7 +122,7 @@ class CommentsServiceTest {
         String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
         redisTemplate.opsForValue().set(key, "실시간 게시판");
 
-        SaveComments testSaveComments = SaveComments.builder()
+        SaveCommentsDto testSaveCommentsDto = SaveCommentsDto.builder()
                 .postId(testPost.getId())
                 .boardId(testPost.getId())
                 .boardName(testBoards.getName())
@@ -133,13 +131,13 @@ class CommentsServiceTest {
 
         // when
         // BOARD_TTL 존재 했을 때, 댓글을 작성
-        commentsService.saveComments(testMembers, testSaveComments);
+        commentsService.saveComments(testMembers, testSaveCommentsDto);
 
         // Redis에서 키 삭제하여 TTL 없는 상태로 만듦
         redisTemplate.delete(key);
 
         // BOARD_TTL 존재하지 않았을 때, 댓글을 작성
-        commentsService.saveComments(testMembers, testSaveComments);
+        commentsService.saveComments(testMembers, testSaveCommentsDto);
 
         // then
         List<Comments> commentsList = commentsRepository.findAll();
@@ -168,43 +166,43 @@ class CommentsServiceTest {
         String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
         redisTemplate.opsForValue().set(key, "실시간 게시판");
 
-        SaveComments testSaveComments = SaveComments.builder()
+        SaveCommentsDto testSaveCommentsDto = SaveCommentsDto.builder()
                 .postId(testPost.getId())
                 .boardId(testPost.getId())
                 .boardName(testBoards.getName())
                 .content("testContent")
                 .build();
 
-        commentsService.saveComments(testMembers, testSaveComments);
-        commentsService.saveComments(testMembers, testSaveComments);
+        commentsService.saveComments(testMembers, testSaveCommentsDto);
+        commentsService.saveComments(testMembers, testSaveCommentsDto);
 
         List<Comments> commentsList = commentsRepository.findAll();
         Comments comments1 = commentsList.get(0);
         Comments comments2 = commentsList.get(1);
 
-        DeleteComments deleteComments1 = DeleteComments.builder()
+        DeleteCommentsDto deleteCommentsDto1 = DeleteCommentsDto.builder()
                 .postId(testPost.getId())
                 .boardId(testBoards.getId())
-                .boardName(testSaveComments.getBoardName())
+                .boardName(testSaveCommentsDto.getBoardName())
                 .commentId(comments1.getId())
                 .build();
 
-        DeleteComments deleteComments2 = DeleteComments.builder()
+        DeleteCommentsDto deleteCommentsDto2 = DeleteCommentsDto.builder()
                 .postId(testPost.getId())
                 .boardId(testBoards.getId())
-                .boardName(testSaveComments.getBoardName())
+                .boardName(testSaveCommentsDto.getBoardName())
                 .commentId(comments2.getId())
                 .build();
 
 
         // when & then
         // 하나는 BOARD_TTL 전에 삭제하여 삭제됨을 확인 & 나머지 하나는 BOARD_TTL 후에 삭제하지만 삭제안됨을 확인
-        commentsService.deleteCommentsByCommentId(testMembers, deleteComments1);
+        commentsService.deleteCommentsByCommentId(testMembers, deleteCommentsDto1);
 
         // Redis에서 키 삭제하여 TTL 없는 상태로 만듦
         redisTemplate.delete(key);
 
-        assertThatThrownBy(() -> commentsService.deleteCommentsByCommentId(testMembers, deleteComments2))
+        assertThatThrownBy(() -> commentsService.deleteCommentsByCommentId(testMembers, deleteCommentsDto2))
                 .isInstanceOf(BoardTtlException.class)
                 .hasMessage("게시판 활성 시간이 만료되었습니다.");
 
@@ -222,32 +220,32 @@ class CommentsServiceTest {
         String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
         redisTemplate.opsForValue().set(key, "실시간 게시판");
 
-        SaveComments testSaveComments = SaveComments.builder()
+        SaveCommentsDto testSaveCommentsDto = SaveCommentsDto.builder()
                 .postId(testPost.getId())
                 .boardId(testPost.getId())
                 .boardName(testBoards.getName())
                 .content("testContent")
                 .build();
 
-        commentsService.saveComments(testMembers, testSaveComments);
-        commentsService.saveComments(testMembers, testSaveComments);
+        commentsService.saveComments(testMembers, testSaveCommentsDto);
+        commentsService.saveComments(testMembers, testSaveCommentsDto);
 
         List<Comments> commentsList = commentsRepository.findAll();
         Comments comments1 = commentsList.get(0);
         Comments comments2 = commentsList.get(1);
 
-        UpdateComments updateComments1 = UpdateComments.builder()
+        UpdateCommentsDto updateCommentsDto1 = UpdateCommentsDto.builder()
                 .postId(testPost.getId())
                 .boardId(testBoards.getId())
-                .boardName(testSaveComments.getBoardName())
+                .boardName(testSaveCommentsDto.getBoardName())
                 .commentId(comments1.getId())
                 .updatedComments("test updated comments1")
                 .build();
 
-        UpdateComments updateComments2 = UpdateComments.builder()
+        UpdateCommentsDto updateCommentsDto2 = UpdateCommentsDto.builder()
                 .postId(testPost.getId())
                 .boardId(testBoards.getId())
-                .boardName(testSaveComments.getBoardName())
+                .boardName(testSaveCommentsDto.getBoardName())
                 .commentId(comments1.getId())
                 .updatedComments("test updated comments2")
                 .build();
@@ -255,12 +253,12 @@ class CommentsServiceTest {
 
         // when & then
         // 하나는 BOARD_TTL 전에 수정하여 수정됨을 확인 & 나머지 하나는 BOARD_TTL 후에 수정하지만 수정안됨을 확인
-        commentsService.updateCommentsByMembersAndCommentId(testMembers, updateComments1);
+        commentsService.updateCommentsByMembersAndCommentId(testMembers, updateCommentsDto1);
 
         // Redis에서 키 삭제하여 TTL 없는 상태로 만듦
         redisTemplate.delete(key);
 
-        assertThatThrownBy(() -> commentsService.updateCommentsByMembersAndCommentId(testMembers, updateComments2))
+        assertThatThrownBy(() -> commentsService.updateCommentsByMembersAndCommentId(testMembers, updateCommentsDto2))
                 .isInstanceOf(BoardTtlException.class)
                 .hasMessage("게시판 활성 시간이 만료되었습니다.");
 

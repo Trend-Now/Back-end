@@ -1,17 +1,15 @@
 package com.trend_now.backend.comment.presentation;
 
 import com.trend_now.backend.comment.application.CommentsService;
-import com.trend_now.backend.comment.data.vo.DeleteComments;
-import com.trend_now.backend.comment.data.vo.FindAllComments;
-import com.trend_now.backend.comment.data.vo.SaveComments;
-import com.trend_now.backend.comment.data.vo.UpdateComments;
-import com.trend_now.backend.comment.domain.Comments;
+import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
+import com.trend_now.backend.comment.data.dto.FindAllCommentsDto;
+import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
+import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
 import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.common.Util;
 import com.trend_now.backend.member.domain.Members;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,15 +34,15 @@ public class CommentsController {
     @Operation(summary = "댓글 저장", description = "게시글에 댓글을 작성합니다.")
     @PostMapping()
     public ResponseEntity<String> saveComments(@AuthenticationPrincipal(expression = "members") Members member
-            , @RequestBody SaveComments saveComments) {
+            , @RequestBody SaveCommentsDto saveCommentsDto) {
         Util.checkMemberExist(member);
-        commentsService.saveComments(member, saveComments);
+        commentsService.saveComments(member, saveCommentsDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(SUCCESS_SAVE_COMMENT);
     }
 
     @Operation(summary = "댓글 조회", description = "게시글에 댓글을 조회합니다.")
     @GetMapping()
-    public ResponseEntity<List<FindAllComments>> findAllCommentsByPostId(@PathVariable Long postId) {
+    public ResponseEntity<List<FindAllCommentsDto>> findAllCommentsByPostId(@PathVariable Long postId) {
         return ResponseEntity.status(HttpStatus.OK).body(commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId));
     }
 
@@ -52,9 +50,9 @@ public class CommentsController {
     @DeleteMapping()
     public ResponseEntity<String> deleteCommentsByMembersAndCommentId(
             @AuthenticationPrincipal(expression = "members") Members member
-            , @RequestBody DeleteComments deleteComments) {
+            , @RequestBody DeleteCommentsDto deleteCommentsDto) {
         Util.checkMemberExist(member);
-        commentsService.deleteCommentsByCommentId(member, deleteComments);
+        commentsService.deleteCommentsByCommentId(member, deleteCommentsDto);
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_COMMENT);
     }
 
@@ -62,9 +60,9 @@ public class CommentsController {
     @PatchMapping()
     public ResponseEntity<String> updateCommentsByMembersAndCommentId(
             @AuthenticationPrincipal(expression = "members") Members members
-            , @RequestBody UpdateComments updateComments) {
+            , @RequestBody UpdateCommentsDto updateCommentsDto) {
         Util.checkMemberExist(members);
-        commentsService.updateCommentsByMembersAndCommentId(members, updateComments);
+        commentsService.updateCommentsByMembersAndCommentId(members, updateCommentsDto);
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_UPDATE_COMMENT);
     }
 }
