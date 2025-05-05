@@ -153,19 +153,11 @@ class CommentsServiceTest {
         Comments comments1 = commentsList.get(0);
         Comments comments2 = commentsList.get(1);
 
-        DeleteCommentsDto deleteCommentsDto1 = DeleteCommentsDto.builder()
-                .postId(testPost.getId())
-                .boardId(testBoards.getId())
-                .boardName(testSaveCommentsDto.getBoardName())
-                .commentId(comments1.getId())
-                .build();
+        DeleteCommentsDto deleteCommentsDto1 = DeleteCommentsDto.of(
+                testBoards.getId(), testPost.getId(), testBoards.getName(), comments1.getId());
 
-        DeleteCommentsDto deleteCommentsDto2 = DeleteCommentsDto.builder()
-                .postId(testPost.getId())
-                .boardId(testBoards.getId())
-                .boardName(testSaveCommentsDto.getBoardName())
-                .commentId(comments2.getId())
-                .build();
+        DeleteCommentsDto deleteCommentsDto2 = DeleteCommentsDto.of(
+                testBoards.getId(), testPost.getId(), testBoards.getName(), comments2.getId());
 
 
         // when & then

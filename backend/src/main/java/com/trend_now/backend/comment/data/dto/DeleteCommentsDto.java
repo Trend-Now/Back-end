@@ -7,11 +7,14 @@ import lombok.Getter;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@Builder
 public class DeleteCommentsDto {
 
-    private final Long postId;
-    private final Long boardId;
-    private final String boardName;
-    private final Long commentId;
+    private Long postId;
+    private Long boardId;
+    private String boardName;
+    private Long commentId;
+
+    public static DeleteCommentsDto of(Long boardId, Long postId, String boardName, Long commentId) {
+        return new DeleteCommentsDto(boardId, postId, boardName, commentId);
+    }
 }

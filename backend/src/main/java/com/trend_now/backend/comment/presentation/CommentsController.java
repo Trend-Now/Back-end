@@ -5,6 +5,7 @@ import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
 import com.trend_now.backend.comment.data.dto.FindAllCommentsDto;
 import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
 import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
+import com.trend_now.backend.comment.data.vo.DeleteCommentsRequest;
 import com.trend_now.backend.comment.data.vo.SaveCommentsRequest;
 import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.common.Util;
@@ -52,12 +53,16 @@ public class CommentsController {
     }
 
     @Operation(summary = "댓글 삭제", description = "특정 게시판의 BOARD_TTL 만료 시간 안의 댓글을 삭제합니다.")
-    @DeleteMapping()
+    @DeleteMapping("/{commentId}")
     public ResponseEntity<String> deleteCommentsByMembersAndCommentId(
-            @AuthenticationPrincipal(expression = "members") Members member
-            , @RequestBody DeleteCommentsDto deleteCommentsDto) {
+            @PathVariable Long boardId
+            , @PathVariable Long postId
+            , @PathVariable Long commentId
+            , @AuthenticationPrincipal(expression = "members") Members member
+            , @RequestBody DeleteCommentsRequest deleteCommentsRequest) {
         Util.checkMemberExist(member);
-        commentsService.deleteCommentsByCommentId(member, deleteCommentsDto);
+        commentsService.deleteCommentsByCommentId(member, DeleteCommentsDto.of(
+                boardId, postId, deleteCommentsRequest.getBoardName(), commentId));
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_COMMENT);
     }
 
