@@ -7,12 +7,16 @@ import lombok.Getter;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@Builder
 public class UpdateCommentsDto {
 
-    private final Long postId;
-    private final Long boardId;
-    private final String boardName;
-    private final Long commentId;
-    private final String updatedComments;
+    private Long postId;
+    private Long boardId;
+    private String boardName;
+    private Long commentId;
+    private String updatedComments;
+
+    public static UpdateCommentsDto of(
+            Long boardId, Long postId, String boardName, Long commentId, String updatedComments) {
+        return new UpdateCommentsDto(boardId, postId, boardName, commentId, updatedComments);
+    }
 }

@@ -67,7 +67,7 @@ class CommentsServiceTest {
     private Members testMembers;
     private Boards testBoards;
 
-    private static final String BOARD_KEY_DELIMITER  = ":";
+    private static final String BOARD_KEY_DELIMITER = ":";
 
     @BeforeEach
     public void setUp() {
@@ -195,21 +195,11 @@ class CommentsServiceTest {
         Comments comments1 = commentsList.get(0);
         Comments comments2 = commentsList.get(1);
 
-        UpdateCommentsDto updateCommentsDto1 = UpdateCommentsDto.builder()
-                .postId(testPost.getId())
-                .boardId(testBoards.getId())
-                .boardName(testSaveCommentsDto.getBoardName())
-                .commentId(comments1.getId())
-                .updatedComments("test updated comments1")
-                .build();
+        UpdateCommentsDto updateCommentsDto1 = UpdateCommentsDto.of(
+                testBoards.getId(), testPost.getId(), testBoards.getName(), comments1.getId(), "test updated comments1");
 
-        UpdateCommentsDto updateCommentsDto2 = UpdateCommentsDto.builder()
-                .postId(testPost.getId())
-                .boardId(testBoards.getId())
-                .boardName(testSaveCommentsDto.getBoardName())
-                .commentId(comments1.getId())
-                .updatedComments("test updated comments2")
-                .build();
+        UpdateCommentsDto updateCommentsDto2 = UpdateCommentsDto.of(
+                testBoards.getId(), testPost.getId(), testBoards.getName(), comments2.getId(), "test updated comments1");
 
 
         // when & then

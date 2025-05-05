@@ -7,6 +7,7 @@ import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
 import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
 import com.trend_now.backend.comment.data.vo.DeleteCommentsRequest;
 import com.trend_now.backend.comment.data.vo.SaveCommentsRequest;
+import com.trend_now.backend.comment.data.vo.UpdateCommentsRequest;
 import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.common.Util;
 import com.trend_now.backend.member.domain.Members;
@@ -67,12 +68,18 @@ public class CommentsController {
     }
 
     @Operation(summary = "댓글 수정", description = "특정 게시판의 BOARD_TTL 만료 시간 안의 댓글을 수정합니다.")
-    @PatchMapping()
+    @PatchMapping("/{commentId}")
     public ResponseEntity<String> updateCommentsByMembersAndCommentId(
-            @AuthenticationPrincipal(expression = "members") Members members
-            , @RequestBody UpdateCommentsDto updateCommentsDto) {
+            @PathVariable Long boardId
+            , @PathVariable Long postId
+            , @PathVariable Long commentId
+            , @AuthenticationPrincipal(expression = "members") Members members
+            , @RequestBody UpdateCommentsRequest updateCommentsRequest) {
         Util.checkMemberExist(members);
-        commentsService.updateCommentsByMembersAndCommentId(members, updateCommentsDto);
+        commentsService.updateCommentsByMembersAndCommentId(members,
+                UpdateCommentsDto.of(
+                        boardId, postId, updateCommentsRequest.getBoardName(), commentId, updateCommentsRequest.getUpdateContent()
+                ));
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_UPDATE_COMMENT);
     }
 }
