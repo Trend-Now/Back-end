@@ -14,16 +14,19 @@ import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostListDto;
+import com.trend_now.backend.post.dto.PostSearchResponseDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class PostsService {
 
+    private static final String BOARD_RANK_KEY = "board_rank";
     private static final String NOT_EXIST_BOARD = "선택하신 게시판이 존재하지 않습니다.";
     private static final String NOT_EXIST_POSTS = "선택하신 게시글이 존재하지 않습니다.";
     private static final String NOT_SAME_WRITER = "작성자가 일치하지 않습니다.";
@@ -40,6 +44,7 @@ public class PostsService {
     private final BoardRepository boardRepository;
     private final ImagesService imagesService;
     private final PostLikesService postLikesService;
+    private final RedisTemplate<String, String> redisTemplate;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
     public List<PostListDto> findAllPostsPagingByBoardId(PostsPagingRequestDto postsPagingRequestDto) {
@@ -66,6 +71,43 @@ public class PostsService {
         int postLikesCount = postLikesService.getPostLikesCount(boardId, postId);
 
         return PostsInfoDto.of(posts, postLikesCount, imagesByPost);
+    }
+
+    public PostSearchResponseDto findRealTimeBoardByKeyword(String keyword, int page, int size) {
+        // 현재 Redis에 저장된 실시간 인기 검색어 조회 (게시판 이름:게시글 ID) 형태로 되어 있음
+        Set<String> realTimeRank = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
+
+        // : 문자를 기준으로 게시판 키워드 분리
+        List<String> realTimeKeywordList = realTimeRank.stream()
+            .map(key -> key.split(":")[0])
+            .toList();
+
+        // : 문자를 기준으로 게시판 ID 분리
+        List<Long> indexes = realTimeRank.stream()
+            .map(key -> Long.parseLong(key.split(":")[1]))
+            .toList();
+
+        // 실시간 인기 검색어 중, 키워드가 포함된 검색어만 필터링
+        List<String> filteredKeywords = realTimeKeywordList.stream()
+            .filter(realTimeKeyword -> realTimeKeyword.contains(keyword))
+            .toList();
+
+        // 내용 또는 제목에 keyword가 포함된 게시글 중, 실시간 게시판에 해당하는(타이머가 남아있는) 게시글만 조회
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Posts> posts = postsRepository.findByKeywordAndRealTimeBoard(keyword, indexes, pageable);
+
+        List<PostListDto> postListDtos = posts.getContent().stream()
+            .map(post -> {
+                int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
+                    post.getId());
+                return PostListDto.of(post, postLikesCount);
+            }).toList();
+
+        return PostSearchResponseDto.builder()
+            .message("게시글 검색 조회 성공")
+            .boards(filteredKeywords)
+            .postListDtos(postListDtos)
+            .build();
     }
 
     //게시글 작성 - 가변 타이머 작동 중에만 가능

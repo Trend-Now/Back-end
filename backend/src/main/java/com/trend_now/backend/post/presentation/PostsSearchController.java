@@ -1,0 +1,35 @@
+package com.trend_now.backend.post.presentation;
+
+import com.trend_now.backend.post.application.PostsService;
+import com.trend_now.backend.post.dto.PostSearchResponseDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/v1/search")
+@Tag(name = "Search API", description = "검색 관련 API")
+public class PostsSearchController {
+
+    private final PostsService postsService;
+
+    @Operation(summary = "검색어로 게시글 조회", description = "검색어 기반으로 게시글을 조회합니다.")
+    @GetMapping("/posts")
+    public ResponseEntity<PostSearchResponseDto> findAllPostsByBoardId(
+        @RequestParam String keyword,
+        @RequestParam(required = false, defaultValue = "0") int page,
+        @RequestParam(required = false, defaultValue = "10") int size) {
+        // 현재 Redis에 저장된 실시간 인기 검색어 조회 (게시판 이름:게시글 ID) 형태로 되어 있음
+        PostSearchResponseDto response = postsService.findRealTimeBoardByKeyword(keyword, page, size);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+}
