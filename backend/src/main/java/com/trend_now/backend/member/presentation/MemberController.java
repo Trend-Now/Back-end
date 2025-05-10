@@ -10,7 +10,7 @@ import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.application.ScrapService;
-import com.trend_now.backend.post.dto.PostListDto;
+import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostListPagingResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -114,7 +114,7 @@ public class MemberController {
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size) {
 
-        List<PostListDto> scrappedPostsByMemberId = scrapService.getScrappedPostsByMemberId(
+        List<PostSummaryDto> scrappedPostsByMemberId = scrapService.getScrappedPostsByMemberId(
             member.getId(), page, size);
         return new ResponseEntity<>(
             PostListPagingResponseDto.of(FIND_SCRAP_POSTS_SUCCESS_MESSAGE, scrappedPostsByMemberId), HttpStatus.OK);
@@ -129,7 +129,7 @@ public class MemberController {
         @AuthenticationPrincipal(expression = "members") Members member,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size) {
-        List<PostListDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page,
+        List<PostSummaryDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page,
             size);
         return new ResponseEntity<>(
             PostListPagingResponseDto.of(FIND_MEMBER_POSTS_SUCCESS_MESSAGE, postsByMemberId), HttpStatus.OK);
