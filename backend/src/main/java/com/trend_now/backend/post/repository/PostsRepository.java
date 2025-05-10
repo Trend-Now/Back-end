@@ -24,4 +24,11 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
         """)
     Page<Posts> findByKeywordAndRealTimeBoard(
         @Param("keyword") String keyword, @Param("boardIds") List<Long> boardIds, Pageable pageable);
+
+    @Query("""
+        SELECT p FROM Posts p
+                WHERE (p.content LIKE %:keyword% OR p.title LIKE %:keyword%)
+                AND p.boards.boardCategory = 'FUNNY'
+        """)
+    Page<Posts> findByFixedBoardAndKeyword(@Param("keyword") String keyword, Pageable pageable);
 }

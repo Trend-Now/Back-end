@@ -6,23 +6,28 @@
  */
 package com.trend_now.backend.post.application;
 
+import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
+import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.board.util.BoardServiceUtil;
 import com.trend_now.backend.image.application.ImagesService;
 import com.trend_now.backend.image.domain.Images;
 import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
-import com.trend_now.backend.post.dto.PostListDto;
+import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostSearchResponseDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PostsService {
@@ -45,21 +51,22 @@ public class PostsService {
     private final ImagesService imagesService;
     private final PostLikesService postLikesService;
     private final RedisTemplate<String, String> redisTemplate;
+    private final BoardServiceUtil boardServiceUtil;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
-    public List<PostListDto> findAllPostsPagingByBoardId(PostsPagingRequestDto postsPagingRequestDto) {
+    public List<PostSummaryDto> findAllPostsPagingByBoardId(PostsPagingRequestDto postsPagingRequestDto) {
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
             postsPagingRequestDto.getSize());
 
         // boardsId에 속하는 게시글 조회
         Page<Posts> postsPage = postsRepository.findAllByBoards_Id(postsPagingRequestDto.getBoardId(), pageable);
-        // 게시글 목록을 PostListDto로 변환
+        // 게시글 목록을 PostSummaryDto 변환
         return postsPage.getContent().stream()
             .map(post -> {
                 int postLikesCount = postLikesService.getPostLikesCount(postsPagingRequestDto.getBoardId(),
                     post.getId());
-                return PostListDto.of(post, postLikesCount);
+                return PostSummaryDto.of(post, postLikesCount);
             }).toList();
     }
 
@@ -87,26 +94,49 @@ public class PostsService {
             .map(key -> Long.parseLong(key.split(":")[1]))
             .toList();
 
-        // 실시간 인기 검색어 중, 키워드가 포함된 검색어만 필터링
-        List<String> filteredKeywords = realTimeKeywordList.stream()
+        // 실시간 인기 검색어(게시판) 중, 키워드가 포함된 검색어(게시판)만 필터링
+        List<BoardInfoDto> filteredKeywords = realTimeRank.stream()
             .filter(realTimeKeyword -> realTimeKeyword.contains(keyword))
+            .map(boardServiceUtil.getStringBoardInfoDto())
+            .sorted(Comparator.comparingLong(BoardInfoDto::getBoardLiveTime).reversed()
+                .thenComparingDouble(BoardInfoDto::getScore))
             .toList();
 
         // 내용 또는 제목에 keyword가 포함된 게시글 중, 실시간 게시판에 해당하는(타이머가 남아있는) 게시글만 조회
         Pageable pageable = PageRequest.of(page, size);
         Page<Posts> posts = postsRepository.findByKeywordAndRealTimeBoard(keyword, indexes, pageable);
-
-        List<PostListDto> postListDtos = posts.getContent().stream()
+        List<PostSummaryDto> postSummaryDtoList = posts.getContent().stream()
             .map(post -> {
                 int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
                     post.getId());
-                return PostListDto.of(post, postLikesCount);
+                return PostSummaryDto.of(post, postLikesCount);
+            }).toList();
+
+        // 고정 게시판 조회
+        List<Boards> funnyBoardList = boardRepository.findByNameLikeAndBoardCategory("%" + keyword + "%",
+            BoardCategory.FUNNY);
+        List<BoardInfoDto> fixedBoardTitleList = funnyBoardList.stream().map(funnyBoard ->
+                BoardInfoDto.builder()
+                    .boardId(funnyBoard.getId())
+                    .boardName(funnyBoard.getName())
+                    .build())
+            .toList();
+
+        // 고정 게시판에서 게시글 조회
+        Page<Posts> byFixedBoardAndKeyword = postsRepository.findByFixedBoardAndKeyword(keyword, pageable);
+        List<PostSummaryDto> fixedPostSummaryList = byFixedBoardAndKeyword.getContent().stream()
+            .map(post -> {
+                int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
+                    post.getId());
+                return PostSummaryDto.of(post, postLikesCount);
             }).toList();
 
         return PostSearchResponseDto.builder()
             .message("게시글 검색 조회 성공")
-            .boards(filteredKeywords)
-            .postListDtos(postListDtos)
+            .boardTitleList(filteredKeywords)
+            .postList(postSummaryDtoList)
+            .fixedBoardTitleList(fixedBoardTitleList)
+            .fixedPostList(fixedPostSummaryList)
             .build();
     }
 
@@ -181,13 +211,13 @@ public class PostsService {
         postsRepository.deleteById(postId);
     }
 
-    public List<PostListDto> getPostsByMemberId(Long memberId, int page, int size) {
+    public List<PostSummaryDto> getPostsByMemberId(Long memberId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Posts> posts = postsRepository.findByMembers_Id(memberId, pageable);
         return posts.getContent().stream().map(post -> {
             int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
                 post.getId());
-            return PostListDto.of(post, postLikesCount);
+            return PostSummaryDto.of(post, postLikesCount);
         }).toList();
     }
 }
