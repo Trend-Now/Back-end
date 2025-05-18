@@ -1,9 +1,13 @@
 package com.trend_now.backend.post.presentation;
 
+import com.trend_now.backend.board.application.BoardService;
+import com.trend_now.backend.board.dto.BoardAutoCompleteResponseDto;
+import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.dto.PostSearchResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class PostsSearchController {
 
     private final PostsService postsService;
+    private final BoardService boardService;
 
-    @Operation(summary = "검색어로 게시글 조회", description = "검색어 기반으로 게시글을 조회합니다.")
+    @Operation(summary = "검색어로 게시글 조회", description = "검색어 기반으로 요구사항에 맞게 게시글을 조회합니다.")
     @GetMapping("/posts")
     public ResponseEntity<PostSearchResponseDto> findAllPostsByBoardId(
         @RequestParam String keyword,
@@ -28,6 +33,16 @@ public class PostsSearchController {
         @RequestParam(required = false, defaultValue = "10") int size) {
         // 현재 Redis에 저장된 실시간 인기 검색어 조회 (게시판 이름:게시글 ID) 형태로 되어 있음
         PostSearchResponseDto response = postsService.findRealTimeBoardByKeyword(keyword, page, size);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @Operation(summary = "검색어 자동완성", description = "게시판 이름 중 prefix가 포함된 게시판이 있으면 해당 리스트를 반환한다.")
+    @GetMapping("/complete")
+    public ResponseEntity<BoardAutoCompleteResponseDto> autoCompleteBoard(
+        @RequestParam String prefix) {
+        List<BoardInfoDto> boardList = boardService.findBoardsByPrefix(prefix);
+        BoardAutoCompleteResponseDto response = BoardAutoCompleteResponseDto.from(boardList);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
