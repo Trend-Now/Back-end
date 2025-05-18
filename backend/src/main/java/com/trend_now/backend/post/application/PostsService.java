@@ -114,7 +114,7 @@ public class PostsService {
 
         // 고정 게시판 조회
         List<Boards> funnyBoardList = boardRepository.findByNameLikeAndBoardCategory("%" + keyword + "%",
-            BoardCategory.FUNNY);
+            BoardCategory.FIXED);
         List<BoardInfoDto> fixedBoardTitleList = funnyBoardList.stream().map(funnyBoard ->
                 BoardInfoDto.builder()
                     .boardId(funnyBoard.getId())
@@ -220,4 +220,5 @@ public class PostsService {
             return PostSummaryDto.of(post, postLikesCount);
         }).toList();
     }
+
 }
