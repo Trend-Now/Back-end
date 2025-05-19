@@ -38,7 +38,7 @@ public class PostsSearchController {
 
     @Operation(summary = "검색어 자동완성", description = "게시판 이름 중 prefix가 포함된 게시판이 있으면 해당 리스트를 반환한다.")
     @GetMapping("/auto-complete")
-    public ResponseEntity<BoardAutoCompleteResponseDto> autoCompleteBoard(
+    public ResponseEntity<BoardAutoCompleteResponseDto> autoCompleteBoardName(
         @RequestParam String prefix) {
         List<BoardInfoDto> boardList = boardService.findBoardsByPrefix(prefix);
         BoardAutoCompleteResponseDto response = BoardAutoCompleteResponseDto.from(boardList);
