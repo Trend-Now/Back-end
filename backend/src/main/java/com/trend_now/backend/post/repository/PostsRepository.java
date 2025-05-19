@@ -1,5 +1,6 @@
 package com.trend_now.backend.post.repository;
 
+import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.post.domain.Posts;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -28,7 +29,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     @Query("""
         SELECT p FROM Posts p
                 WHERE (p.content LIKE %:keyword% OR p.title LIKE %:keyword%)
-                AND p.boards.boardCategory = 'FUNNY'
+                AND p.boards.boardCategory = :category
         """)
-    Page<Posts> findByFixedBoardAndKeyword(@Param("keyword") String keyword, Pageable pageable);
+    Page<Posts> findByBoardCategoryAndKeyword(@Param("keyword") String keyword, @Param("category") BoardCategory category, Pageable pageable);
 }
