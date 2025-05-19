@@ -80,11 +80,12 @@ public class BoardService {
         }
 
         // 고정 게시판 조회
-        List<BoardInfoDto> fixedBoardList = realTimeBoardCache.getFixedBoardList().stream()
+        List<BoardInfoDto> fixedBoardList = realTimeBoardCache.getFixedBoardCacheList().stream()
+            .filter(fixBoard -> fixBoard.getDisassembledBoardName().startsWith(disassemblePrefix))
             .map(fixedBoard ->
                 BoardInfoDto.builder()
-                    .boardId(fixedBoard.getId())
-                    .boardName(fixedBoard.getName())
+                    .boardId(fixedBoard.getBoardId())
+                    .boardName(fixedBoard.getBoardName())
                     .build())
             .toList();
 

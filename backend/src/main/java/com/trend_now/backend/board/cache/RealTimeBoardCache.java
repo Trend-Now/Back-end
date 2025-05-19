@@ -22,7 +22,7 @@ public class RealTimeBoardCache {
     @Getter
     private final List<BoardCacheEntry> boardCacheEntryList = new ArrayList<>();
     @Getter
-    private List<Boards> fixedBoardList;
+    private List<BoardCacheEntry> fixedBoardCacheList;
     @Getter
     private List<Long> boardCacheIdList = new ArrayList<>();
 
@@ -47,6 +47,14 @@ public class RealTimeBoardCache {
     // 고정 게시판 초기화
     @PostConstruct
     public void initFixedBoard() {
-        fixedBoardList = boardRepository.findByNameLikeAndBoardCategory("%", BoardCategory.FIXED);
+        List<Boards> fixedBoardList = boardRepository.findByNameLikeAndBoardCategory(
+            "%", BoardCategory.FIXED);
+        this.fixedBoardCacheList = fixedBoardList.stream()
+            .map(fixedBoard -> BoardCacheEntry.builder()
+                .boardId(fixedBoard.getId())
+                .boardName(fixedBoard.getName())
+                .disassembledBoardName(boardServiceUtil.disassembleText(fixedBoard.getName()))
+                .build())
+            .toList();
     }
 }
