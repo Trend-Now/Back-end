@@ -31,14 +31,13 @@ public class PostsSearchController {
         @RequestParam String keyword,
         @RequestParam(required = false, defaultValue = "0") int page,
         @RequestParam(required = false, defaultValue = "10") int size) {
-        // 현재 Redis에 저장된 실시간 인기 검색어 조회 (게시판 이름:게시글 ID) 형태로 되어 있음
         PostSearchResponseDto response = postsService.findRealTimeBoardByKeyword(keyword, page, size);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @Operation(summary = "검색어 자동완성", description = "게시판 이름 중 prefix가 포함된 게시판이 있으면 해당 리스트를 반환한다.")
-    @GetMapping("/complete")
+    @GetMapping("/auto-complete")
     public ResponseEntity<BoardAutoCompleteResponseDto> autoCompleteBoard(
         @RequestParam String prefix) {
         List<BoardInfoDto> boardList = boardService.findBoardsByPrefix(prefix);

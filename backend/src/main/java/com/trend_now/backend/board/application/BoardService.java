@@ -1,19 +1,17 @@
 package com.trend_now.backend.board.application;
 
-import static com.trend_now.backend.board.util.BoardServiceUtil.BOARD_RANK_KEY;
-
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardSaveDto;
+import com.trend_now.backend.board.dto.FixedBoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.board.util.BoardServiceUtil;
-import jakarta.annotation.PostConstruct;
+import com.trend_now.backend.board.cache.BoardCacheEntry;
+import com.trend_now.backend.board.cache.RealTimeBoardCache;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,15 +22,7 @@ public class BoardService {
 
     private final BoardRepository boardRepository;
     private final BoardServiceUtil boardServiceUtil;
-    private final RedisTemplate<String, String> redisTemplate;
-
-    public static List<Boards> fixedBoardList;
-
-    // 고정 게시판 초기화
-    @PostConstruct
-    public void initFixedBoard() {
-        fixedBoardList = boardRepository.findByNameLikeAndBoardCategory("%", BoardCategory.FIXED);
-    }
+    private final RealTimeBoardCache realTimeBoardCache;
 
     @Transactional
     public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto) {
@@ -70,33 +60,31 @@ public class BoardService {
     public List<BoardInfoDto> findBoardsByPrefix(String prefix) {
         // 공백 제거
         String trimmedPrefix = prefix.replaceAll(" ", "");
-        // 현재 Redis에 저장된 실시간 인기 검색어 조회 (게시판 이름:게시글 ID) 형태로 되어 있음
-        Set<String> realTimeRank = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
         // 입력된 prefix를 자모 분해
         String disassemblePrefix = boardServiceUtil.disassembleText(trimmedPrefix);
+        // 캐싱해놓은 실시간 인기 검색어 리스트 조회
+        List<BoardCacheEntry> boardCacheEntryList = realTimeBoardCache.getBoardCacheEntryList();
 
         List<BoardInfoDto> filteredBoards = new ArrayList<>();
-        for (String realTimeKeyword : realTimeRank) {
-            // 게시판 이름과 게시판 id 분리
-            String[] splitKeyword = realTimeKeyword.split(":");
-            String boardName = splitKeyword[0];
-            Long boardId = Long.parseLong(splitKeyword[1]);
-            // 게시판 이름을 자모 분해
-            String disassembleBoardName = boardServiceUtil.disassembleText(boardName.replaceAll(" ", ""));
+        for (BoardCacheEntry boardEntry : boardCacheEntryList) {
             // 게시판 이름이 prefix로 시작하지 않으면 continue
-            if (!disassembleBoardName.startsWith(disassemblePrefix)) continue;
+            String disassembleBoardName = boardEntry.getDisassembledBoardName();
+            if (!disassembleBoardName.startsWith(disassemblePrefix)) {
+                continue;
+            }
 
             filteredBoards.add(BoardInfoDto.builder()
-                .boardName(boardName)
-                .boardId(boardId)
+                .boardName(boardEntry.getBoardName())
+                .boardId(boardEntry.getBoardId())
                 .build());
         }
 
         // 고정 게시판 조회
-        List<BoardInfoDto> fixedBoardList = BoardService.fixedBoardList.stream().map(funnyBoard ->
+        List<BoardInfoDto> fixedBoardList = realTimeBoardCache.getFixedBoardList().stream()
+            .map(fixedBoard ->
                 BoardInfoDto.builder()
-                    .boardId(funnyBoard.getId())
-                    .boardName(funnyBoard.getName())
+                    .boardId(fixedBoard.getId())
+                    .boardName(fixedBoard.getName())
                     .build())
             .toList();
 
@@ -105,5 +93,15 @@ public class BoardService {
         result.addAll(fixedBoardList);
 
         return result;
+    }
+
+    @Transactional
+    public void addFixedBoard(FixedBoardSaveDto fixedBoardSaveDto) {
+        boardRepository.save(
+            Boards.builder()
+                .name(fixedBoardSaveDto.getBoardName())
+                .boardCategory(BoardCategory.FIXED)
+                .build());
+
     }
 }

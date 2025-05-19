@@ -6,11 +6,12 @@
  */
 package com.trend_now.backend.post.application;
 
+import com.trend_now.backend.board.cache.BoardCacheEntry;
+import com.trend_now.backend.board.cache.RealTimeBoardCache;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.board.util.BoardServiceUtil;
 import com.trend_now.backend.image.application.ImagesService;
 import com.trend_now.backend.image.domain.Images;
 import com.trend_now.backend.image.dto.ImageInfoDto;
@@ -25,13 +26,11 @@ import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,7 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class PostsService {
 
-    private static final String BOARD_RANK_KEY = "board_rank";
     private static final String NOT_EXIST_BOARD = "선택하신 게시판이 존재하지 않습니다.";
     private static final String NOT_EXIST_POSTS = "선택하신 게시글이 존재하지 않습니다.";
     private static final String NOT_SAME_WRITER = "작성자가 일치하지 않습니다.";
@@ -50,8 +48,7 @@ public class PostsService {
     private final BoardRepository boardRepository;
     private final ImagesService imagesService;
     private final PostLikesService postLikesService;
-    private final RedisTemplate<String, String> redisTemplate;
-    private final BoardServiceUtil boardServiceUtil;
+    private final RealTimeBoardCache realTimeBoardCache;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
     public List<PostSummaryDto> findAllPostsPagingByBoardId(PostsPagingRequestDto postsPagingRequestDto) {
@@ -82,29 +79,22 @@ public class PostsService {
 
     public PostSearchResponseDto findRealTimeBoardByKeyword(String keyword, int page, int size) {
         // 현재 Redis에 저장된 실시간 인기 검색어 조회 (게시판 이름:게시글 ID) 형태로 되어 있음
-        Set<String> realTimeRank = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
-
-        // : 문자를 기준으로 게시판 키워드 분리
-        List<String> realTimeKeywordList = realTimeRank.stream()
-            .map(key -> key.split(":")[0])
-            .toList();
-
-        // : 문자를 기준으로 게시판 ID 분리
-        List<Long> indexes = realTimeRank.stream()
-            .map(key -> Long.parseLong(key.split(":")[1]))
-            .toList();
+        List<BoardCacheEntry> boardCacheEntryList = realTimeBoardCache.getBoardCacheEntryList();
 
         // 실시간 인기 검색어(게시판) 중, 키워드가 포함된 검색어(게시판)만 필터링
-        List<BoardInfoDto> filteredKeywords = realTimeRank.stream()
-            .filter(realTimeKeyword -> realTimeKeyword.contains(keyword))
-            .map(boardServiceUtil.getStringBoardInfoDto())
+        List<BoardInfoDto> filteredKeywords = boardCacheEntryList.stream()
+            .filter(boardEntry -> boardEntry.getBoardName().contains(keyword))
+            .map(boardEntry -> BoardInfoDto.builder()
+                .boardId(boardEntry.getBoardId())
+                .boardName(boardEntry.getBoardName())
+                .build())
             .sorted(Comparator.comparingLong(BoardInfoDto::getBoardLiveTime).reversed()
                 .thenComparingDouble(BoardInfoDto::getScore))
             .toList();
 
         // 내용 또는 제목에 keyword가 포함된 게시글 중, 실시간 게시판에 해당하는(타이머가 남아있는) 게시글만 조회
         Pageable pageable = PageRequest.of(page, size);
-        Page<Posts> posts = postsRepository.findByKeywordAndRealTimeBoard(keyword, indexes, pageable);
+        Page<Posts> posts = postsRepository.findByKeywordAndRealTimeBoard(keyword, realTimeBoardCache.getBoardCacheIdList(), pageable);
         List<PostSummaryDto> postSummaryDtoList = posts.getContent().stream()
             .map(post -> {
                 int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
@@ -113,17 +103,17 @@ public class PostsService {
             }).toList();
 
         // 고정 게시판 조회
-        List<Boards> funnyBoardList = boardRepository.findByNameLikeAndBoardCategory("%" + keyword + "%",
+        List<Boards> fixedBoardList = boardRepository.findByNameLikeAndBoardCategory("%" + keyword + "%",
             BoardCategory.FIXED);
-        List<BoardInfoDto> fixedBoardTitleList = funnyBoardList.stream().map(funnyBoard ->
+        List<BoardInfoDto> fixedBoardTitleList = fixedBoardList.stream().map(fixedBoard ->
                 BoardInfoDto.builder()
-                    .boardId(funnyBoard.getId())
-                    .boardName(funnyBoard.getName())
+                    .boardId(fixedBoard.getId())
+                    .boardName(fixedBoard.getName())
                     .build())
             .toList();
 
         // 고정 게시판에서 게시글 조회
-        Page<Posts> byFixedBoardAndKeyword = postsRepository.findByFixedBoardAndKeyword(keyword, pageable);
+        Page<Posts> byFixedBoardAndKeyword = postsRepository.findByBoardCategoryAndKeyword(keyword, BoardCategory.FIXED, pageable);
         List<PostSummaryDto> fixedPostSummaryList = byFixedBoardAndKeyword.getContent().stream()
             .map(post -> {
                 int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
