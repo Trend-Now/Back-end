@@ -15,8 +15,10 @@ import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
 
 @Configuration
 @ConditionalOnProperty(name = "quartzScheduler.enabled", havingValue = "true", matchIfMissing = false)
@@ -40,7 +42,7 @@ public class QuartzSchedulerConfig {
         this.applicationContext = applicationContext;
     }
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void scheduleTopKeywordJob() throws SchedulerException {
         JobDataMap ctx = new JobDataMap();
         ctx.put("applicationContext", applicationContext);
