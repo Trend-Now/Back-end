@@ -10,7 +10,7 @@ import com.trend_now.backend.board.cache.BoardCacheEntry;
 import com.trend_now.backend.board.cache.RealTimeBoardCache;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
-import com.trend_now.backend.board.dto.BoardInfoDto;
+import com.trend_now.backend.board.dto.BoardSummaryDto;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.image.application.ImagesService;
 import com.trend_now.backend.image.domain.Images;
@@ -51,17 +51,20 @@ public class PostsService {
     private final RealTimeBoardCache realTimeBoardCache;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
-    public List<PostSummaryDto> findAllPostsPagingByBoardId(PostsPagingRequestDto postsPagingRequestDto) {
+    public List<PostSummaryDto> findAllPostsPagingByBoardId(
+        PostsPagingRequestDto postsPagingRequestDto) {
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
             postsPagingRequestDto.getSize());
 
         // boardsId에 속하는 게시글 조회
-        Page<Posts> postsPage = postsRepository.findAllByBoards_Id(postsPagingRequestDto.getBoardId(), pageable);
+        Page<Posts> postsPage = postsRepository.findAllByBoards_Id(
+            postsPagingRequestDto.getBoardId(), pageable);
         // 게시글 목록을 PostSummaryDto 변환
         return postsPage.getContent().stream()
             .map(post -> {
-                int postLikesCount = postLikesService.getPostLikesCount(postsPagingRequestDto.getBoardId(),
+                int postLikesCount = postLikesService.getPostLikesCount(
+                    postsPagingRequestDto.getBoardId(),
                     post.getId());
                 return PostSummaryDto.of(post, postLikesCount);
             }).toList();
@@ -77,57 +80,72 @@ public class PostsService {
         return PostsInfoDto.of(posts, postLikesCount, imagesByPost);
     }
 
+    /**
+     * 실시간 인기 게시판 실시간 인기 게시판의 게시글 고정 게시판 고정 게시판의 게시글 순서대로 조회 후 반환하는 메서드
+     */
     public PostSearchResponseDto findRealTimeBoardByKeyword(String keyword, int page, int size) {
-        // 현재 Redis에 저장된 실시간 인기 검색어 조회 (게시판 이름:게시글 ID) 형태로 되어 있음
-        List<BoardCacheEntry> boardCacheEntryList = realTimeBoardCache.getBoardCacheEntryList();
-
-        // 실시간 인기 검색어(게시판) 중, 키워드가 포함된 검색어(게시판)만 필터링
-        List<BoardInfoDto> filteredKeywords = boardCacheEntryList.stream()
-            .filter(boardEntry -> boardEntry.getBoardName().contains(keyword))
-            .map(boardEntry -> BoardInfoDto.builder()
-                .boardId(boardEntry.getBoardId())
-                .boardName(boardEntry.getBoardName())
-                .build())
-            .sorted(Comparator.comparingLong(BoardInfoDto::getBoardLiveTime).reversed()
-                .thenComparingDouble(BoardInfoDto::getScore))
-            .toList();
-
-        // 내용 또는 제목에 keyword가 포함된 게시글 중, 실시간 게시판에 해당하는(타이머가 남아있는) 게시글만 조회
         Pageable pageable = PageRequest.of(page, size);
-        Page<Posts> posts = postsRepository.findByKeywordAndRealTimeBoard(keyword, realTimeBoardCache.getBoardCacheIdList(), pageable);
-        List<PostSummaryDto> postSummaryDtoList = posts.getContent().stream()
-            .map(post -> {
-                int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
-                    post.getId());
-                return PostSummaryDto.of(post, postLikesCount);
-            }).toList();
+        // 현재 인메모리에 캐싱된 데이터 조회
+        List<BoardCacheEntry> boardCacheEntryList = realTimeBoardCache.getBoardCacheEntryList();
+        List<BoardCacheEntry> fixedBoardCacheList = realTimeBoardCache.getFixedBoardCacheList();
+        List<Long> boardCacheIdList = realTimeBoardCache.getBoardCacheIdList();
+
+        // 실시간 인기 게시판 중, 키워드가 포함된 게시판만 필터링
+        List<BoardSummaryDto> filteredKeywords = filterBoardsByKeyword(keyword, boardCacheEntryList);
+
+        // 실시간 게시판에 해당하는(타이머가 남아있는) 게시글 중, 내용 또는 제목에 keyword가 포함된 게시글 조회
+        List<PostSummaryDto> postSummaryDtoList = filterRealTimePostsByKeyword(keyword, boardCacheIdList, pageable);
 
         // 고정 게시판 조회
-        List<Boards> fixedBoardList = boardRepository.findByNameLikeAndBoardCategory("%" + keyword + "%",
-            BoardCategory.FIXED);
-        List<BoardInfoDto> fixedBoardTitleList = fixedBoardList.stream().map(fixedBoard ->
-                BoardInfoDto.builder()
-                    .boardId(fixedBoard.getId())
-                    .boardName(fixedBoard.getName())
-                    .build())
-            .toList();
+        List<BoardSummaryDto> fixedBoardTitleList = filterBoardsByKeyword(keyword, fixedBoardCacheList);
 
         // 고정 게시판에서 게시글 조회
-        Page<Posts> byFixedBoardAndKeyword = postsRepository.findByBoardCategoryAndKeyword(keyword, BoardCategory.FIXED, pageable);
-        List<PostSummaryDto> fixedPostSummaryList = byFixedBoardAndKeyword.getContent().stream()
-            .map(post -> {
-                int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
-                    post.getId());
-                return PostSummaryDto.of(post, postLikesCount);
-            }).toList();
+        List<PostSummaryDto> fixedPostSummaryList = filterFixedPostsByKeyword(keyword, pageable);
 
         return PostSearchResponseDto.builder()
             .message("게시글 검색 조회 성공")
-            .boardTitleList(filteredKeywords)
+            .boardList(filteredKeywords)
             .postList(postSummaryDtoList)
-            .fixedBoardTitleList(fixedBoardTitleList)
+            .fixedBoardList(fixedBoardTitleList)
             .fixedPostList(fixedPostSummaryList)
             .build();
+    }
+
+    private List<PostSummaryDto> filterRealTimePostsByKeyword(String keyword, List<Long> boardCacheIdList, Pageable pageable) {
+        Page<Posts> posts = postsRepository.findByKeywordAndRealTimeBoard(keyword, boardCacheIdList, pageable);
+        return convertToPostSummaryDtos(posts);
+    }
+
+    private List<BoardSummaryDto> filterBoardsByKeyword(String keyword,
+        List<BoardCacheEntry> BoardCacheEntryList) {
+        return BoardCacheEntryList.stream()
+            .filter(boardEntry -> boardEntry.getBoardName().contains(keyword))
+            .map(
+                boardEntry -> BoardSummaryDto.builder()
+                    .boardId(boardEntry.getBoardId())
+                    .boardName(boardEntry.getBoardName())
+                    .createdAt(boardEntry.getCreatedAt())
+                    .updatedAt(boardEntry.getUpdatedAt())
+                    .build())
+            .sorted(Comparator.comparing(BoardSummaryDto::getUpdatedAt).reversed()
+                .thenComparing(BoardSummaryDto::getCreatedAt, Comparator.reverseOrder()))
+            .toList();
+    }
+
+    private List<PostSummaryDto> filterFixedPostsByKeyword(String keyword, Pageable pageable) {
+
+        Page<Posts> fixedPostsPage = postsRepository.findByBoardCategoryAndKeyword(keyword,
+            BoardCategory.FIXED, pageable);
+        return convertToPostSummaryDtos(fixedPostsPage);
+    }
+
+    private List<PostSummaryDto> convertToPostSummaryDtos(Page<Posts> byFixedBoardAndKeyword) {
+        return byFixedBoardAndKeyword.getContent().stream()
+            .map(post -> {
+                int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
+                    post.getId());
+                return PostSummaryDto.of(post, postLikesCount);
+            }).toList();
     }
 
     //게시글 작성 - 가변 타이머 작동 중에만 가능
@@ -159,7 +177,8 @@ public class PostsService {
 
     //게시글 수정 - 가변 타이머 작동 중에만 가능
     @Transactional
-    public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long postId, Long memberId) {
+    public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long postId,
+        Long memberId) {
         Posts posts = postsRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
 
