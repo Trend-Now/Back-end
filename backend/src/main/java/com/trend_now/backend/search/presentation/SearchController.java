@@ -3,7 +3,6 @@ package com.trend_now.backend.search.presentation;
 import com.trend_now.backend.board.application.BoardService;
 import com.trend_now.backend.board.dto.BoardAutoCompleteResponseDto;
 import com.trend_now.backend.board.dto.BoardInfoDto;
-import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.search.aplication.SearchService;
 import com.trend_now.backend.search.dto.SearchResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,7 +31,7 @@ public class SearchController {
         @RequestParam String keyword,
         @RequestParam(required = false, defaultValue = "0") int page,
         @RequestParam(required = false, defaultValue = "10") int size) {
-        SearchResponseDto response = searchService.findRealTimeBoardByKeyword(keyword, page, size);
+        SearchResponseDto response = searchService.findBoardAndPostByKeyword(keyword, page, size);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

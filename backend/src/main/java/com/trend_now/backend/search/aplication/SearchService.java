@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -35,8 +36,9 @@ public class SearchService {
      * 순서대로 조회 후 반환하는 메서드
      * </pre>
      */
-    public SearchResponseDto findRealTimeBoardByKeyword(String keyword, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    public SearchResponseDto findBoardAndPostByKeyword(String keyword, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size,
+            Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.desc("createdAt")));
         // 현재 인메모리에 캐싱된 데이터 조회
         List<BoardCacheEntry> boardCacheEntryList = realTimeBoardCache.getBoardCacheEntryList();
         List<BoardCacheEntry> fixedBoardCacheList = realTimeBoardCache.getFixedBoardCacheList();
@@ -65,8 +67,10 @@ public class SearchService {
             .build();
     }
 
-    private List<PostSummaryDto> filterRealTimePostsByKeyword(String keyword, List<Long> boardCacheIdList, Pageable pageable) {
-        Page<Posts> posts = postsRepository.findByKeywordAndRealTimeBoard(keyword, boardCacheIdList, pageable);
+    private List<PostSummaryDto> filterRealTimePostsByKeyword(String keyword,
+        List<Long> boardCacheIdList, Pageable pageable) {
+        Page<Posts> posts = postsRepository.findByKeywordAndRealTimeBoard(keyword, boardCacheIdList,
+            pageable);
         return convertToPostSummaryDtos(posts);
     }
 
