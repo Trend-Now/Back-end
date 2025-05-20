@@ -1,6 +1,6 @@
 package com.trend_now.backend.board.cache;
 
-import com.trend_now.backend.board.domain.BoardCategory;
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -11,4 +11,7 @@ public class BoardCacheEntry {
     private Long boardId;
     private String boardName;
     private String disassembledBoardName;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
 }
