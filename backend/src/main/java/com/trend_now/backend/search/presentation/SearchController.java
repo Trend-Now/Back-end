@@ -1,10 +1,11 @@
-package com.trend_now.backend.post.presentation;
+package com.trend_now.backend.search.presentation;
 
 import com.trend_now.backend.board.application.BoardService;
 import com.trend_now.backend.board.dto.BoardAutoCompleteResponseDto;
 import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.post.application.PostsService;
-import com.trend_now.backend.post.dto.PostSearchResponseDto;
+import com.trend_now.backend.search.aplication.SearchService;
+import com.trend_now.backend.search.dto.SearchResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -20,18 +21,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/search")
 @Tag(name = "Search API", description = "검색 관련 API")
-public class PostsSearchController {
+public class SearchController {
 
-    private final PostsService postsService;
     private final BoardService boardService;
+    private final SearchService searchService;
 
     @Operation(summary = "검색어로 게시글 조회", description = "검색어 기반으로 요구사항에 맞게 게시글을 조회합니다.")
     @GetMapping("/posts")
-    public ResponseEntity<PostSearchResponseDto> findAllPostsByBoardId(
+    public ResponseEntity<SearchResponseDto> findAllPostsByBoardId(
         @RequestParam String keyword,
         @RequestParam(required = false, defaultValue = "0") int page,
         @RequestParam(required = false, defaultValue = "10") int size) {
-        PostSearchResponseDto response = postsService.findRealTimeBoardByKeyword(keyword, page, size);
+        SearchResponseDto response = searchService.findRealTimeBoardByKeyword(keyword, page, size);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

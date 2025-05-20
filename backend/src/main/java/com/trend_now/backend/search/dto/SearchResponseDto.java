@@ -1,14 +1,14 @@
-package com.trend_now.backend.post.dto;
+package com.trend_now.backend.search.dto;
 
-import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardSummaryDto;
+import com.trend_now.backend.post.dto.PostSummaryDto;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
-public class PostSearchResponseDto {
+public class SearchResponseDto {
 
     private String message;
 
