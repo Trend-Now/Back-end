@@ -103,6 +103,6 @@ public class BoardService {
                 .name(fixedBoardSaveDto.getBoardName())
                 .boardCategory(BoardCategory.FIXED)
                 .build());
-
+        realTimeBoardCache.initFixedBoard();
     }
 }
