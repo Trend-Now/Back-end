@@ -1,6 +1,5 @@
 package com.trend_now.backend.search.presentation;
 
-import com.trend_now.backend.board.application.BoardService;
 import com.trend_now.backend.board.dto.BoardAutoCompleteResponseDto;
 import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.search.aplication.SearchService;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Search API", description = "검색 관련 API")
 public class SearchController {
 
-    private final BoardService boardService;
     private final SearchService searchService;
 
     @Operation(summary = "검색어로 게시글 조회", description = "검색어 기반으로 요구사항에 맞게 게시글을 조회합니다.")
@@ -40,7 +38,7 @@ public class SearchController {
     @GetMapping("/auto-complete")
     public ResponseEntity<BoardAutoCompleteResponseDto> autoCompleteBoardName(
         @RequestParam String prefix) {
-        List<BoardInfoDto> boardList = boardService.findBoardsByPrefix(prefix);
+        List<BoardInfoDto> boardList = searchService.findBoardsByPrefix(prefix);
         BoardAutoCompleteResponseDto response = BoardAutoCompleteResponseDto.from(boardList);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);

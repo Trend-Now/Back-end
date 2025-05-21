@@ -3,12 +3,15 @@ package com.trend_now.backend.search.aplication;
 import com.trend_now.backend.board.cache.BoardCacheEntry;
 import com.trend_now.backend.board.cache.RealTimeBoardCache;
 import com.trend_now.backend.board.domain.BoardCategory;
+import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardSummaryDto;
 import com.trend_now.backend.post.application.PostLikesService;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import com.trend_now.backend.search.dto.SearchResponseDto;
+import com.trend_now.backend.search.util.SearchKeywordUtil;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +30,7 @@ public class SearchService {
     private final PostsRepository postsRepository;
     private final RealTimeBoardCache realTimeBoardCache;
     private final PostLikesService postLikesService;
+    private final SearchKeywordUtil searchKeywordUtil;
 
     /**
      * <pre>
@@ -104,6 +108,46 @@ public class SearchService {
                     post.getId());
                 return PostSummaryDto.of(post, postLikesCount);
             }).toList();
+    }
+
+    // 게시판 이름 자동완성 메서드
+    public List<BoardInfoDto> findBoardsByPrefix(String prefix) {
+        // 공백 제거
+        String trimmedPrefix = prefix.replaceAll(" ", "");
+        // 입력된 prefix를 자모 분해
+        String disassemblePrefix = searchKeywordUtil.disassembleText(trimmedPrefix);
+        // 캐싱해놓은 실시간 인기 검색어 리스트 조회
+        List<BoardCacheEntry> boardCacheEntryList = realTimeBoardCache.getBoardCacheEntryList();
+
+        List<BoardInfoDto> filteredBoards = new ArrayList<>();
+        for (BoardCacheEntry boardEntry : boardCacheEntryList) {
+            // 게시판 이름이 prefix로 시작하지 않으면 continue
+            String disassembleBoardName = boardEntry.getDisassembledBoardName();
+            if (!disassembleBoardName.contains(disassemblePrefix)) {
+                continue;
+            }
+
+            filteredBoards.add(BoardInfoDto.builder()
+                .boardName(boardEntry.getBoardName())
+                .boardId(boardEntry.getBoardId())
+                .build());
+        }
+
+        // 고정 게시판 조회
+        List<BoardInfoDto> fixedBoardList = realTimeBoardCache.getFixedBoardCacheList().stream()
+            .filter(fixBoard -> fixBoard.getDisassembledBoardName().startsWith(disassemblePrefix))
+            .map(fixedBoard ->
+                BoardInfoDto.builder()
+                    .boardId(fixedBoard.getBoardId())
+                    .boardName(fixedBoard.getBoardName())
+                    .build())
+            .toList();
+
+        // 실시간 게시판과 고정 게시판 결합
+        List<BoardInfoDto> result = new ArrayList<>(filteredBoards);
+        result.addAll(fixedBoardList);
+
+        return result;
     }
 
 }
