@@ -33,7 +33,7 @@ public class RealTimeBoardCache {
             keyword -> Long.parseLong(keyword.split(":")[1])
         ).toList();
         List<Boards> boardsList = boardRepository.findByIdIn(boardCacheIdList);
-        boardCacheEntryList = boardsList.stream().map(
+        this.boardCacheEntryList = boardsList.stream().map(
             board -> BoardCacheEntry.builder()
                 .boardId(board.getId())
                 .boardName(board.getName())
