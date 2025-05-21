@@ -2,6 +2,7 @@ package com.trend_now.backend.board.util;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.trend_now.backend.search.util.SearchKeywordUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -16,10 +17,11 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @SpringBootTest
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yml")
-class BoardServiceUtilTest {
+class SearchKeywordUtilTest {
 
-    private static final Logger log = LoggerFactory.getLogger(BoardServiceUtilTest.class);
-    @Autowired BoardServiceUtil boardServiceUtil;
+    private static final Logger log = LoggerFactory.getLogger(SearchKeywordUtilTest.class);
+    @Autowired
+    SearchKeywordUtil searchKeywordUtil;
 
     @Test
     void 텍스트_분해() {
@@ -28,8 +30,8 @@ class BoardServiceUtilTest {
         String text2 = "apple";
 
         // when
-        String disassembleText1 = boardServiceUtil.disassembleText(text);
-        String disassembleText2 = boardServiceUtil.disassembleText(text2);
+        String disassembleText1 = searchKeywordUtil.disassembleText(text);
+        String disassembleText2 = searchKeywordUtil.disassembleText(text2);
 
         // then
         assertEquals("ㅇㅏㄴㄴㅕㅇㅎㅏㅅㅔㅇㅛ.ㅂㅏㄴㄱㅏㅂㅅㅡㅂㄴㅣㄷㅏ.", disassembleText1);

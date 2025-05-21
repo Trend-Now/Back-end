@@ -1,4 +1,4 @@
-package com.trend_now.backend.board.util;
+package com.trend_now.backend.search.util;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,9 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @AllArgsConstructor
-public class BoardServiceUtil {
-
-
+public class SearchKeywordUtil {
 
     // 완성형 한글의 시작 코드
     private static final char KOREAN_UNICODE_START = '가';

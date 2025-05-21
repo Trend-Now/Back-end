@@ -3,7 +3,7 @@ package com.trend_now.backend.board.cache;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.board.util.BoardServiceUtil;
+import com.trend_now.backend.search.util.SearchKeywordUtil;
 import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Set;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 public class RealTimeBoardCache {
 
     private final BoardRepository boardRepository;
-    private final BoardServiceUtil boardServiceUtil;
+    private final SearchKeywordUtil searchKeywordUtil;
 
     @Getter
     private List<BoardCacheEntry> boardCacheEntryList;
@@ -37,7 +37,7 @@ public class RealTimeBoardCache {
             board -> BoardCacheEntry.builder()
                 .boardId(board.getId())
                 .boardName(board.getName())
-                .disassembledBoardName(boardServiceUtil.disassembleText(board.getName()))
+                .disassembledBoardName(searchKeywordUtil.disassembleText(board.getName()))
                 .createdAt(board.getCreatedAt())
                 .updatedAt(board.getUpdatedAt())
                 .build()
@@ -53,7 +53,7 @@ public class RealTimeBoardCache {
             .map(fixedBoard -> BoardCacheEntry.builder()
                 .boardId(fixedBoard.getId())
                 .boardName(fixedBoard.getName())
-                .disassembledBoardName(boardServiceUtil.disassembleText(fixedBoard.getName()))
+                .disassembledBoardName(searchKeywordUtil.disassembleText(fixedBoard.getName()))
                 .build())
             .toList();
     }

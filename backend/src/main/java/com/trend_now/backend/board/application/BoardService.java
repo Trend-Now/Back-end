@@ -6,7 +6,7 @@ import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.FixedBoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.board.util.BoardServiceUtil;
+import com.trend_now.backend.search.util.SearchKeywordUtil;
 import com.trend_now.backend.board.cache.BoardCacheEntry;
 import com.trend_now.backend.board.cache.RealTimeBoardCache;
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BoardService {
 
     private final BoardRepository boardRepository;
-    private final BoardServiceUtil boardServiceUtil;
+    private final SearchKeywordUtil searchKeywordUtil;
     private final RealTimeBoardCache realTimeBoardCache;
 
     @Transactional
@@ -61,7 +61,7 @@ public class BoardService {
         // 공백 제거
         String trimmedPrefix = prefix.replaceAll(" ", "");
         // 입력된 prefix를 자모 분해
-        String disassemblePrefix = boardServiceUtil.disassembleText(trimmedPrefix);
+        String disassemblePrefix = searchKeywordUtil.disassembleText(trimmedPrefix);
         // 캐싱해놓은 실시간 인기 검색어 리스트 조회
         List<BoardCacheEntry> boardCacheEntryList = realTimeBoardCache.getBoardCacheEntryList();
 
