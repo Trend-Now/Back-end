@@ -1,21 +1,28 @@
-package com.trend_now.backend.config.quartz;
+package com.trend_now.backend.config;
 
 import com.trend_now.backend.board.application.SignalKeywordJob;
+import com.trend_now.backend.board.application.SignalKeywordJobListener;
 import com.trend_now.backend.post.application.PostLikesSyncDbJob;
-import lombok.RequiredArgsConstructor;
+import com.trend_now.backend.post.application.PostLikesSyncDbJobListener;
+import jakarta.annotation.PostConstruct;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
+import org.quartz.impl.StdSchedulerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
 
 @Configuration
-@RequiredArgsConstructor
-public class QuartzJobConfig {
+@ConditionalOnProperty(name = "quartzScheduler.enabled", havingValue = "true", matchIfMissing = false)
+public class QuartzSchedulerConfig {
 
     private static final String SIGNAL_KEYWORD_GROUP = "SignalGroup";
     private static final String SIGNAL_KEYWORD_JOB = "SignalKeywordJob";
@@ -26,27 +33,29 @@ public class QuartzJobConfig {
     private static final String POST_LIKES_SYNC_DB_JOB_TRIGGER = "PostLikesSyncDbJobTrigger";
     private static final int POST_LIKES_SYNC_DB_JOB_INTERVAL_SECONDS = 11;
 
+    private Scheduler scheduler;
     private final ApplicationContext applicationContext;
 
-    @Bean
-    public JobDetail signalKeywordJobDetail() {
+    public QuartzSchedulerConfig(Scheduler scheduler,
+            ApplicationContext applicationContext) {
+        this.scheduler = scheduler;
+        this.applicationContext = applicationContext;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void scheduleTopKeywordJob() throws SchedulerException {
         JobDataMap ctx = new JobDataMap();
         ctx.put("applicationContext", applicationContext);
 
-        return JobBuilder
+        JobDetail job = JobBuilder
                 .newJob(SignalKeywordJob.class)
                 .withIdentity(SIGNAL_KEYWORD_JOB, SIGNAL_KEYWORD_GROUP)
                 .withDescription("TOP10 검색어 순위 리스트 Job")
                 .setJobData(ctx)
-                .storeDurably()
                 .build();
-    }
 
-    @Bean
-    public Trigger signalKeywordTrigger(JobDetail signalKeywordJobDetail) {
-        return TriggerBuilder
+        Trigger trigger = TriggerBuilder
                 .newTrigger()
-                .forJob(signalKeywordJobDetail)
                 .withIdentity(SIGNAL_KEYWORD_TRIGGER, SIGNAL_KEYWORD_GROUP)
                 .withDescription("TOP10 검색어 순위 리스트 Trigger")
                 .startNow()
@@ -56,27 +65,19 @@ public class QuartzJobConfig {
                                 .withIntervalInSeconds(SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS)
                                 .repeatForever())
                 .build();
-    }
 
-    @Bean
-    public JobDetail postLikesSyncDbJobDetail() {
         JobDataMap postLikesCtx = new JobDataMap();
         postLikesCtx.put("applicationContext", applicationContext);
 
-        return JobBuilder
+        JobDetail postLikesJob = JobBuilder
                 .newJob(PostLikesSyncDbJob.class)
                 .withIdentity(POST_LIKES_SYNC_DB_JOB, POST_LIKES_SYNC_DB_JOB_GROUP)
                 .withDescription("DB 동기화 job")
                 .setJobData(postLikesCtx)
-                .storeDurably()
                 .build();
-    }
 
-    @Bean
-    public Trigger postLikesSyncDbTrigger(JobDetail postLikesSyncDbJobDetail) {
-        return TriggerBuilder
+        Trigger postLikesTrigger = TriggerBuilder
                 .newTrigger()
-                .forJob(postLikesSyncDbJobDetail)
                 .withIdentity(POST_LIKES_SYNC_DB_JOB_TRIGGER, POST_LIKES_SYNC_DB_JOB_GROUP)
                 .withDescription("DB 동기화 Trigger")
                 .startNow()
@@ -86,5 +87,16 @@ public class QuartzJobConfig {
                                 .withIntervalInSeconds(POST_LIKES_SYNC_DB_JOB_INTERVAL_SECONDS)
                                 .repeatForever())
                 .build();
+
+        scheduler = new StdSchedulerFactory().getScheduler();
+
+        SignalKeywordJobListener signalKeywordJobListener = new SignalKeywordJobListener();
+        PostLikesSyncDbJobListener postLikesSyncDbJobListener = new PostLikesSyncDbJobListener();
+        scheduler.getListenerManager().addJobListener(signalKeywordJobListener);
+        scheduler.getListenerManager().addJobListener(postLikesSyncDbJobListener);
+
+        scheduler.start();
+        scheduler.scheduleJob(job, trigger);
+        scheduler.scheduleJob(postLikesJob, postLikesTrigger);
     }
 }
