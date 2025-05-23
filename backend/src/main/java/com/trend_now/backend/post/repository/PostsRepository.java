@@ -3,6 +3,7 @@ package com.trend_now.backend.post.repository;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.post.domain.Posts;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,7 +25,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
         AND p.boards.id IN :boardIds
         """)
     Page<Posts> findByKeywordAndRealTimeBoard(
-        @Param("keyword") String keyword, @Param("boardIds") List<Long> boardIds, Pageable pageable);
+        @Param("keyword") String keyword, @Param("boardIds") Set<Long> boardIds, Pageable pageable);
 
     @Query("""
         SELECT p FROM Posts p

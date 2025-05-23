@@ -39,8 +39,7 @@ public class SearchController {
     public ResponseEntity<BoardAutoCompleteResponseDto> autoCompleteBoardName(
         @RequestParam String prefix) {
         List<BoardInfoDto> boardList = searchService.findBoardsByPrefix(prefix);
-        BoardAutoCompleteResponseDto response = BoardAutoCompleteResponseDto.from(boardList);
-
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.status(HttpStatus.OK)
+            .body(BoardAutoCompleteResponseDto.from(boardList));
     }
 }

@@ -8,7 +8,6 @@ import lombok.Getter;
 @Builder
 public class BoardCacheEntry {
 
-    private Long boardId;
     private String boardName;
     private String disassembledBoardName;
     private LocalDateTime createdAt;
