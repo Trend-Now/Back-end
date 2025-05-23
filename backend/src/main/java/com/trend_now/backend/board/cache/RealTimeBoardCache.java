@@ -27,6 +27,10 @@ public class RealTimeBoardCache {
     private final Map<Long, BoardCacheEntry> boardCacheEntryMap = new HashMap<>();
     private final Map<Long, BoardCacheEntry> fixedBoardCacheMap = new HashMap<>();
 
+    /**
+     * try 구문에서 에러가 발생하더라도 lock은 해제되야 하기 때문에 finally 구문을 사용
+     */
+
     @Async
     public void setBoardInfo(Set<String> boardRank) {
         lock.writeLock().lock();
@@ -43,7 +47,6 @@ public class RealTimeBoardCache {
                     .updatedAt(boards.getUpdatedAt())
                     .build())
             );
-        // try 구문에서 에러가 발생하더라도 lock은 해제되야 하기 때문에 finally 구문을 사용
         } finally {
             lock.writeLock().unlock();
         }
@@ -61,19 +64,26 @@ public class RealTimeBoardCache {
                     .boardName(fixedBoard.getName())
                     .build())
             );
-        // try 구문에서 에러가 발생하더라도 lock은 해제되야 하기 때문에 finally 구문을 사용
         } finally {
             lock.writeLock().unlock();
         }
     }
 
     public Map<Long, BoardCacheEntry> getBoardCacheEntryMap() {
-        lock.readLock().lock();
+        try {
+            lock.readLock().lock();
+        } finally {
+            lock.readLock().unlock();
+        }
         return boardCacheEntryMap;
     }
 
     public Map<Long, BoardCacheEntry> getFixedBoardCacheMap() {
-        lock.readLock().lock();
+        try {
+            lock.readLock().lock();
+        } finally {
+            lock.readLock().unlock();
+        }
         return fixedBoardCacheMap;
     }
 }
