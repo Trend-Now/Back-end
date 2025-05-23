@@ -59,7 +59,6 @@ public class RealTimeBoardCache {
             fixedBoardList.forEach(
                 fixedBoard -> fixedBoardCacheMap.put(fixedBoard.getId(), BoardCacheEntry.builder()
                     .boardName(fixedBoard.getName())
-                    .disassembledBoardName(searchKeywordUtil.disassembleText(fixedBoard.getName()))
                     .build())
             );
         // try 구문에서 에러가 발생하더라도 lock은 해제되야 하기 때문에 finally 구문을 사용

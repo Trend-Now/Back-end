@@ -120,15 +120,14 @@ public class SearchService {
         // 공백 제거
         String trimmedPrefix = prefix.replaceAll(" ", "");
         // 입력된 prefix를 자모 분해
-        String disassemblePrefix = searchKeywordUtil.disassembleText(trimmedPrefix);
         // 캐싱해놓은 실시간 인기 검색어 리스트 조회
         Map<Long, BoardCacheEntry> boardCacheEntryMap = realTimeBoardCache.getBoardCacheEntryMap();
         // 캐싱해놓은 고정 게시판 리스트 조회
         Map<Long, BoardCacheEntry> fixedBoardCacheMap = realTimeBoardCache.getFixedBoardCacheMap();
 
         List<BoardInfoDto> filteredBoards = boardCacheEntryMap.entrySet().stream()
-            .filter(fixedBoard -> fixedBoard.getValue().getDisassembledBoardName()
-                .contains(disassemblePrefix))
+            .filter(fixedBoard -> fixedBoard.getValue().getBoardName()
+                .contains(trimmedPrefix))
             .map(fixedBoard -> BoardInfoDto.builder()
                 .boardId(fixedBoard.getKey())
                 .boardName(fixedBoard.getValue().getBoardName())
@@ -137,8 +136,8 @@ public class SearchService {
 
         // 고정 게시판 조회
         List<BoardInfoDto> fixedBoardList = fixedBoardCacheMap.entrySet().stream()
-            .filter(fixedBoard -> fixedBoard.getValue().getDisassembledBoardName()
-                .contains(disassemblePrefix))
+            .filter(fixedBoard -> fixedBoard.getValue().getBoardName()
+                .contains(trimmedPrefix))
             .map(fixedBoard -> BoardInfoDto.builder()
                 .boardId(fixedBoard.getKey())
                 .boardName(fixedBoard.getValue().getBoardName())

@@ -9,7 +9,6 @@ import lombok.Getter;
 public class BoardCacheEntry {
 
     private String boardName;
-    private String disassembledBoardName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
