@@ -13,6 +13,7 @@ import com.trend_now.backend.comment.domain.BoardTtlStatus;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.exception.CustomException.BoardTtlException;
+import com.trend_now.backend.exception.CustomException.InvalidRequestException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
@@ -221,5 +222,62 @@ class CommentsServiceTest {
         assertThat(commentsList.get(0).getContent()).isEqualTo("test updated comments1");
         assertThat(commentsList.get(1).getContent()).isEqualTo("testContent");
 
+    }
+
+    @Test
+    @DisplayName("자신이 작성한 댓글만 수정 또는 삭제를 할 수 있다.")
+    void 댓글_작성자만_수정_또는_삭제_가능() {
+        // given
+        // redis에 게시판 저장 (BOARD_TTL이 존재하는 상태로 만들기)
+        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
+        redisTemplate.opsForValue().set(key, "실시간 게시판");
+
+        // testMembers가 comments1 댓글 작성
+        SaveCommentsDto testSaveCommentsDto =
+                SaveCommentsDto.of(testBoards.getId(), testPost.getId(), testBoards.getName(), "testContent");
+
+        commentsService.saveComments(testMembers, testSaveCommentsDto);
+
+        // 다른 사용자 생성 (testMembers2)
+        Members testMembers2 = memberRepository.save(Members.builder()
+                .name("testUser2")
+                .email("testEmail2")
+                .snsId("testSnsId2")
+                .provider(Provider.TEST)
+                .build());
+
+        em.flush();
+        em.clear();
+
+        // 작성된 댓글 조회
+        List<Comments> commentsList = commentsRepository.findAll();
+        Comments comments1 = commentsList.get(0);
+
+        // 삭제 요청 DTO 생성
+        DeleteCommentsDto deleteCommentsDto = DeleteCommentsDto.of(
+                testBoards.getId(), testPost.getId(), testBoards.getName(), comments1.getId());
+
+        // 수정 요청 DTO 생성
+        UpdateCommentsDto updateCommentsDto = UpdateCommentsDto.of(
+                testBoards.getId(), testPost.getId(), testBoards.getName(), comments1.getId(), "updated content");
+
+        // when & then
+        // 임의 testMembers2가 comments1 댓글을 삭제 처리 요청 시,
+        // InvalidRequestException 예외에 NOT_COMMENT_WRITER 메시지 발생해야 한다.
+        assertThatThrownBy(() -> commentsService.deleteCommentsByCommentId(testMembers2, deleteCommentsDto))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessage("댓글 작성자가 아닙니다.");
+
+        // 임의 testMembers2가 comments1 댓글을 수정 처리 요청 시,
+        // InvalidRequestException 예외에 NOT_COMMENT_WRITER 메시지 발생해야 한다.
+        assertThatThrownBy(() -> commentsService.updateCommentsByMembersAndCommentId(testMembers2, updateCommentsDto))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessage("댓글 작성자가 아닙니다.");
+
+        // 댓글이 여전히 존재하고 변경되지 않았는지 확인
+        commentsList = commentsRepository.findAll();
+        assertThat(commentsList).hasSize(1);
+        assertThat(commentsList.get(0).getContent()).isEqualTo("testContent");
+        assertThat(commentsList.get(0).getMembers().getId()).isEqualTo(testMembers.getId());
     }
 }

@@ -7,6 +7,7 @@ import com.trend_now.backend.comment.domain.BoardTtlStatus;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.exception.CustomException.BoardTtlException;
+import com.trend_now.backend.exception.CustomException.InvalidRequestException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
@@ -25,6 +26,7 @@ public class CommentsService {
     private static final String NOT_EXIST_COMMENTS = "댓글이 없습니다.";
     private static final String BOARD_TTL_EXPIRATION = "게시판 활성 시간이 만료되었습니다.";
     private static final String BOARD_KEY_DELIMITER  = ":";
+    private static final String NOT_COMMENT_WRITER = "댓글 작성자가 아닙니다.";
 
     private final CommentsRepository commentsRepository;
     private final PostsRepository postsRepository;
@@ -53,6 +55,7 @@ public class CommentsService {
 
     /**
      * 댓글 삭제 조건
+     * - 댓글 식별자에 맞는 댓글이 존재
      * - 본인 댓글만 삭제 가능
      * - 댓글은 BOARD_TTL 만료 시간 안에서만 삭제가 가능
      */
@@ -62,7 +65,17 @@ public class CommentsService {
 
         // BOARD_TTL 만료 이전의 경우에만 삭제 가능
         if(boardTtlStatus.equals(BoardTtlStatus.BOARD_TTL_BEFORE)) {
-            commentsRepository.deleteByIdAndMembers(deleteCommentsDto.getCommentId(), member);
+            // 댓글 존재 확인
+            Comments comments = commentsRepository.findById(deleteCommentsDto.getCommentId())
+                    .orElseThrow(() -> new NotFoundException(NOT_EXIST_COMMENTS));
+
+            // 본인이 작성한 댓글만 삭제가 가능
+            if(!comments.getMembers().getId().equals(member.getId())) {
+                throw new InvalidRequestException(NOT_COMMENT_WRITER);
+            }
+
+            // 댓글 삭제 처리
+            commentsRepository.deleteById(deleteCommentsDto.getCommentId());
         } else {
             throw new BoardTtlException(BOARD_TTL_EXPIRATION);
         }
@@ -70,6 +83,7 @@ public class CommentsService {
 
     /**
      * 댓글 수정 조건
+     * - 댓글 식별자에 맞는 댓글이 존재
      * - 본인 댓글만 수정 가능
      * - 댓글은 BOART_TTL 만료 시간 안에서만 수정 가능
      */
@@ -79,10 +93,16 @@ public class CommentsService {
 
         // BOARD_TTL 만료 이전의 경우에만 수정 가능
         if(boardTtlStatus.equals(BoardTtlStatus.BOARD_TTL_BEFORE)) {
-            Comments comments = commentsRepository.findByIdAndMembers(updateCommentsDto.getCommentId(), members)
+            // 댓글 존재 확인
+            Comments comments = commentsRepository.findById(updateCommentsDto.getCommentId())
                     .orElseThrow(() -> new NotFoundException(NOT_EXIST_COMMENTS));
 
-            // 댓글 수정
+            // 본인이 작성한 댓글만 수정이 가능
+            if(!comments.getMembers().getId().equals(members.getId())) {
+                throw new InvalidRequestException(NOT_COMMENT_WRITER);
+            }
+
+            // 댓글 수정 처리
             comments.update(updateCommentsDto);
         } else {
             throw new BoardTtlException(BOARD_TTL_EXPIRATION);
