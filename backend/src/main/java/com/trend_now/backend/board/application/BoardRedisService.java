@@ -86,23 +86,24 @@ public class BoardRedisService {
                     redisTemplate.opsForSet()
                             .isMember(BOARD_THRESHOLD_KEY, threshold50))) {
                 log.info("{} 게시판의 게시글 수가 50개 도달, 시간 5분 추가!", boardName);
-                redisTemplate.expire(key, currentExpireTime + BOARD_TIME_UP_50, TimeUnit.SECONDS);
-                redisTemplate.opsForSet()
-                        .add(BOARD_THRESHOLD_KEY, threshold50);
+                extendBoardExpireTime(key, currentExpireTime, BOARD_TIME_UP_50, threshold50);
                 log.info("{} 게시판의 증가 후 남은 시간은 {}입니다", boardName,
                         redisTemplate.getExpire(key, TimeUnit.SECONDS));
-            } else if (postCount >= BOARD_TIME_UP_100_THRESHOLD
-                    && postCount % BOARD_TIME_UP_100_THRESHOLD == 0 && !Boolean.TRUE.equals(
+            } else if (postCount % BOARD_TIME_UP_100_THRESHOLD == 0 && !Boolean.TRUE.equals(
                     redisTemplate.opsForSet()
                             .isMember(BOARD_THRESHOLD_KEY, threshold100))) {
                 log.info("{} 게시판의 게시글 수가 100개 도달, 시간 10분 추가!", boardName);
-                redisTemplate.expire(key, currentExpireTime + BOARD_TIME_UP_100, TimeUnit.SECONDS);
-                redisTemplate.opsForSet()
-                        .add(BOARD_THRESHOLD_KEY, threshold100);
+                extendBoardExpireTime(key, currentExpireTime, BOARD_TIME_UP_100, threshold100);
                 log.info("{} 게시판의 증가 후 남은 시간은 {}입니다", boardName,
                         redisTemplate.getExpire(key, TimeUnit.SECONDS));
             }
         }
+    }
+
+    private void extendBoardExpireTime(String key, Long currentExpireTime, long additionalSeconds,
+            String thresholdKey) {
+        redisTemplate.expire(key, currentExpireTime + additionalSeconds, TimeUnit.SECONDS);
+        redisTemplate.opsForSet().add(BOARD_THRESHOLD_KEY, thresholdKey);
     }
 
     /**
