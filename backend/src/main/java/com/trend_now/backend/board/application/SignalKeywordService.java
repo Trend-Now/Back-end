@@ -2,7 +2,16 @@ package com.trend_now.backend.board.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trend_now.backend.board.dto.MsgFormat;
+import com.trend_now.backend.board.dto.RankChangeType;
 import com.trend_now.backend.board.dto.SignalKeywordDto;
+import com.trend_now.backend.board.dto.Top10;
+import com.trend_now.backend.board.dto.Top10WithChange;
+import com.trend_now.backend.board.dto.Top10WithDiff;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +33,7 @@ public class SignalKeywordService {
     private static final String JSON_PARSE_ERROR_MESSAGE = "JSON 파싱에 오류가 생겼습니다.";
     private static final String CLIENT_ID_KEY = "clientId";
     private static final String SIGNAL_KEYWORD_LIST_EMITTER_NAME = "signalKeywordList";
+    private static final String SIGNAL_KEYWORD_LIST = "realtime_keywords";
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
@@ -51,6 +61,59 @@ public class SignalKeywordService {
                     }
                 });
     }
+
+    /**
+     * 실시간 검색어 순위 변동 추이를 계산하는 함수이다 Redis에 실시간 검색어 순위가 저장되어 있지 않으면 서버가 처음 시작되었음을 의미하고, 현재 순위를 저장하고 모두
+     * NEW로 처리 이전 순위가 있으면 비교하여 변동 추이를 계산한다
+     */
+    public Top10WithChange calculateRankChange(SignalKeywordDto signalKeywordDto) {
+        long now = signalKeywordDto.getNow();
+        List<Top10> currentKeywordList = signalKeywordDto.getTop10();
+        List<Top10WithDiff> keywordDiffList = new ArrayList<>();
+
+        List<String> previousKeywordList = redisTemplate.opsForList()
+                .range(SIGNAL_KEYWORD_LIST, 0, -1);
+
+        Map<String, Integer> previousRankMap = new HashMap<>();
+        if (previousKeywordList != null) {
+            for (int i = 0; i < previousKeywordList.size(); i++) {
+                previousRankMap.put(previousKeywordList.get(i), i + 1);
+            }
+        }
+
+        for (Top10 currentKeyword : currentKeywordList) {
+            String keyword = currentKeyword.getKeyword();
+            int currentRank = currentKeyword.getRank();
+
+            if (previousRankMap.containsKey(keyword)) {
+                Integer previousRank = previousRankMap.get(keyword);
+                RankChangeType changeType;
+
+                if (previousRank != null) {
+                    if (currentRank < previousRank) {
+                        changeType = RankChangeType.UP;
+                    } else if (currentRank > previousRank) {
+                        changeType = RankChangeType.DOWN;
+                    } else {
+                        changeType = RankChangeType.SAME;
+                    }
+                } else {
+                    changeType = RankChangeType.NEW;
+                }
+
+                keywordDiffList.add(
+                        new Top10WithDiff(currentRank, keyword, changeType, previousRank));
+            }
+        }
+
+        redisTemplate.delete(SIGNAL_KEYWORD_LIST);
+        currentKeywordList.forEach(keyword ->
+                redisTemplate.opsForList().rightPush(SIGNAL_KEYWORD_LIST, keyword.getKeyword())
+        );
+
+        return new Top10WithChange(now, keywordDiffList);
+    }
+
 
     private void saveClientId(String clientId) {
         redisTemplate.opsForSet().add(CLIENT_ID_KEY, clientId);

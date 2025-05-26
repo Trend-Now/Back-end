@@ -4,19 +4,24 @@
 package com.trend_now.backend.post.dto;
 
 import jakarta.validation.constraints.NotEmpty;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-@Data
-@AllArgsConstructor
+@Getter
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class PostsPagingRequestDto {
 
     @NotEmpty(message = "게시판을 선택해주세요.")
-    private Long boardId;
+    private final Long boardId;
 
     @NotEmpty(message = "페이지를 선택해주세요.")
-    private int page;
+    private final int page;
 
     @NotEmpty(message = "페이지의 게시글 개수를 선택해주세요.")
-    private int size;
+    private final int size;
+
+    public static PostsPagingRequestDto of(Long boardId, int page, int size) {
+        return new PostsPagingRequestDto(boardId, page, size);
+    }
 }
