@@ -47,8 +47,8 @@ public class SearchService {
         Pageable pageable = PageRequest.of(page, size,
             Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.desc("createdAt")));
         // 현재 인메모리에 캐싱된 데이터 조회
-        Map<Long, BoardCacheEntry> boardCacheEntryMap = realTimeBoardCache.getBoardCacheEntryMap();
-        Map<Long, BoardCacheEntry> fixedBoardCacheMap = realTimeBoardCache.getFixedBoardCacheMap();
+        Map<Long, BoardCacheEntry> boardCacheEntryMap = realTimeBoardCache.getBoardCacheEntryMap().asMap();
+        Map<Long, BoardCacheEntry> fixedBoardCacheMap = realTimeBoardCache.getFixedBoardCacheMap().asMap();
 
         // 실시간 인기 게시판 중, 키워드가 포함된 게시판만 필터링
         List<BoardSummaryDto> filteredKeywords = filterBoardsByKeyword(keyword, boardCacheEntryMap);
@@ -118,9 +118,9 @@ public class SearchService {
         // 공백 제거
         String trimmedPrefix = prefix.replaceAll(" ", "");
         // 캐싱해놓은 실시간 인기 검색어 리스트 조회
-        Map<Long, BoardCacheEntry> boardCacheEntryMap = realTimeBoardCache.getBoardCacheEntryMap();
+        Map<Long, BoardCacheEntry> boardCacheEntryMap = realTimeBoardCache.getBoardCacheEntryMap().asMap();
         // 캐싱해놓은 고정 게시판 리스트 조회
-        Map<Long, BoardCacheEntry> fixedBoardCacheMap = realTimeBoardCache.getFixedBoardCacheMap();
+        Map<Long, BoardCacheEntry> fixedBoardCacheMap = realTimeBoardCache.getFixedBoardCacheMap().asMap();
 
         List<AutoCompleteDto> filteredBoards = boardCacheEntryMap.entrySet().stream()
             .filter(fixedBoard -> fixedBoard.getValue().getBoardName()

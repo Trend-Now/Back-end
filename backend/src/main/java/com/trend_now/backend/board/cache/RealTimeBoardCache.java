@@ -1,16 +1,14 @@
 package com.trend_now.backend.board.cache;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.search.util.SearchKeywordUtil;
 import jakarta.annotation.PostConstruct;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
@@ -20,70 +18,59 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RealTimeBoardCache {
 
+    public static final int EXPIRATION_TIME = 30; // 캐시 만료 시간 (분 단위)
+    public static final int MAXIMUM_SIZE = 1000; // 캐시 최대 크기
+
     private final BoardRepository boardRepository;
-    private final SearchKeywordUtil searchKeywordUtil;
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private final Map<Long, BoardCacheEntry> boardCacheEntryMap = new HashMap<>();
-    private final Map<Long, BoardCacheEntry> fixedBoardCacheMap = new HashMap<>();
+    @Getter
+    private final Cache<Long, BoardCacheEntry> boardCacheEntryMap = Caffeine.newBuilder()
+        // write 작업이 일어난 이후 30분 뒤 캐시 만료
+        .expireAfterWrite(EXPIRATION_TIME, TimeUnit.MINUTES)
+        // 캐시의 최대 크기 설정
+        .maximumSize(MAXIMUM_SIZE)
+        .build();
 
-    /**
-     * try 구문에서 에러가 발생하더라도 lock은 해제되야 하기 때문에 finally 구문을 사용
-     */
+    @Getter
+    private final Cache<Long, BoardCacheEntry> fixedBoardCacheMap = Caffeine.newBuilder()
+        // write 작업이 일어난 이후 30분 뒤 캐시 만료
+        .expireAfterWrite(30, TimeUnit.MINUTES)
+        // 캐시의 최대 크기 설정
+        .maximumSize(MAXIMUM_SIZE)
+        .build();
 
     @Async
     public void setBoardInfo(Set<String> boardRank) {
-        lock.writeLock().lock();
-        try {
-            List<Long> boardCacheIdList = boardRank.stream().map(
-                keyword -> Long.parseLong(keyword.split(":")[1])
-            ).toList();
-            List<Boards> boardsList = boardRepository.findByIdIn(boardCacheIdList);
-            boardCacheEntryMap.clear();
-            boardsList.forEach(boards ->
-                boardCacheEntryMap.put(boards.getId(), BoardCacheEntry.builder()
-                    .boardName(boards.getName())
-                    .createdAt(boards.getCreatedAt())
-                    .updatedAt(boards.getUpdatedAt())
-                    .build())
-            );
-        } finally {
-            lock.writeLock().unlock();
-        }
+        // 실시간 게시판 캐시 초기화
+        boardCacheEntryMap.invalidateAll();
+
+        // 캐시 생성
+        List<Long> boardCacheIdList = boardRank.stream().map(
+            keyword -> Long.parseLong(keyword.split(":")[1])
+        ).toList();
+        List<Boards> boardsList = boardRepository.findByIdIn(boardCacheIdList);
+        boardsList.forEach(boards ->
+            boardCacheEntryMap.put(boards.getId(), BoardCacheEntry.builder()
+                .boardName(boards.getName())
+                .createdAt(boards.getCreatedAt())
+                .updatedAt(boards.getUpdatedAt())
+                .build())
+        );
     }
 
     // 고정 게시판 초기화
     @PostConstruct
     public void initFixedBoard() {
-        lock.writeLock().lock();
-        try {
-            List<Boards> fixedBoardList = boardRepository.findByNameLikeAndBoardCategory(
-                "%", BoardCategory.FIXED);
-            fixedBoardList.forEach(
-                fixedBoard -> fixedBoardCacheMap.put(fixedBoard.getId(), BoardCacheEntry.builder()
-                    .boardName(fixedBoard.getName())
-                    .build())
-            );
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
+        // 고정 게시판 캐시 초기화
+        fixedBoardCacheMap.invalidateAll();
 
-    public Map<Long, BoardCacheEntry> getBoardCacheEntryMap() {
-        try {
-            lock.readLock().lock();
-        } finally {
-            lock.readLock().unlock();
-        }
-        return boardCacheEntryMap;
-    }
-
-    public Map<Long, BoardCacheEntry> getFixedBoardCacheMap() {
-        try {
-            lock.readLock().lock();
-        } finally {
-            lock.readLock().unlock();
-        }
-        return fixedBoardCacheMap;
+        // 캐시 생성
+        List<Boards> fixedBoardList = boardRepository.findByNameLikeAndBoardCategory(
+            "%", BoardCategory.FIXED);
+        fixedBoardList.forEach(
+            fixedBoard -> fixedBoardCacheMap.put(fixedBoard.getId(), BoardCacheEntry.builder()
+                .boardName(fixedBoard.getName())
+                .build())
+        );
     }
 }

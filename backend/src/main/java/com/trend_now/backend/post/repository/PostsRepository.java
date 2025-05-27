@@ -22,7 +22,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     @Query("""
         SELECT p from Posts p
         WHERE (p.boards.id IN :boardIds)
-        AND p.content LIKE %:keyword% OR p.title LIKE %:keyword%
+        AND (p.content LIKE %:keyword% OR p.title LIKE %:keyword%)
         """)
     Page<Posts> findByKeywordAndRealTimeBoard(
         @Param("keyword") String keyword, @Param("boardIds") Set<Long> boardIds, Pageable pageable);
