@@ -4,15 +4,14 @@ import com.trend_now.backend.board.cache.BoardCacheEntry;
 import com.trend_now.backend.board.cache.RealTimeBoardCache;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
-import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardSummaryDto;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.post.application.PostLikesService;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.repository.PostsRepository;
+import com.trend_now.backend.search.dto.AutoCompleteDto;
 import com.trend_now.backend.search.dto.SearchResponseDto;
-import com.trend_now.backend.search.util.SearchKeywordUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -34,7 +33,6 @@ public class SearchService {
     private final PostsRepository postsRepository;
     private final RealTimeBoardCache realTimeBoardCache;
     private final PostLikesService postLikesService;
-    private final SearchKeywordUtil searchKeywordUtil;
     private final BoardRepository boardRepository;
 
     /**
@@ -116,36 +114,35 @@ public class SearchService {
     }
 
     // 게시판 이름 자동완성 메서드
-    public List<BoardInfoDto> findBoardsByPrefix(String prefix) {
+    public List<AutoCompleteDto> findBoardsByPrefix(String prefix) {
         // 공백 제거
         String trimmedPrefix = prefix.replaceAll(" ", "");
-        // 입력된 prefix를 자모 분해
         // 캐싱해놓은 실시간 인기 검색어 리스트 조회
         Map<Long, BoardCacheEntry> boardCacheEntryMap = realTimeBoardCache.getBoardCacheEntryMap();
         // 캐싱해놓은 고정 게시판 리스트 조회
         Map<Long, BoardCacheEntry> fixedBoardCacheMap = realTimeBoardCache.getFixedBoardCacheMap();
 
-        List<BoardInfoDto> filteredBoards = boardCacheEntryMap.entrySet().stream()
+        List<AutoCompleteDto> filteredBoards = boardCacheEntryMap.entrySet().stream()
             .filter(fixedBoard -> fixedBoard.getValue().getBoardName()
                 .contains(trimmedPrefix))
-            .map(fixedBoard -> BoardInfoDto.builder()
+            .map(fixedBoard -> AutoCompleteDto.builder()
                 .boardId(fixedBoard.getKey())
                 .boardName(fixedBoard.getValue().getBoardName())
                 .build())
             .toList();
 
         // 고정 게시판 조회
-        List<BoardInfoDto> fixedBoardList = fixedBoardCacheMap.entrySet().stream()
+        List<AutoCompleteDto> fixedBoardList = fixedBoardCacheMap.entrySet().stream()
             .filter(fixedBoard -> fixedBoard.getValue().getBoardName()
                 .contains(trimmedPrefix))
-            .map(fixedBoard -> BoardInfoDto.builder()
+            .map(fixedBoard -> AutoCompleteDto.builder()
                 .boardId(fixedBoard.getKey())
                 .boardName(fixedBoard.getValue().getBoardName())
                 .build())
             .toList();
 
         // 실시간 게시판과 고정 게시판 결합
-        List<BoardInfoDto> result = new ArrayList<>(filteredBoards);
+        List<AutoCompleteDto> result = new ArrayList<>(filteredBoards);
         result.addAll(fixedBoardList);
 
         return result;

@@ -1,8 +1,7 @@
 package com.trend_now.backend.search.presentation;
 
-import com.trend_now.backend.board.dto.BoardAutoCompleteResponseDto;
-import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.search.aplication.SearchService;
+import com.trend_now.backend.search.dto.AutoCompleteDto;
 import com.trend_now.backend.search.dto.SearchResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,10 +35,9 @@ public class SearchController {
 
     @Operation(summary = "검색어 자동완성", description = "게시판 이름 중 prefix가 포함된 게시판이 있으면 해당 리스트를 반환한다.")
     @GetMapping("/auto-complete")
-    public ResponseEntity<BoardAutoCompleteResponseDto> autoCompleteBoardName(
-        @RequestParam String prefix) {
-        List<BoardInfoDto> boardList = searchService.findBoardsByPrefix(prefix);
-        return ResponseEntity.status(HttpStatus.OK)
-            .body(BoardAutoCompleteResponseDto.from(boardList));
+    public ResponseEntity<List<AutoCompleteDto>> autoCompleteBoardName(
+        @RequestParam String keyword) {
+        List<AutoCompleteDto> boardList = searchService.findBoardsByPrefix(keyword);
+        return ResponseEntity.status(HttpStatus.OK).body(boardList);
     }
 }
