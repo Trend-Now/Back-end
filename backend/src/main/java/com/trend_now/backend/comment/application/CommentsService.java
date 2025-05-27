@@ -71,7 +71,7 @@ public class CommentsService {
                     .orElseThrow(() -> new NotFoundException(NOT_EXIST_COMMENTS));
 
             // 본인이 작성한 댓글만 삭제가 가능
-            if(!comments.getMembers().getId().equals(member.getId())) {
+            if(!comments.iscommentsWriter(comments, member)) {
                 throw new InvalidRequestException(NOT_COMMENT_WRITER);
             }
 
@@ -106,7 +106,7 @@ public class CommentsService {
                     .orElseThrow(() -> new NotFoundException(NOT_EXIST_COMMENTS));
 
             // 본인이 작성한 댓글만 수정이 가능
-            if(!comments.getMembers().getId().equals(members.getId())) {
+            if(!comments.iscommentsWriter(comments, members)) {
                 throw new InvalidRequestException(NOT_COMMENT_WRITER);
             }
 

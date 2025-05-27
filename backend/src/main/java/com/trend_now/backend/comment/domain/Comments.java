@@ -39,4 +39,9 @@ public class Comments extends BaseEntity {
     public void update(UpdateCommentsDto updateCommentsDto) {
         this.content = updateCommentsDto.getUpdatedComments();
     }
+
+    // 댓글 작성자와 API 요청자가 동일한지 확인하는 메서드
+    public boolean iscommentsWriter(Comments comments, Members member) {
+        return comments.getMembers().getId().equals(member.getId());
+    }
 }
