@@ -16,7 +16,7 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
 
     /**
      * JPQL을 이용한 프로젝션 처리 방식
-     * - DTO 필드와 SELECT 순서를 지켜줘야 한다.
+     * - DTO 생성자의 파라미터 순서와 SELECT 순서를 지켜줘야 한다.
      * - DTO 객체로 쿼리 결과를 반환하기 위해선 SELECT 부분에 new 키워드와 해당 DTO 경로를 지정해줘야 한다.
      */
     @Query("""
