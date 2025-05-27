@@ -27,6 +27,7 @@ public class CommentsService {
     private static final String BOARD_TTL_EXPIRATION = "게시판 활성 시간이 만료되었습니다.";
     private static final String BOARD_KEY_DELIMITER  = ":";
     private static final String NOT_COMMENT_WRITER = "댓글 작성자가 아닙니다.";
+    private static final String NOT_EXIST_BOARD_TTL = "Redis에 BOARD_TTL 정보가 없습니다.";
 
     private final CommentsRepository commentsRepository;
     private final PostsRepository postsRepository;
@@ -76,8 +77,15 @@ public class CommentsService {
 
             // 댓글 삭제 처리
             commentsRepository.deleteById(deleteCommentsDto.getCommentId());
-        } else {
+        }
+        // BOARD_TTL 만료 이후의 경우에는 댓글 삭제 불가능
+        else if(boardTtlStatus.equals(BoardTtlStatus.BOARD_TTL_AFTER)) {
             throw new BoardTtlException(BOARD_TTL_EXPIRATION);
+        }
+        // BOARD_TTL 정보가 없는 경우에는 예외 처리
+        // 절차 상, BOARD_TTL이 있어야 하나 없는 예외라 NotFoundException이 아닌 InvalidRequestException으로 처리
+        else {
+            throw new InvalidRequestException(NOT_EXIST_BOARD_TTL);
         }
     }
 
@@ -104,8 +112,15 @@ public class CommentsService {
 
             // 댓글 수정 처리
             comments.update(updateCommentsDto);
-        } else {
+        }
+        // BOARD_TTL 만료 이후의 경우에는 댓글 수정 불가능
+        else if(boardTtlStatus.equals(BoardTtlStatus.BOARD_TTL_AFTER)) {
             throw new BoardTtlException(BOARD_TTL_EXPIRATION);
+        }
+        // BOARD_TTL 정보가 없는 경우에는 예외 처리
+        // 절차 상, BOARD_TTL이 있어야 하나 없는 예외라 NotFoundException이 아닌 InvalidRequestException으로 처리
+        else {
+            throw new InvalidRequestException(NOT_EXIST_BOARD_TTL);
         }
     }
 
