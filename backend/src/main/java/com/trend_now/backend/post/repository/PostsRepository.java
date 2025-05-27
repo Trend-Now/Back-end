@@ -21,8 +21,8 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     // 게시글 제목, 내용에 키워드가 포함된 게시글 중, 실시간 검색어 게시판에 속한 게시물 조회
     @Query("""
         SELECT p from Posts p
-        WHERE (p.content LIKE %:keyword% OR p.title LIKE %:keyword%)
-        AND p.boards.id IN :boardIds
+        WHERE (p.boards.id IN :boardIds)
+        AND p.content LIKE %:keyword% OR p.title LIKE %:keyword%
         """)
     Page<Posts> findByKeywordAndRealTimeBoard(
         @Param("keyword") String keyword, @Param("boardIds") Set<Long> boardIds, Pageable pageable);
