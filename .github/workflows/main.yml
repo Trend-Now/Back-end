@@ -1,0 +1,64 @@
+name: CI/CD using github actions & docker
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - name: code checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Gradle
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Build with Gradle Wrapper
+      run: ./gradlew clean build
+
+    # Docker build & Push 
+    - name: Docker build
+      run: docker build --platform=linux/amd64 -t ${{ secrets.DOCKER_USERNAME }}/trendnow:v1 .
+
+    - name: DockerHub login
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Docker push
+      run: docker push ${{ secrets.DOCKER_USERNAME }}/trendnow:v1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # EC2 배포
+      - name: Docker image pull & Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }} # EC2 인스턴스 퍼블릭 DNS
+          username: ubuntu
+          key: ${{ secrets.EC2_PRIVATE_KEY }} # pem 키
+          # 도커 작업
+          script: |
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/trendnow:v1
+            # 기존 컨테이너 멈춤 및 삭제
+            sudo docker stop trendnow || true
+            sudo docker rm trendnow || true
+            # 사용 안 하는 이미지 정리
+            sudo docker image prune -a -f
+            # 새 컨테이너 실행
+            sudo docker run -d -p 8080:8080 --name trendnow --log-driver=syslog ${{ secrets.DOCKER_USERNAME }}/trendnow:v1
