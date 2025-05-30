@@ -3,23 +3,28 @@
  */
 package com.trend_now.backend.post.dto;
 
+import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.post.domain.Posts;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import java.time.LocalDateTime;
+import java.util.List;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 @Data
-@AllArgsConstructor
-@Builder
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class PostsInfoDto {
 
-    private String title;
-    private String writer;
-    private String content;
-    private int viewCount;
+    private final String title;
+    private final String writer;
+    private final String content;
+    private final int viewCount;
+    private final int likeCount;
+    private final List<ImageInfoDto> imageInfos;
+    private final LocalDateTime updatedAt;
 
-    public static PostsInfoDto from(Posts posts) {
+    public static PostsInfoDto of(Posts posts, int likeCount, List<ImageInfoDto> imageInfos) {
         return new PostsInfoDto(posts.getTitle(), posts.getWriter(), posts.getContent(),
-                posts.getViewCount());
+                posts.getViewCount(), likeCount, imageInfos, posts.getUpdatedAt());
     }
 }
