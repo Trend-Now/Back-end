@@ -1,5 +1,6 @@
 package com.trend_now.backend.member.application;
 
+import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.data.vo.GoogleProfile;
@@ -31,6 +32,7 @@ public class MemberService {
     private final PostsRepository postsRepository;
     private final PasswordEncoder passwordEncoder;
     private final ScrapRepository scrapRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Transactional
     public Members createGoogleOauth(GoogleProfile googleProfile, Provider provider) {
@@ -113,5 +115,19 @@ public class MemberService {
             .orElseThrow(() -> new NotFoundException(NOT_EXIST_MEMBER));
         members.setName(nickname);
         log.info("닉네임 변경 완료 - {}", member.getName());
+    }
+
+    @Transactional
+    public String getTestJwt() {
+        Members testMember = Members.builder()
+                .name("test_name")
+                .email("test_email")
+                .provider(Provider.TEST)
+                .snsId("test_snsId")
+                .build();
+
+        String testJwt = jwtTokenProvider.createToken(memberRepository.save(testMember).getId());
+        log.info("[MemberService.getTestJwt] : 테스트용 JWT = {}", testJwt);
+        return testJwt;
     }
 }

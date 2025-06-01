@@ -38,6 +38,7 @@ public class MemberController {
     private final ScrapService scrapService;
     private final PostsService postsService;
 
+    private static final String SUCCESS_GET_JWT = "테스트용 JWT 발급에 성공하였습니다.";
     private static final String NICKNAME_UPDATE_SUCCESS_MESSAGE = "닉네임 변경 완료";
     private static final String WITHDRAWAL_SUCCESS_MESSAGE = "회원 탈퇴가 완료";
     private static final String FIND_SCRAP_POSTS_SUCCESS_MESSAGE = "사용자가 스크랩한 게시글 조회 완료";
@@ -48,6 +49,13 @@ public class MemberController {
     @Operation(summary = "연결 확인", description = "연결 확인 API")
     public ResponseEntity<String> connectionCheck() {
         return new ResponseEntity<>("Connection Success", HttpStatus.OK);
+    }
+
+    // 테스트용 JWT 발급 API
+    @GetMapping("test-jwt")
+    @Operation(summary = "JWT 발급", description = "테스트용 JWT 발급 API")
+    public ResponseEntity<String> getJwt() {
+        return new ResponseEntity<>(memberService.getTestJwt(), HttpStatus.OK);
     }
 
     /**
