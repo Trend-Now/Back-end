@@ -18,6 +18,8 @@ import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
+import com.trend_now.backend.post.presentation.BoardTtlException;
+import com.trend_now.backend.post.presentation.BoardTtlStatus;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +48,7 @@ public class PostsService {
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
     public List<PostSummaryDto> findAllPostsPagingByBoardId(
         PostsPagingRequestDto postsPagingRequestDto) {
+        //TODO: 게시판 타이머 작동 조건 추가
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
             postsPagingRequestDto.getSize());
@@ -65,6 +68,7 @@ public class PostsService {
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
     public PostsInfoDto findPostsById(Long boardId, Long postId) {
+        //TODO: 게시판 타이머 작동 조건 추가
         Posts posts = postsRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
         List<ImageInfoDto> imagesByPost = imagesService.findImagesByPost(posts);
@@ -104,6 +108,7 @@ public class PostsService {
     @Transactional
     public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long postId,
         Long memberId) {
+        //TODO: 게시판 타이머 작동 조건 추가
         Posts posts = postsRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
 
