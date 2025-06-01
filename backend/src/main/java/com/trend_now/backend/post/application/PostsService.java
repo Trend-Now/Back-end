@@ -6,6 +6,7 @@
  */
 package com.trend_now.backend.post.application;
 
+import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.image.application.ImagesService;
@@ -38,30 +39,34 @@ public class PostsService {
 
     private final PostsRepository postsRepository;
     private final BoardRepository boardRepository;
+    private final BoardRedisService boardRedisService;
     private final ImagesService imagesService;
     private final PostLikesService postLikesService;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
-    public List<PostListDto> findAllPostsPagingByBoardId(PostsPagingRequestDto postsPagingRequestDto) {
+    public List<PostListDto> findAllPostsPagingByBoardId(
+            PostsPagingRequestDto postsPagingRequestDto) {
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
-            postsPagingRequestDto.getSize());
+                postsPagingRequestDto.getSize());
 
         // boardsId에 속하는 게시글 조회
-        Page<Posts> postsPage = postsRepository.findAllByBoards_Id(postsPagingRequestDto.getBoardId(), pageable);
+        Page<Posts> postsPage = postsRepository.findAllByBoards_Id(
+                postsPagingRequestDto.getBoardId(), pageable);
         // 게시글 목록을 PostListDto로 변환
         return postsPage.getContent().stream()
-            .map(post -> {
-                int postLikesCount = postLikesService.getPostLikesCount(postsPagingRequestDto.getBoardId(),
-                    post.getId());
-                return PostListDto.of(post, postLikesCount);
-            }).toList();
+                .map(post -> {
+                    int postLikesCount = postLikesService.getPostLikesCount(
+                            postsPagingRequestDto.getBoardId(),
+                            post.getId());
+                    return PostListDto.of(post, postLikesCount);
+                }).toList();
     }
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
     public PostsInfoDto findPostsById(Long boardId, Long postId) {
         Posts posts = postsRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
         List<ImageInfoDto> imagesByPost = imagesService.findImagesByPost(posts);
         int postLikesCount = postLikesService.getPostLikesCount(boardId, postId);
 
@@ -72,24 +77,27 @@ public class PostsService {
     @Transactional
     public Long savePosts(PostsSaveDto postsSaveDto, Members members, Long boardId) {
         Boards findBoards = boardRepository.findById(boardId)
-            .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_BOARD));
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_BOARD));
 
         Posts posts = Posts.builder()
-            .title(postsSaveDto.getTitle())
-            .content(postsSaveDto.getContent())
-            .writer(members.getName())
-            .members(members)
-            .boards(findBoards)
-            .build();
+                .title(postsSaveDto.getTitle())
+                .content(postsSaveDto.getContent())
+                .writer(members.getName())
+                .members(members)
+                .boards(findBoards)
+                .build();
+
+        boardRedisService.updatePostCountAndExpireTime(findBoards.getId(), findBoards.getName());
+
         Posts savePost = postsRepository.save(posts);
 
         // 저장돼 있던 이미지와 등록된 게시글 연관관계 설정
         if (postsSaveDto.getImageIds() != null) {
             postsSaveDto.getImageIds().forEach(
-                imageId -> {
-                    Images image = imagesService.findImageById(imageId);
-                    image.setPosts(savePost);
-                }
+                    imageId -> {
+                        Images image = imagesService.findImageById(imageId);
+                        image.setPosts(savePost);
+                    }
             );
         }
         return posts.getId();
@@ -97,9 +105,10 @@ public class PostsService {
 
     //게시글 수정 - 가변 타이머 작동 중에만 가능
     @Transactional
-    public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long postId, Long memberId) {
+    public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long postId,
+            Long memberId) {
         Posts posts = postsRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
 
         if (posts.isNotSameId(memberId)) {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
@@ -113,10 +122,10 @@ public class PostsService {
         List<Long> newImageIdList = postsUpdateRequestDto.getNewImageIdList();
         if (newImageIdList != null && !newImageIdList.isEmpty()) {
             newImageIdList.forEach(
-                imageId -> {
-                    Images image = imagesService.findImageById(imageId);
-                    image.setPosts(posts);
-                }
+                    imageId -> {
+                        Images image = imagesService.findImageById(imageId);
+                        image.setPosts(posts);
+                    }
             );
         }
         // 제목, 내용 업데이트
@@ -127,7 +136,7 @@ public class PostsService {
     @Transactional
     public void deletePostsById(Long postId, Long memberId) {
         Posts posts = postsRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
+                .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
 
         if (posts.isNotSameId(memberId)) {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
@@ -135,6 +144,10 @@ public class PostsService {
         // TODO: 해당 게시글에 연관된 댓글 삭제
         // 게시글에 등록된 이미지 삭제
         imagesService.deleteImageByPostId(posts.getId());
+
+        boardRedisService.decrementPostCountAndExpireTime(posts.getBoards().getId(),
+                posts.getBoards().getName());
+
         // 게시글 삭제
         postsRepository.deleteById(postId);
     }
@@ -144,7 +157,7 @@ public class PostsService {
         Page<Posts> posts = postsRepository.findByMembers_Id(memberId, pageable);
         return posts.getContent().stream().map(post -> {
             int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
-                post.getId());
+                    post.getId());
             return PostListDto.of(post, postLikesCount);
         }).toList();
     }

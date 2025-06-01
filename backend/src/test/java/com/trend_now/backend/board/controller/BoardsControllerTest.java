@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -83,6 +84,7 @@ public class BoardsControllerTest {
             "2, 10",  // page=2, size=10 -> 데이터 없음 (out of range)
             "0, 20"  // page=0, size=20 -> 총 20개 항목, 전체 20개, 총 1페이지
     })
+    @WithMockUser(roles = "USER")
     public void getBoards_Pagination_Success(int page, int size) throws Exception {
         mockMvc.perform(get("/api/v1/boards/list")
                         .param("page", String.valueOf(page))
