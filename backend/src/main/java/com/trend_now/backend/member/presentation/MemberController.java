@@ -1,6 +1,5 @@
 package com.trend_now.backend.member.presentation;
 
-import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.member.application.GoogleService;
 import com.trend_now.backend.member.application.KakaoService;
 import com.trend_now.backend.member.application.MemberService;
@@ -11,8 +10,8 @@ import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.application.ScrapService;
-import com.trend_now.backend.post.dto.PostsInfoDto;
-import com.trend_now.backend.post.dto.PostsPagingResponseDto;
+import com.trend_now.backend.post.dto.PostListDto;
+import com.trend_now.backend.post.dto.PostListPagingResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -33,7 +32,6 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
-    private final JwtTokenProvider jwtTokenProvider;
     private final GoogleService googleService;
     private final KakaoService kakaoService;
     private final NaverService naverService;
@@ -41,6 +39,10 @@ public class MemberController {
     private final PostsService postsService;
 
     private static final String SUCCESS_GET_JWT = "테스트용 JWT 발급에 성공하였습니다.";
+    private static final String NICKNAME_UPDATE_SUCCESS_MESSAGE = "닉네임 변경 완료";
+    private static final String WITHDRAWAL_SUCCESS_MESSAGE = "회원 탈퇴가 완료";
+    private static final String FIND_SCRAP_POSTS_SUCCESS_MESSAGE = "사용자가 스크랩한 게시글 조회 완료";
+    private static final String FIND_MEMBER_POSTS_SUCCESS_MESSAGE = "사용자가 작성한 게시글 조회 완료";
 
     // 연결 확인
     @GetMapping("")
@@ -92,9 +94,11 @@ public class MemberController {
      */
     @PatchMapping("/nickname")
     @Operation(summary = "닉네임 변경", description = "닉네임 변경을 요청한 사용자의 닉네임을 변경합니다.")
-    public ResponseEntity<String> updateNickname(@AuthenticationPrincipal(expression = "members") Members member, @RequestBody @Valid UpdateNicknameRequestDto nicknameRequest) {
+    public ResponseEntity<String> updateNickname(
+        @AuthenticationPrincipal(expression = "members") Members member,
+        @RequestBody @Valid UpdateNicknameRequestDto nicknameRequest) {
         memberService.updateNickname(member, nicknameRequest.nickname());
-        return new ResponseEntity<>("닉네임 변경이 완료 되었습니다.", HttpStatus.OK);
+        return new ResponseEntity<>(NICKNAME_UPDATE_SUCCESS_MESSAGE, HttpStatus.OK);
     }
 
     /**
@@ -105,32 +109,37 @@ public class MemberController {
     @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 요청한 사용자의 정보를 삭제합니다. 해당 사용자가 작성한 글의 작성자는 NULL로 변경됩니다.")
     public ResponseEntity<String> withdrawMember(@AuthenticationPrincipal(expression = "members") Members member) {
         memberService.deleteMember(member.getId());
-        return new ResponseEntity<>("회원 탈퇴가 완료 되었습니다.", HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(WITHDRAWAL_SUCCESS_MESSAGE, HttpStatus.NO_CONTENT);
     }
 
     /**
      * 회원이 스크랩한 게시글 조회 API
      */
     @GetMapping("/scrap")
-    @Operation(summary = "스크랩한 게시글 조회", description = "회원이 스크랩한 게시글을 조회합니다.")
-    public ResponseEntity<PostsPagingResponseDto> getMemberScrapPosts(
-            @AuthenticationPrincipal(expression = "members") Members member,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        List<PostsInfoDto> scrapsByMemberId = scrapService.getScrappedPostsByMemberId(member.getId(), page, size);
-        return new ResponseEntity<>(PostsPagingResponseDto.of("스크랩한 게시글 조회 완료", scrapsByMemberId), HttpStatus.OK);
+    @Operation(summary = "스크랩한 게시글 목록 조회", description = "회원이 스크랩한 게시글을 조회합니다.")
+    public ResponseEntity<PostListPagingResponseDto> getMemberScrapPosts(
+        @AuthenticationPrincipal(expression = "members") Members member,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
+
+        List<PostListDto> scrappedPostsByMemberId = scrapService.getScrappedPostsByMemberId(
+            member.getId(), page, size);
+        return new ResponseEntity<>(
+            PostListPagingResponseDto.of(FIND_SCRAP_POSTS_SUCCESS_MESSAGE, scrappedPostsByMemberId), HttpStatus.OK);
     }
 
     /**
      * 회원이 작성한 게시글 조회 API
      */
     @GetMapping("/posts")
-    @Operation(summary = "회원이 작성한 게시글 조회", description = "회원이 작성한 게시글을 조회합니다.")
-    public ResponseEntity<PostsPagingResponseDto> getMemberPosts(
-            @AuthenticationPrincipal(expression = "members") Members member,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        List<PostsInfoDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page, size);
-        return new ResponseEntity<>(PostsPagingResponseDto.of("스크랩한 게시글 조회 완료", postsByMemberId), HttpStatus.OK);
+    @Operation(summary = "회원이 작성한 게시글 목록 조회", description = "회원이 작성한 게시글을 조회합니다.")
+    public ResponseEntity<PostListPagingResponseDto> getMemberPosts(
+        @AuthenticationPrincipal(expression = "members") Members member,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
+        List<PostListDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page,
+            size);
+        return new ResponseEntity<>(
+            PostListPagingResponseDto.of(FIND_MEMBER_POSTS_SUCCESS_MESSAGE, postsByMemberId), HttpStatus.OK);
     }
 }
