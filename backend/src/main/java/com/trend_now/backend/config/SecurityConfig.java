@@ -44,13 +44,13 @@ public class SecurityConfig {
             // todo. 비회원도 사용 가능한 API의 uri 패턴 추가
             .authorizeHttpRequests(a -> a
                 .requestMatchers(HttpMethod.GET,
-                    // 게시글 목록 조회
-                    "/api/v1/boards/*/posts"
+                    // 게시판과 게시글 조회 허용
+                    "/api/v1/boards/**"
                 ).permitAll()
                 .requestMatchers(
                     "/api/v1/member/login/**", "/swagger-ui/**", "/v3/api-docs/**",
                     "/api/v1/news/realtime", "/api/v1/timeSync", "/api/v1/subscribe",
-                    "/api/v1/unsubscribe", "/sse-test").permitAll()
+                    "/api/v1/unsubscribe", "/sse-test", "/api/v1/member/test-jwt").permitAll()
                 .anyRequest().authenticated())
 
             /**
