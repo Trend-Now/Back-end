@@ -28,25 +28,23 @@ jobs:
 
     - name: make application.yml file
       run: |
-        cd backend/src/main/resources
+        cd backend
+        mkdir -p ./src/main/resources
+        cd ./src/main/resources
         touch ./application.yml
         touch ./application-prod.yml
-        cat <<EOF > application.yml
-${{ secrets.APPLICATION_YML }}
-EOF
-        
-        cat <<EOF > application-prod.yml
-${{ secrets.APPLICATION_PROD_YML }}
-EOF
+        echo "${{ secrets.APPLICATION_YML }}" > ./application.yml
+        echo "${{ secrets.APPLICATION_PROD_YML }}" > ./application-prod.yml
 
     - name: make application-test.yml file
       run: |
-        cd backend/src/test/resources
-        cat <<EOF > application-test.yml
-${{ secrets.APPLICATION_TEST_YML }}
-EOF
+        cd backend
+        mkdir -p ./src/test/resources
+        cd ./src/test/resources
+        touch ./application-test.yml
+        echo "${{ secrets.APPLICATION_TEST_YML }}" > ./application-test.yml
 
-    # 테스트 코드를 실행하지 않도록 설정
+      # 테스트 코드를 실행하지 않도록 설정
     - name: Build with Gradle Wrapper
       run: |
         cd backend
