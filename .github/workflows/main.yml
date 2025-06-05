@@ -80,7 +80,7 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }} # EC2 인스턴스 퍼블릭 DNS
           username: ubuntu
-          key: ec2_key.pem # pem 키
+          key_path: ec2_key.pem # pem 키
           # 도커 작업
           script: |
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/trendnow:v1
