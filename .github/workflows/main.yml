@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -25,14 +26,37 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
 
+    - name: make application.yml file
+      run: |
+        cd backend/src/main/resources
+        touch ./application.yml
+        touch ./application-prod.yml
+        cat <<EOF > application.yml
+${{ secrets.APPLICATION_YML }}
+EOF
+        
+        cat <<EOF > application-prod.yml
+${{ secrets.APPLICATION_PROD_YML }}
+EOF
+
+    - name: make application-test.yml file
+      run: |
+        cd backend/src/test/resources
+        cat <<EOF > application-test.yml
+${{ secrets.APPLICATION_TEST_YML }}
+EOF
+
+      # 테스트 코드를 실행하지 않도록 설정
     - name: Build with Gradle Wrapper
       run: |
         cd backend
-        ./gradlew clean build
+        ./gradlew clean build -x test
 
     # Docker build & Push 
     - name: Docker build
-      run: docker build --platform=linux/amd64 -t ${{ secrets.DOCKER_USERNAME }}/trendnow:v1 .
+      run: |
+        cd backend
+        docker build --platform=linux/amd64 -t ${{ secrets.DOCKER_USERNAME }}/trendnow:v1 .
 
     - name: DockerHub login
       uses: docker/login-action@v3
