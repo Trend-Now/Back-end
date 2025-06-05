@@ -46,7 +46,7 @@ EOF
 ${{ secrets.APPLICATION_TEST_YML }}
 EOF
 
-      # 테스트 코드를 실행하지 않도록 설정
+    # 테스트 코드를 실행하지 않도록 설정
     - name: Build with Gradle Wrapper
       run: |
         cd backend
