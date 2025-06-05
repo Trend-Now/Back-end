@@ -25,22 +25,47 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-//	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-jooq'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
 	// swagger 의존성 주입
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
 
-	testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
-	testImplementation 'org.assertj:assertj-core:3.23.1'
+	// h2 데이터베이스 (v2.1.214)
 	testRuntimeOnly 'com.h2database:h2:2.1.214'
+
+	// p6spy
 	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.1'
+
+	// quartz
+	implementation 'org.springframework.boot:spring-boot-starter-quartz:3.2.3'
+
+	// webClient
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	// spring security
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	testImplementation 'org.springframework.security:spring-security-test'
+
+	// jwt 관련 라이브러리
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+	implementation 'org.springframework:spring-messaging'
+	implementation 'org.redisson:redisson-spring-boot-starter:3.27.0'
+
+	// s3
+	implementation 'software.amazon.awssdk:s3:2.25.26'
+
 }
 
 tasks.named('test') {

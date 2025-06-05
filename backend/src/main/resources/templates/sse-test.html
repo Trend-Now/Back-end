@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSE 테스트</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    .container {
+      display: flex;
+      justify-content: space-between;
+      width: 80%;
+      margin: 20px auto;
+    }
+    .box {
+      width: 48%;
+      height: 300px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      overflow-y: auto;
+      background-color: #f9f9f9;
+    }
+    .box h2 {
+      margin: 0 0 10px;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<h1>SSE 테스트</h1>
+
+<label for="clientId">Client ID 입력:</label>
+<input type="text" id="clientId" placeholder="클라이언트 ID를 입력하세요" />
+<button id="connect">SSE 연결</button>
+<button id="disconnect">SSE 연결 해제</button>
+
+<div class="container">
+  <div class="box">
+    <h2>Signal Keyword List</h2>
+    <div id="signalKeywordListOutput"></div>
+  </div>
+  <div class="box">
+    <h2>Realtime Board Expired</h2>
+    <div id="realtimeBoardExpiredOutput"></div>
+  </div>
+</div>
+
+<script>
+  let eventSource;
+
+  document.getElementById("connect").addEventListener("click", function () {
+    const clientId = document.getElementById("clientId").value;
+
+    if (!clientId) {
+      alert("Client ID를 입력하세요.");
+      return;
+    }
+
+    if (eventSource) {
+      console.log("이미 SSE 연결이 활성화되어 있습니다.");
+      return;
+    }
+
+    const url = `http://localhost:8080/api/v1/subscribe?clientId=${clientId}`;
+    eventSource = new EventSource(url);
+
+    eventSource.addEventListener("subscribe", (e) => {
+      console.log("subscribe 이벤트:", e.data);
+    });
+
+    eventSource.addEventListener("signalKeywordList", (e) => {
+      const receivedData = e.data;
+      console.log("signalKeywordList 이벤트:", receivedData);
+      document.getElementById("signalKeywordListOutput").innerHTML += `<p>${receivedData}</p>`;
+    });
+
+    eventSource.addEventListener("realtimeBoardExpired", (e) => {
+      const receivedData = e.data;
+      console.log("realtimeBoardExpired 이벤트:", receivedData);
+      document.getElementById("realtimeBoardExpiredOutput").innerHTML += `<p>${receivedData}</p>`;
+    });
+
+    eventSource.onerror = function (e) {
+      console.error("SSE 오류 발생:", e);
+      eventSource.close();
+      eventSource = null;
+    };
+
+    console.log("SSE 연결 시작");
+  });
+
+  document.getElementById("disconnect").addEventListener("click", async function () {
+    const clientId = document.getElementById("clientId").value;
+
+    if (!clientId) {
+      alert("Client ID를 입력하세요.");
+      return;
+    }
+
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+      console.log("SSE 연결 해제");
+    }
+
+    try {
+      const response = await fetch("http://localhost:8080/api/v1/unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: clientId })
+      });
+
+      const result = await response.text();
+      console.log("서버 응답:", result);
+    } catch (error) {
+      console.error("연결 해제 요청 중 오류 발생:", error);
+    }
+  });
+</script>
+
+</body>
+</html>
