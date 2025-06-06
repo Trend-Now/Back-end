@@ -13,12 +13,20 @@ import org.springframework.stereotype.Component;
 public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
 
     private final RedisPublisher redisPublisher;
+    private final RedisMessageListenerContainer listenerContainer;
 
     public RedisKeyExpiredListener(
             RedisMessageListenerContainer listenerContainer,
             RedisPublisher redisPublisher) {
         super(listenerContainer);
         this.redisPublisher = redisPublisher;
+        this.listenerContainer = listenerContainer;
+    }
+
+    @Override
+    public void init() {
+        // CONFIG 명령어를 사용하는 super.init() 호출을 피하고 직접 등록 메서드 호출
+        super.doRegister(this.listenerContainer);
     }
 
     /**
