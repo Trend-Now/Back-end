@@ -4,6 +4,7 @@ import com.trend_now.backend.member.application.GoogleService;
 import com.trend_now.backend.member.application.KakaoService;
 import com.trend_now.backend.member.application.MemberService;
 import com.trend_now.backend.member.application.NaverService;
+import com.trend_now.backend.member.data.dto.MyPageResponseDto;
 import com.trend_now.backend.member.data.dto.UpdateNicknameRequestDto;
 import com.trend_now.backend.member.data.vo.AuthCodeToJwtRequest;
 import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
@@ -87,6 +88,16 @@ public class MemberController {
     @PostMapping("/login/test/naver")
     public ResponseEntity<OAuth2LoginResponse> testNaverLogin(@RequestBody AuthCodeToJwtRequest accessToken) {
         return new ResponseEntity<>(naverService.testGetToken(accessToken), HttpStatus.OK);
+    }
+
+    /**
+     * 마이페이지 조회 API
+     */
+    @GetMapping("/me")
+    public ResponseEntity<MyPageResponseDto> getMyPage(
+        @AuthenticationPrincipal(expression = "members") Members member) {
+        MyPageResponseDto myPageResponseDto = memberService.getMyPage(member);
+        return new ResponseEntity<>(myPageResponseDto, HttpStatus.OK);
     }
 
     /**

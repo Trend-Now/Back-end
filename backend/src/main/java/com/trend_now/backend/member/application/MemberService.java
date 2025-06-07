@@ -3,6 +3,7 @@ package com.trend_now.backend.member.application;
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.member.data.dto.MyPageResponseDto;
 import com.trend_now.backend.member.data.vo.GoogleProfile;
 import com.trend_now.backend.member.data.vo.KakaoProfile;
 import com.trend_now.backend.member.data.vo.NaverProfile;
@@ -71,6 +72,13 @@ public class MemberService {
 
         memberRepository.save(member);
         return member;
+    }
+
+    /**
+     * 마이페이지 조회
+     */
+    public MyPageResponseDto getMyPage(Members members) {
+        return MyPageResponseDto.of(members.getName(), members.getEmail());
     }
 
     /**
