@@ -53,4 +53,6 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
             """
     )
     Page<CommentInfoDto> findByMemberIdWithPost(@Param("memberId") Long membersId, Pageable pageable);
+
+    void deleteByPosts_Id(Long postsId);
 }

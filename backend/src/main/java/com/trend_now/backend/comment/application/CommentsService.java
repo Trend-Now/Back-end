@@ -17,6 +17,7 @@ import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -140,13 +141,8 @@ public class CommentsService {
                 ? BoardTtlStatus.BOARD_TTL_BEFORE : BoardTtlStatus.BOARD_TTL_AFTER;
     }
 
-    public CommentListPagingResponseDto getCommentsByMemberId(Long memberId, int page, int size) {
+    public Page<CommentInfoDto> getCommentsByMemberId(Long memberId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<CommentInfoDto> commentInfoPages = commentsRepository.findByMemberIdWithPost(memberId, pageable);
-        return CommentListPagingResponseDto.builder()
-            .message("댓글 목록 조회 성공")
-            .totalPageCount(commentInfoPages.getTotalPages())
-            .commentsInfoListDto(commentInfoPages.getContent())
-            .build();
+        return commentsRepository.findByMemberIdWithPost(memberId, pageable);
     }
 }

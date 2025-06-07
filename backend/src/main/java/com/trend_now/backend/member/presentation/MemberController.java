@@ -1,6 +1,7 @@
 package com.trend_now.backend.member.presentation;
 
 import com.trend_now.backend.comment.application.CommentsService;
+import com.trend_now.backend.comment.data.dto.CommentInfoDto;
 import com.trend_now.backend.comment.data.dto.CommentListPagingResponseDto;
 import com.trend_now.backend.member.application.GoogleService;
 import com.trend_now.backend.member.application.KakaoService;
@@ -21,6 +22,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -40,13 +42,15 @@ public class MemberController {
     private final NaverService naverService;
     private final ScrapService scrapService;
     private final PostsService postsService;
+    private final CommentsService commentsService;
 
     private static final String SUCCESS_GET_JWT = "테스트용 JWT 발급에 성공하였습니다.";
     private static final String NICKNAME_UPDATE_SUCCESS_MESSAGE = "닉네임 변경 완료";
     private static final String WITHDRAWAL_SUCCESS_MESSAGE = "회원 탈퇴가 완료";
     private static final String FIND_SCRAP_POSTS_SUCCESS_MESSAGE = "사용자가 스크랩한 게시글 조회 완료";
     private static final String FIND_MEMBER_POSTS_SUCCESS_MESSAGE = "사용자가 작성한 게시글 조회 완료";
-    private final CommentsService commentsService;
+    private static final String FIND_MEMBER_COMMENTS_SUCCESS_MESSAGE = "사용자가 작성한 댓글 조회 완료";
+
 
     // 연결 확인
     @GetMapping("")
@@ -138,10 +142,11 @@ public class MemberController {
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size) {
 
-        List<PostSummaryDto> scrappedPostsByMemberId = scrapService.getScrappedPostsByMemberId(
+        Page<PostSummaryDto> scrappedPostsByMemberId = scrapService.getScrappedPostsByMemberId(
             member.getId(), page, size);
         return new ResponseEntity<>(
-            PostListPagingResponseDto.of(FIND_SCRAP_POSTS_SUCCESS_MESSAGE, scrappedPostsByMemberId),
+            PostListPagingResponseDto.of(FIND_SCRAP_POSTS_SUCCESS_MESSAGE,
+                scrappedPostsByMemberId.getTotalPages(), scrappedPostsByMemberId.getContent()),
             HttpStatus.OK);
     }
 
@@ -154,11 +159,11 @@ public class MemberController {
         @AuthenticationPrincipal(expression = "members") Members member,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size) {
-        List<PostSummaryDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page,
+        Page<PostSummaryDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page,
             size);
-        return new ResponseEntity<>(
-            PostListPagingResponseDto.of(FIND_MEMBER_POSTS_SUCCESS_MESSAGE, postsByMemberId),
-            HttpStatus.OK);
+
+        return new ResponseEntity<>(PostListPagingResponseDto.of(FIND_MEMBER_POSTS_SUCCESS_MESSAGE,
+            postsByMemberId.getTotalPages(), postsByMemberId.getContent()), HttpStatus.OK);
     }
 
     @GetMapping("/comments")
@@ -167,6 +172,11 @@ public class MemberController {
         @AuthenticationPrincipal(expression = "members") Members member,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size) {
-        return new ResponseEntity<>(commentsService.getCommentsByMemberId(member.getId(), page, size), HttpStatus.OK);
+        Page<CommentInfoDto> commentsByMemberId = commentsService.getCommentsByMemberId(
+            member.getId(), page, size);
+        return new ResponseEntity<>(
+            CommentListPagingResponseDto.of(FIND_MEMBER_COMMENTS_SUCCESS_MESSAGE,
+                commentsByMemberId.getTotalPages(), commentsByMemberId.getContent()),
+            HttpStatus.OK);
     }
 }
