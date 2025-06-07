@@ -11,7 +11,7 @@ import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.domain.Posts;
-import com.trend_now.backend.post.dto.PostListDto;
+import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
@@ -119,7 +119,7 @@ public class PostsServiceTest {
         PostsPagingRequestDto requestDto = PostsPagingRequestDto.of(boards.getId(), page, size);
 
         //when
-        List<PostListDto> result = postsService.findAllPostsPagingByBoardId(requestDto);
+        List<PostSummaryDto> result = postsService.findAllPostsPagingByBoardId(requestDto);
 
         //then
         assertThat(result).isNotNull();

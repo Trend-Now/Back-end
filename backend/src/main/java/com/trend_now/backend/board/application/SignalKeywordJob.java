@@ -5,6 +5,7 @@ import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10;
 import com.trend_now.backend.board.dto.Top10WithChange;
+import com.trend_now.backend.board.cache.RealTimeBoardCache;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -31,6 +32,7 @@ public class SignalKeywordJob implements Job {
         BoardService boardService = applicationContext.getBean(BoardService.class);
         BoardRedisService boardRedisService = applicationContext.getBean(BoardRedisService.class);
         RedisPublisher redisPublisher = applicationContext.getBean(RedisPublisher.class);
+        RealTimeBoardCache realTimeBoardCache = applicationContext.getBean(RealTimeBoardCache.class);
 
         try {
             SignalKeywordDto signalKeywordDto = signalKeywordService.fetchRealTimeKeyword().block();
@@ -58,6 +60,8 @@ public class SignalKeywordJob implements Job {
                 boardService.updateBoardIsDeleted(boardSaveDto, isRealTimeBoard);
             }
             boardRedisService.setRankValidListTime();
+
+            realTimeBoardCache.setBoardInfo(boardRedisService.getBoardRank());
 
             Set<String> allClientId = signalKeywordService.findAllClientId();
             for (String clientId : allClientId) {

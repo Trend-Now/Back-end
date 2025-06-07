@@ -3,7 +3,7 @@ package com.trend_now.backend.post.presentation;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.dto.PostInfoResponseDto;
-import com.trend_now.backend.post.dto.PostListDto;
+import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostListPagingResponseDto;
@@ -51,7 +51,7 @@ public class PostsController {
         PostsPagingRequestDto postsPagingRequestDto = PostsPagingRequestDto.of(boardId, page,
             size);
 
-        List<PostListDto> postList = postsService.findAllPostsPagingByBoardId(postsPagingRequestDto);
+        List<PostSummaryDto> postList = postsService.findAllPostsPagingByBoardId(postsPagingRequestDto);
 
         return ResponseEntity.status(HttpStatus.OK)
             .body(PostListPagingResponseDto.of(SUCCESS_PAGING_POSTS_MESSAGE, postList));
