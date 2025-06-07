@@ -13,9 +13,10 @@ import lombok.RequiredArgsConstructor;
 public class PostListPagingResponseDto {
 
     private final String message;
+    private final int totalPageCount;
     private final List<PostSummaryDto> postsInfoListDto;
 
-    public static PostListPagingResponseDto of(String message, List<PostSummaryDto> postsInfoListDto) {
-        return new PostListPagingResponseDto(message, postsInfoListDto);
+    public static PostListPagingResponseDto of(String message, int totalPageCount, List<PostSummaryDto> postsInfoListDto) {
+        return new PostListPagingResponseDto(message, totalPageCount, postsInfoListDto);
     }
 }
