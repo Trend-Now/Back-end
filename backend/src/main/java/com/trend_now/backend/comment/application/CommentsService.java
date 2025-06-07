@@ -1,5 +1,7 @@
 package com.trend_now.backend.comment.application;
 
+import com.trend_now.backend.comment.data.dto.CommentInfoDto;
+import com.trend_now.backend.comment.data.dto.CommentListPagingResponseDto;
 import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
 import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
 import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
@@ -12,7 +14,12 @@ import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.repository.PostsRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -131,5 +138,15 @@ public class CommentsService {
         String key = boardName + BOARD_KEY_DELIMITER + boardId;
         return redisTemplate.hasKey(key)
                 ? BoardTtlStatus.BOARD_TTL_BEFORE : BoardTtlStatus.BOARD_TTL_AFTER;
+    }
+
+    public CommentListPagingResponseDto getCommentsByMemberId(Long memberId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<CommentInfoDto> commentInfoPages = commentsRepository.findByMemberIdWithPost(memberId, pageable);
+        return CommentListPagingResponseDto.builder()
+            .message("댓글 목록 조회 성공")
+            .totalPageCount(commentInfoPages.getTotalPages())
+            .commentsInfoListDto(commentInfoPages.getContent())
+            .build();
     }
 }

@@ -1,5 +1,7 @@
 package com.trend_now.backend.member.presentation;
 
+import com.trend_now.backend.comment.application.CommentsService;
+import com.trend_now.backend.comment.data.dto.CommentListPagingResponseDto;
 import com.trend_now.backend.member.application.GoogleService;
 import com.trend_now.backend.member.application.KakaoService;
 import com.trend_now.backend.member.application.MemberService;
@@ -44,6 +46,7 @@ public class MemberController {
     private static final String WITHDRAWAL_SUCCESS_MESSAGE = "회원 탈퇴가 완료";
     private static final String FIND_SCRAP_POSTS_SUCCESS_MESSAGE = "사용자가 스크랩한 게시글 조회 완료";
     private static final String FIND_MEMBER_POSTS_SUCCESS_MESSAGE = "사용자가 작성한 게시글 조회 완료";
+    private final CommentsService commentsService;
 
     // 연결 확인
     @GetMapping("")
@@ -60,25 +63,25 @@ public class MemberController {
     }
 
     /**
-     *  구글 인가코드를 받는 Controller
-     *  - 프론트엔드에서 구글 인가코드를 가지고 유저 정보를 반환받는 Controller
-     *  - 해당 Controller에서 HTTP Body를 통해 인가 코드를 받음
-     *  - 해당 인가 코드를 가지고 구글 서버에 사용자 정보 요청
-     *  - 사용자 정보를 통해 서비스 유저인지 확인
-     *  - 유저인 경우, JWT 토큰 발급
+     * 구글 인가코드를 받는 Controller - 프론트엔드에서 구글 인가코드를 가지고 유저 정보를 반환받는 Controller - 해당 Controller에서 HTTP
+     * Body를 통해 인가 코드를 받음 - 해당 인가 코드를 가지고 구글 서버에 사용자 정보 요청 - 사용자 정보를 통해 서비스 유저인지 확인 - 유저인 경우, JWT 토큰
+     * 발급
      */
     @PostMapping("/login/google")
-    public ResponseEntity<OAuth2LoginResponse> googleLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
+    public ResponseEntity<OAuth2LoginResponse> googleLogin(
+        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
         return new ResponseEntity<>(googleService.getToken(authCodeToJwtRequest), HttpStatus.OK);
     }
 
     @PostMapping("/login/kakao")
-    public ResponseEntity<OAuth2LoginResponse> kakaoLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
+    public ResponseEntity<OAuth2LoginResponse> kakaoLogin(
+        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
         return new ResponseEntity<>(kakaoService.getToken(authCodeToJwtRequest), HttpStatus.OK);
     }
 
     @PostMapping("/login/naver")
-    public ResponseEntity<OAuth2LoginResponse> naverLogin(@RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
+    public ResponseEntity<OAuth2LoginResponse> naverLogin(
+        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
         return new ResponseEntity<>(naverService.getToken(authCodeToJwtRequest), HttpStatus.OK);
     }
 
@@ -86,7 +89,8 @@ public class MemberController {
      * Postman 테스트용 API
      */
     @PostMapping("/login/test/naver")
-    public ResponseEntity<OAuth2LoginResponse> testNaverLogin(@RequestBody AuthCodeToJwtRequest accessToken) {
+    public ResponseEntity<OAuth2LoginResponse> testNaverLogin(
+        @RequestBody AuthCodeToJwtRequest accessToken) {
         return new ResponseEntity<>(naverService.testGetToken(accessToken), HttpStatus.OK);
     }
 
@@ -94,14 +98,15 @@ public class MemberController {
      * 마이페이지 조회 API
      */
     @GetMapping("/me")
+    @Operation(summary = "마이페이지 조회", description = "회원의 마이페이지 정보를 조회합니다.")
     public ResponseEntity<MyPageResponseDto> getMyPage(
         @AuthenticationPrincipal(expression = "members") Members member) {
-        MyPageResponseDto myPageResponseDto = memberService.getMyPage(member);
+        MyPageResponseDto myPageResponseDto = memberService.getMyPage(member.getId());
         return new ResponseEntity<>(myPageResponseDto, HttpStatus.OK);
     }
 
     /**
-     *  닉네임 변경 API
+     * 닉네임 변경 API
      */
     @PatchMapping("/nickname")
     @Operation(summary = "닉네임 변경", description = "닉네임 변경을 요청한 사용자의 닉네임을 변경합니다.")
@@ -113,12 +118,12 @@ public class MemberController {
     }
 
     /**
-     * 회원 탈퇴 API
-     * API가 호출되면 해당 회원의 값을 DB에서 물리적으로 삭제함
+     * 회원 탈퇴 API API가 호출되면 해당 회원의 값을 DB에서 물리적으로 삭제함
      */
     @DeleteMapping("/withdrawal")
     @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 요청한 사용자의 정보를 삭제합니다. 해당 사용자가 작성한 글의 작성자는 NULL로 변경됩니다.")
-    public ResponseEntity<String> withdrawMember(@AuthenticationPrincipal(expression = "members") Members member) {
+    public ResponseEntity<String> withdrawMember(
+        @AuthenticationPrincipal(expression = "members") Members member) {
         memberService.deleteMember(member.getId());
         return new ResponseEntity<>(WITHDRAWAL_SUCCESS_MESSAGE, HttpStatus.NO_CONTENT);
     }
@@ -136,7 +141,8 @@ public class MemberController {
         List<PostSummaryDto> scrappedPostsByMemberId = scrapService.getScrappedPostsByMemberId(
             member.getId(), page, size);
         return new ResponseEntity<>(
-            PostListPagingResponseDto.of(FIND_SCRAP_POSTS_SUCCESS_MESSAGE, scrappedPostsByMemberId), HttpStatus.OK);
+            PostListPagingResponseDto.of(FIND_SCRAP_POSTS_SUCCESS_MESSAGE, scrappedPostsByMemberId),
+            HttpStatus.OK);
     }
 
     /**
@@ -151,6 +157,16 @@ public class MemberController {
         List<PostSummaryDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page,
             size);
         return new ResponseEntity<>(
-            PostListPagingResponseDto.of(FIND_MEMBER_POSTS_SUCCESS_MESSAGE, postsByMemberId), HttpStatus.OK);
+            PostListPagingResponseDto.of(FIND_MEMBER_POSTS_SUCCESS_MESSAGE, postsByMemberId),
+            HttpStatus.OK);
+    }
+
+    @GetMapping("/comments")
+    @Operation(summary = "회원이 작성한 댓글 목록 조회", description = "회원이 작성한 댓글을 조회합니다.")
+    public ResponseEntity<CommentListPagingResponseDto> getMemberComments(
+        @AuthenticationPrincipal(expression = "members") Members member,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
+        return new ResponseEntity<>(commentsService.getCommentsByMemberId(member.getId(), page, size), HttpStatus.OK);
     }
 }

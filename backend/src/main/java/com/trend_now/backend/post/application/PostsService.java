@@ -18,8 +18,6 @@ import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
-import com.trend_now.backend.post.presentation.BoardTtlException;
-import com.trend_now.backend.post.presentation.BoardTtlStatus;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -159,5 +157,4 @@ public class PostsService {
             return PostSummaryDto.of(post, postLikesCount);
         }).toList();
     }
-
 }
