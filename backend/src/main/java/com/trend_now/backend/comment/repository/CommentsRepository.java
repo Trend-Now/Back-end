@@ -18,8 +18,12 @@ import java.util.Optional;
 public interface CommentsRepository extends JpaRepository<Comments, Long> {
 
     /**
-     * JPQL을 이용한 프로젝션 처리 방식 - DTO 생성자의 파라미터 순서와 SELECT 순서를 지켜줘야 한다. - DTO 객체로 쿼리 결과를 반환하기 위해선 SELECT
-     * 부분에 new 키워드와 해당 DTO 경로를 지정해줘야 한다.
+     * <pre>
+     * JPQL을 이용한 프로젝션 처리 방식\
+     *
+     * - DTO 생성자의 파라미터 순서와 SELECT 순서를 지켜줘야 한다.
+     * - DTO 객체로 쿼리 결과를 반환하기 위해선 SELECT 부분에 new 키워드와 해당 DTO 경로를 지정해줘야 한다.
+     * </pre>
      */
     @Query("""
         SELECT new com.trend_now.backend.comment.data.dto.FindAllCommentsDto(
@@ -38,21 +42,22 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
 
     @Query(
         value = """
-        SELECT new com.trend_now.backend.comment.data.dto.CommentInfoDto(
-              p.id, p.title, c.id, c.content, m.name, c.createdAt
-            )
-        FROM Comments c
-        JOIN c.posts p
-        JOIN c.members m
-        WHERE c.members.id = :memberId
-        """,
+            SELECT new com.trend_now.backend.comment.data.dto.CommentInfoDto(
+                  p.id, p.title, c.id, c.content, m.name, c.createdAt
+                )
+            FROM Comments c
+            JOIN c.posts p
+            JOIN c.members m
+            WHERE c.members.id = :memberId
+            """,
         countQuery = """
             SELECT COUNT(c)
             FROM Comments c
             WHERE c.members.id = :memberId
             """
     )
-    Page<CommentInfoDto> findByMemberIdWithPost(@Param("memberId") Long membersId, Pageable pageable);
+    Page<CommentInfoDto> findByMemberIdWithPost(@Param("memberId") Long membersId,
+        Pageable pageable);
 
     void deleteByPosts_Id(Long postsId);
 }
