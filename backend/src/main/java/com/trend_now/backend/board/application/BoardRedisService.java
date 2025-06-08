@@ -23,13 +23,12 @@ public class BoardRedisService {
 
     private static final String BOARD_RANK_KEY = "board_rank";
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
+    public static final String BOARD_KEY_DELIMITER = ":";
+    public static final int BOARD_KEY_PARTS_LENGTH = 2;
+    public static final int BOARD_NAME_INDEX = 0;
+    public static final int BOARD_ID_INDEX = 1;
     private static final long KEY_LIVE_TIME = 301L;
     private static final int KEY_EXPIRE = 0;
-
-    private static final String BOARD_KEY_DELIMITER  = ":";
-    private static final int BOARD_KEY_PARTS_LENGTH = 2;
-    private static final int BOARD_NAME_INDEX = 0;
-    private static final int BOARD_ID_INDEX = 1;
 
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -49,19 +48,19 @@ public class BoardRedisService {
 
     public void setRankValidListTime() {
         String validTime = Long.toString(
-                LocalTime.now().plusSeconds(KEY_LIVE_TIME).toSecondOfDay());
+            LocalTime.now().plusSeconds(KEY_LIVE_TIME).toSecondOfDay());
         redisTemplate.opsForValue().set(BOARD_RANK_VALID_KEY, validTime);
     }
 
     public void cleanUpExpiredKeys() {
-        Set<String> allRankKey = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
+        Set<String> allRankKey = getBoardRank();
         if (allRankKey == null || allRankKey.isEmpty()) {
             return;
         }
 
         allRankKey.stream()
-                .filter(key -> !Boolean.TRUE.equals(redisTemplate.hasKey(key)))
-                .forEach(key -> redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, key));
+            .filter(key -> !Boolean.TRUE.equals(redisTemplate.hasKey(key)))
+            .forEach(key -> redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, key));
     }
 
     public boolean isRealTimeBoard(BoardSaveDto boardSaveDto) {
@@ -70,41 +69,46 @@ public class BoardRedisService {
     }
 
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
-            BoardPagingRequestDto boardPagingRequestDto) {
-        Set<String> allBoardName = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
+        BoardPagingRequestDto boardPagingRequestDto) {
+        Set<String> allBoardName = getBoardRank();
 
         if (allBoardName == null || allBoardName.isEmpty()) {
             return BoardPagingResponseDto.from(Collections.emptyList());
         }
 
         List<BoardInfoDto> boardInfoDtos = allBoardName.stream()
-                .map(boardKey -> {
+            .map(boardKey -> {
+                // boardId 추출
+                String[] parts = boardKey.split(BOARD_KEY_DELIMITER);
+                log.info("[BoardRedisService.findAllRealTimeBoardPaging] : parts = {}",
+                    Arrays.toString(parts));
 
-                    // boardId 추출
-                    String[] parts = boardKey.split(BOARD_KEY_DELIMITER);
-                    log.info("[BoardRedisService.findAllRealTimeBoardPaging] : parts = {}", Arrays.toString(parts));
+                // 데이터 타입 이상 시, 다음으로 넘김
+                if (parts.length < BOARD_KEY_PARTS_LENGTH)
+                    return null;
 
-                    // 데이터 타입 이상 시, 다음으로 넘김
-                    if(parts.length < BOARD_KEY_PARTS_LENGTH) return null;
+                String boardName = parts[BOARD_NAME_INDEX];
+                Long boardId = Long.parseLong(parts[BOARD_ID_INDEX]);
 
-                    String boardName = parts[BOARD_NAME_INDEX];
-                    Long boardId = Long.parseLong(parts[BOARD_ID_INDEX]);
-
-                    Long boardLiveTime = redisTemplate.getExpire(boardKey, TimeUnit.SECONDS);
-                    Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
-                    return new BoardInfoDto(boardId, boardName, boardLiveTime, score);
-                })
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparingLong(BoardInfoDto::getBoardLiveTime).reversed()
-                        .thenComparingDouble(BoardInfoDto::getScore))
-                .collect(Collectors.toList());
+                Long boardLiveTime = redisTemplate.getExpire(boardKey, TimeUnit.SECONDS);
+                Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
+                return new BoardInfoDto(boardId, boardName, boardLiveTime, score);
+            })
+            .filter(Objects::nonNull)
+            .sorted(Comparator.comparingLong(BoardInfoDto::getBoardLiveTime).reversed()
+                .thenComparingDouble(BoardInfoDto::getScore))
+            .collect(Collectors.toList());
 
         PageRequest pageRequest = PageRequest.of(boardPagingRequestDto.getPage(),
-                boardPagingRequestDto.getSize());
+            boardPagingRequestDto.getSize());
         int start = (int) pageRequest.getOffset();
         int end = Math.min(start + pageRequest.getPageSize(), boardInfoDtos.size());
 
         return BoardPagingResponseDto.from(boardInfoDtos.subList(start, end));
+    }
+
+    public Set<String> getBoardRank() {
+        return redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
     }
 
     public String getBoardRankValidTime() {

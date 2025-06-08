@@ -8,12 +8,14 @@ package com.trend_now.backend.post.application;
 
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.image.application.ImagesService;
 import com.trend_now.backend.image.domain.Images;
 import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
-import com.trend_now.backend.post.dto.PostListDto;
+import com.trend_now.backend.post.dto.PostListPagingResponseDto;
+import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
@@ -21,13 +23,16 @@ import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PostsService {
@@ -40,26 +45,32 @@ public class PostsService {
     private final BoardRepository boardRepository;
     private final ImagesService imagesService;
     private final PostLikesService postLikesService;
+    private final CommentsRepository commentsRepository;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
-    public List<PostListDto> findAllPostsPagingByBoardId(PostsPagingRequestDto postsPagingRequestDto) {
+    public List<PostSummaryDto> findAllPostsPagingByBoardId(
+        PostsPagingRequestDto postsPagingRequestDto) {
+        //TODO: 게시판 타이머 작동 조건 추가
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
             postsPagingRequestDto.getSize());
 
         // boardsId에 속하는 게시글 조회
-        Page<Posts> postsPage = postsRepository.findAllByBoards_Id(postsPagingRequestDto.getBoardId(), pageable);
-        // 게시글 목록을 PostListDto로 변환
+        Page<Posts> postsPage = postsRepository.findAllByBoards_Id(
+            postsPagingRequestDto.getBoardId(), pageable);
+        // 게시글 목록을 PostSummaryDto 변환
         return postsPage.getContent().stream()
             .map(post -> {
-                int postLikesCount = postLikesService.getPostLikesCount(postsPagingRequestDto.getBoardId(),
+                int postLikesCount = postLikesService.getPostLikesCount(
+                    postsPagingRequestDto.getBoardId(),
                     post.getId());
-                return PostListDto.of(post, postLikesCount);
+                return PostSummaryDto.of(post, postLikesCount);
             }).toList();
     }
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
     public PostsInfoDto findPostsById(Long boardId, Long postId) {
+        //TODO: 게시판 타이머 작동 조건 추가
         Posts posts = postsRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
         List<ImageInfoDto> imagesByPost = imagesService.findImagesByPost(posts);
@@ -97,7 +108,9 @@ public class PostsService {
 
     //게시글 수정 - 가변 타이머 작동 중에만 가능
     @Transactional
-    public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long postId, Long memberId) {
+    public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long postId,
+        Long memberId) {
+        //TODO: 게시판 타이머 작동 조건 추가
         Posts posts = postsRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
 
@@ -132,20 +145,23 @@ public class PostsService {
         if (posts.isNotSameId(memberId)) {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
         }
-        // TODO: 해당 게시글에 연관된 댓글 삭제
+        // 게시글에 연관된 댓글 삭제
+        commentsRepository.deleteByPosts_Id(postId);
         // 게시글에 등록된 이미지 삭제
         imagesService.deleteImageByPostId(posts.getId());
         // 게시글 삭제
         postsRepository.deleteById(postId);
     }
 
-    public List<PostListDto> getPostsByMemberId(Long memberId, int page, int size) {
+    public Page<PostSummaryDto> getPostsByMemberId(Long memberId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Posts> posts = postsRepository.findByMembers_Id(memberId, pageable);
-        return posts.getContent().stream().map(post -> {
+        List<PostSummaryDto> postSummaryDtoList = posts.getContent().stream().map(post -> {
             int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
                 post.getId());
-            return PostListDto.of(post, postLikesCount);
+            return PostSummaryDto.of(post, postLikesCount);
         }).toList();
+
+        return new PageImpl<>(postSummaryDtoList, pageable, posts.getTotalElements());
     }
 }

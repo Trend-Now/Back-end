@@ -3,6 +3,7 @@ package com.trend_now.backend.member.application;
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.member.data.dto.MyPageResponseDto;
 import com.trend_now.backend.member.data.vo.GoogleProfile;
 import com.trend_now.backend.member.data.vo.KakaoProfile;
 import com.trend_now.backend.member.data.vo.NaverProfile;
@@ -13,7 +14,6 @@ import com.trend_now.backend.post.repository.PostsRepository;
 import com.trend_now.backend.post.repository.ScrapRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +30,6 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final PostsRepository postsRepository;
-    private final PasswordEncoder passwordEncoder;
     private final ScrapRepository scrapRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -71,6 +70,15 @@ public class MemberService {
 
         memberRepository.save(member);
         return member;
+    }
+
+    /**
+     * 마이페이지 조회
+     */
+    public MyPageResponseDto getMyPage(Long memberId) {
+        Members members = memberRepository.findById(memberId)
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_MEMBER));
+        return MyPageResponseDto.of(members.getName(), members.getEmail());
     }
 
     /**
