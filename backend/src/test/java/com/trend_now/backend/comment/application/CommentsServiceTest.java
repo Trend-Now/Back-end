@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.comment.data.dto.CommentInfoDto;
 import com.trend_now.backend.comment.data.dto.CommentListPagingResponseDto;
 import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
 import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -302,14 +304,14 @@ class CommentsServiceTest {
             commentsService.saveComments(testMembers, testSaveCommentsDto);
         }
         //when
-        CommentListPagingResponseDto commentsByMemberId = commentsService.getCommentsByMemberId(
+        Page<CommentInfoDto> commentsByMemberId = commentsService.getCommentsByMemberId(
             testMembers.getId(), 0, 5);
 
         //then
-        assertThat(commentsByMemberId.getTotalPageCount()).isEqualTo(2);
+        assertThat(commentsByMemberId.getTotalPages()).isEqualTo(2);
         // 최신순으로 조회되기 때문에 마지막에 저장된 댓글이 첫번째 값
-        assertThat(commentsByMemberId.getCommentsInfoListDto().getFirst().getContent()).isEqualTo("testContent10");
-        assertThat(commentsByMemberId.getCommentsInfoListDto().getLast().getPostTitle()).isEqualTo(testPost.getTitle());
+        assertThat(commentsByMemberId.getContent().getFirst().getContent()).isEqualTo("testContent10");
+        assertThat(commentsByMemberId.getContent().getLast().getPostTitle()).isEqualTo(testPost.getTitle());
 
     }
 }
