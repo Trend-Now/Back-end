@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -51,10 +52,12 @@ public class PostsController {
         PostsPagingRequestDto postsPagingRequestDto = PostsPagingRequestDto.of(boardId, page,
             size);
 
-        List<PostSummaryDto> postList = postsService.findAllPostsPagingByBoardId(postsPagingRequestDto);
+        Page<PostSummaryDto> postSummaryDtoPage = postsService.findAllPostsPagingByBoardId(
+            postsPagingRequestDto);
 
         return ResponseEntity.status(HttpStatus.OK)
-            .body(PostListPagingResponseDto.of(SUCCESS_PAGING_POSTS_MESSAGE, postList));
+            .body(PostListPagingResponseDto.of(SUCCESS_PAGING_POSTS_MESSAGE,
+                postSummaryDtoPage.getTotalPages(), postSummaryDtoPage.getContent()));
     }
 
     @Operation(summary = "게시글 상세 조회", description = "게시판의 게시글을 상세 조회합니다.")
