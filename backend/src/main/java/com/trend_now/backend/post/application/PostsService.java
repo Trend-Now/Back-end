@@ -48,7 +48,7 @@ public class PostsService {
     private final CommentsRepository commentsRepository;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
-    public List<PostSummaryDto> findAllPostsPagingByBoardId(
+    public Page<PostSummaryDto> findAllPostsPagingByBoardId(
         PostsPagingRequestDto postsPagingRequestDto) {
         //TODO: 게시판 타이머 작동 조건 추가
 
@@ -59,13 +59,14 @@ public class PostsService {
         Page<Posts> postsPage = postsRepository.findAllByBoards_Id(
             postsPagingRequestDto.getBoardId(), pageable);
         // 게시글 목록을 PostSummaryDto 변환
-        return postsPage.getContent().stream()
+        List<PostSummaryDto> postSummaryDtoList = postsPage.getContent().stream()
             .map(post -> {
                 int postLikesCount = postLikesService.getPostLikesCount(
                     postsPagingRequestDto.getBoardId(),
                     post.getId());
                 return PostSummaryDto.of(post, postLikesCount);
             }).toList();
+        return new PageImpl<>(postSummaryDtoList, pageable, postsPage.getTotalElements());
     }
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
