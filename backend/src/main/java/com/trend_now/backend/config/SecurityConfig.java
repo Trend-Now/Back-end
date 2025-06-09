@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/v1/member/login/**", "/swagger-ui/**", "/v3/api-docs/**",
                     "/api/v1/news/realtime", "/api/v1/timeSync", "/api/v1/subscribe",
-                    "/api/v1/unsubscribe", "/sse-test", "/api/v1/member/test-jwt", "/api/v1/loadMainNotLogin").permitAll()
+                    "/api/v1/unsubscribe", "/sse-test", "/api/v1/member/test-jwt", "/api/v1/loadMain").permitAll()
                 .anyRequest().authenticated())
 
             /**

@@ -103,7 +103,7 @@ public class MainPageControllerTest {
         //when
 
         //then
-        mockMvc.perform(get("/api/v1/loadMainNotLogin"))
+        mockMvc.perform(get("/api/v1/loadMain"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.memberName").value("Guest"))
                 .andDo(print());
