@@ -70,12 +70,15 @@ public class PostsService {
     }
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
+    @Transactional
     public PostsInfoDto findPostsById(Long boardId, Long postId) {
         //TODO: 게시판 타이머 작동 조건 추가
         Posts posts = postsRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
         List<ImageInfoDto> imagesByPost = imagesService.findImagesByPost(posts);
         int postLikesCount = postLikesService.getPostLikesCount(boardId, postId);
+        // 조회수 증가
+        posts.increaseViewCount();
 
         return PostsInfoDto.of(posts, postLikesCount, imagesByPost);
     }
