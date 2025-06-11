@@ -11,7 +11,6 @@ import lombok.*;
 
 @Entity
 @Table(name = "members", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_email", columnNames = {"email"}),
     @UniqueConstraint(name = "uk_sns_id", columnNames = {"snsId"}),
     @UniqueConstraint(name = "uk_provider_sns_id", columnNames = {"provider", "snsId"})
 })
