@@ -9,6 +9,7 @@ package com.trend_now.backend.post.application;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.repository.CommentsRepository;
+import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.image.application.ImagesService;
 import com.trend_now.backend.image.domain.Images;
 import com.trend_now.backend.image.dto.ImageInfoDto;
@@ -164,5 +165,10 @@ public class PostsService {
         }).toList();
 
         return new PageImpl<>(postSummaryDtoList, pageable, posts.getTotalElements());
+    }
+
+    @Transactional
+    public void updateRegeneratedFlag(Long boardId) {
+        postsRepository.updateFlagByBoardId(boardId);
     }
 }

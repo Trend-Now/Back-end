@@ -7,6 +7,7 @@ import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -33,4 +34,8 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 AND p.boards.boardCategory = :category
         """)
     Page<Posts> findByBoardCategoryAndKeyword(@Param("keyword") String keyword, @Param("category") BoardCategory category, Pageable pageable);
+
+    @Modifying
+    @Query("UPDATE Posts p SET p.modifiable = true WHERE p.boards.id = :boardsId AND p.modifiable = false")
+    void updateFlagByBoardId(@Param("boardsId") Long boardsId);
 }
