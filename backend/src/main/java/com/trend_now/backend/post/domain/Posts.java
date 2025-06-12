@@ -45,8 +45,7 @@ public class Posts extends BaseEntity {
 
     @Builder.Default
     @Column(nullable = false)
-    @Setter
-    private boolean modifiable = false;
+    private boolean modifiable = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")

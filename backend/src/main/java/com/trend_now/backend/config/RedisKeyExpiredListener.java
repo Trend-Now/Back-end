@@ -42,9 +42,9 @@ public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
     public void onMessage(Message message, byte[] pattern) {
         String messageToStr = message.toString();
 
-        // 게시판이 만료 되었을 때
+        // 게시판이 만료 되면 게시판에 속한 게시글의 modifiable를 false로 변경
         String[] key = messageToStr.split(BOARD_KEY_DELIMITER);
-        postsService.updateRegeneratedFlag(Long.parseLong(key[1]));
+        postsService.updateModifiable(Long.parseLong(key[1]));
 
         log.info("RedisKeyExpiredListener에서 수신된 데이터 : {}", messageToStr);
         redisPublisher.publishRealTimeBoardExpiredEvent(

@@ -36,6 +36,6 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     Page<Posts> findByBoardCategoryAndKeyword(@Param("keyword") String keyword, @Param("category") BoardCategory category, Pageable pageable);
 
     @Modifying
-    @Query("UPDATE Posts p SET p.modifiable = true WHERE p.boards.id = :boardsId AND p.modifiable = false")
+    @Query("UPDATE Posts p SET p.modifiable = false WHERE p.boards.id = :boardsId AND p.modifiable = true")
     void updateFlagByBoardId(@Param("boardsId") Long boardsId);
 }
