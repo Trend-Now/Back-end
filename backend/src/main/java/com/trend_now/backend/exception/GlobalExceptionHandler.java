@@ -33,12 +33,38 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * RuntimeException 에러가 들어오면 InternalServerError(500) 상태코드와 함께 에러 메시지를 반환한다.
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponseDto> handleRuntimeException(RuntimeException exception, HttpServletRequest request) {
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponseDto);
+    }
+
+    /**
      * IllegalArgumentException 에러가 들어오면 BadRequest(400) 상태코드와 함께 에러 메시지를 반환한다.
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponseDto> handleIllegalArgumentException(IllegalArgumentException exception, HttpServletRequest request) {
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.badRequest().body(errorResponseDto);
+    }
+
+    /**
+     * 시스템 상태가 요청을 수행할 수 없는 경우 Forbidden(403) 상태코드와 함께 에러 메시지를 반환한다.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponseDto> handleIllegalStateException(IllegalStateException exception, HttpServletRequest request) {
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+                HttpStatus.FORBIDDEN,
                 exception.getMessage(),
                 request.getRequestURI()
         );
@@ -69,18 +95,5 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponseDto);
-    }
-
-    /**
-     * S3 파일 업로드 중 에러가 발생하면 InternalServerError(500) 상태코드와 함께 에러 메시지를 반환한다.
-     */
-    @ExceptionHandler(S3FileUploadException.class)
-    public ResponseEntity<ErrorResponseDto> handleS3FileUploadException(S3FileUploadException exception, HttpServletRequest request) {
-        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                exception.getMessage(),
-                request.getRequestURI()
-        );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponseDto);
     }
 }

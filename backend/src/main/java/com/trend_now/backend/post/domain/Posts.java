@@ -43,6 +43,10 @@ public class Posts extends BaseEntity {
     @Column(nullable = false)
     private int viewCount = 0;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean modifiable = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")
     private Boards boards;

@@ -23,6 +23,9 @@ public class Comments extends BaseEntity {
     @Column(nullable = false)
     private String content;
 
+    @Column(nullable = false)
+    private boolean modifiable = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Members members;
@@ -41,7 +44,7 @@ public class Comments extends BaseEntity {
     }
 
     // 댓글 작성자와 API 요청자가 동일한지 확인하는 메서드
-    public boolean iscommentsWriter(Comments comments, Members member) {
+    public boolean isCommentsWriter(Comments comments, Members member) {
         return comments.getMembers().getId().equals(member.getId());
     }
 }

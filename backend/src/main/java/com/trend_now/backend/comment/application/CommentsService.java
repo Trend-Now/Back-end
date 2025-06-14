@@ -1,7 +1,6 @@
 package com.trend_now.backend.comment.application;
 
 import com.trend_now.backend.comment.data.dto.CommentInfoDto;
-import com.trend_now.backend.comment.data.dto.CommentListPagingResponseDto;
 import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
 import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
 import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
@@ -14,10 +13,8 @@ import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.repository.PostsRepository;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -36,6 +33,7 @@ public class CommentsService {
     private static final String BOARD_KEY_DELIMITER  = ":";
     private static final String NOT_COMMENT_WRITER = "댓글 작성자가 아닙니다.";
     private static final String NOT_EXIST_BOARD_TTL = "Redis에 BOARD_TTL 정보가 없습니다.";
+    private static final String NOT_MODIFIABLE_POSTS = "게시글이 수정/삭제 불가능한 상태입니다.";
 
     private final CommentsRepository commentsRepository;
     private final PostsRepository postsRepository;
@@ -77,9 +75,11 @@ public class CommentsService {
             // 댓글 존재 확인
             Comments comments = commentsRepository.findById(deleteCommentsDto.getCommentId())
                     .orElseThrow(() -> new NotFoundException(NOT_EXIST_COMMENTS));
-
+            if (!comments.isModifiable()) {
+                throw new InvalidRequestException(NOT_MODIFIABLE_POSTS);
+            }
             // 본인이 작성한 댓글만 삭제가 가능
-            if(!comments.iscommentsWriter(comments, member)) {
+            if(!comments.isCommentsWriter(comments, member)) {
                 throw new InvalidRequestException(NOT_COMMENT_WRITER);
             }
 
@@ -113,8 +113,12 @@ public class CommentsService {
             Comments comments = commentsRepository.findById(updateCommentsDto.getCommentId())
                     .orElseThrow(() -> new NotFoundException(NOT_EXIST_COMMENTS));
 
+            if (!comments.isModifiable()) {
+                throw new InvalidRequestException(NOT_MODIFIABLE_POSTS);
+            }
+
             // 본인이 작성한 댓글만 수정이 가능
-            if(!comments.iscommentsWriter(comments, members)) {
+            if(!comments.isCommentsWriter(comments, members)) {
                 throw new InvalidRequestException(NOT_COMMENT_WRITER);
             }
 
