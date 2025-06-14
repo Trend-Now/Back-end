@@ -68,6 +68,11 @@ public class BoardRedisService {
         return redisTemplate.hasKey(key);
     }
 
+    public boolean isNotRealTimeBoard(String boardName, Long boardId) {
+        String key = boardName + BOARD_KEY_DELIMITER + boardId;
+        return !redisTemplate.hasKey(key);
+    }
+
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
         BoardPagingRequestDto boardPagingRequestDto) {
         Set<String> allBoardName = getBoardRank();
