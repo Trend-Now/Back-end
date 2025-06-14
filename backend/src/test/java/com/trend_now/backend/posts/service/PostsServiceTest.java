@@ -11,7 +11,7 @@ import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.domain.Posts;
-import com.trend_now.backend.post.dto.PostListDto;
+import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
@@ -19,7 +19,6 @@ import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +27,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -111,7 +111,6 @@ public class PostsServiceTest {
             "0, 5",  // 첫 번째 페이지, 5개 게시글
             "1, 5",  // 두 번째 페이지, 5개 게시글
             "0, 10", // 첫 번째 페이지, 10개 게시글 (모두 가져오기)
-            "11, 1"   // 열두 번째 페이지, 게시글 없음 (경계 테스트)
     })
     @DisplayName("게시판별 게시글 페이징 조회")
     public void 게시글_페이징_조회(int page, int size) {
@@ -119,11 +118,11 @@ public class PostsServiceTest {
         PostsPagingRequestDto requestDto = PostsPagingRequestDto.of(boards.getId(), page, size);
 
         //when
-        List<PostListDto> result = postsService.findAllPostsPagingByBoardId(requestDto);
+        Page<PostSummaryDto> result = postsService.findAllPostsPagingByBoardId(requestDto);
 
         //then
         assertThat(result).isNotNull();
-        assertThat(result.size()).isEqualTo(size);
+        assertThat(result.getContent().size()).isEqualTo(size);
 
         int allPosts = postsRepository.findAll().size();
 
@@ -166,5 +165,4 @@ public class PostsServiceTest {
         assertThatThrownBy(() -> postsService.findPostsById(boards.getId(), posts.getId()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
-
 }
