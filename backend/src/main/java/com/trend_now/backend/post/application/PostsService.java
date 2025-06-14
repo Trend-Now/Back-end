@@ -10,6 +10,7 @@ import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.repository.CommentsRepository;
+import com.trend_now.backend.exception.CustomException.InvalidRequestException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.image.application.ImagesService;
 import com.trend_now.backend.image.domain.Images;
@@ -42,7 +43,7 @@ public class PostsService {
     private static final String NOT_EXIST_POSTS = "선택하신 게시글이 존재하지 않습니다.";
     private static final String NOT_SAME_WRITER = "작성자가 일치하지 않습니다.";
     private static final String NOT_REAL_TIME_BOARD = "타이머가 종료된 게시판입니다. 타이머가 남아있는 게시판에서만 요청할 수 있습니다.";
-    private static final String NOT_MODIFIABLE_POSTS = "게시글이 수정 불가능한 상태입니다.";
+    private static final String NOT_MODIFIABLE_POSTS = "게시글이 수정/삭제 불가능한 상태입니다.";
 
     private final PostLikesService postLikesService;
     private final BoardRedisService boardRedisService;
@@ -60,7 +61,7 @@ public class PostsService {
         Boards boards = boardRepository.findById(postsPagingRequestDto.getBoardId()).
             orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
         if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId())) {
-            throw new IllegalStateException(NOT_REAL_TIME_BOARD);
+            throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         }
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
@@ -69,6 +70,7 @@ public class PostsService {
         // boardsId에 속하는 게시글 조회
         Page<Posts> postsPage = postsRepository.findAllByBoards_Id(
             postsPagingRequestDto.getBoardId(), pageable);
+
         // 게시글 목록을 PostSummaryDto 변환
         List<PostSummaryDto> postSummaryDtoList = postsPage.getContent().stream()
             .map(post -> {
@@ -86,7 +88,7 @@ public class PostsService {
         Boards boards = boardRepository.findById(boardId).
             orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
         if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId())) {
-            throw new IllegalStateException(NOT_REAL_TIME_BOARD);
+            throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         }
 
         // 게시글 조회
@@ -106,7 +108,7 @@ public class PostsService {
 
         // 게시판이 가변 타이머가 작동 중인지 확인
         if (boardRedisService.isNotRealTimeBoard(findBoards.getName(), findBoards.getId())) {
-            throw new IllegalStateException(NOT_REAL_TIME_BOARD);
+            throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         }
 
         Posts posts = Posts.builder()
@@ -179,8 +181,9 @@ public class PostsService {
         isModifiable(boards.getId(), boards.getName(), posts);
 
         if (posts.isNotSameId(memberId)) {
-            throw new IllegalArgumentException(NOT_SAME_WRITER);
+            throw new InvalidRequestException(NOT_SAME_WRITER);
         }
+
         // 게시글에 연관된 댓글 삭제
         commentsRepository.deleteByPosts_Id(postId);
         // 게시글에 등록된 이미지 삭제
@@ -213,9 +216,9 @@ public class PostsService {
 
     private void isModifiable(Long boardId, String boardName, Posts posts) {
         if (boardRedisService.isNotRealTimeBoard(boardName, boardId)) {
-            throw new IllegalStateException(NOT_REAL_TIME_BOARD);
+            throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         } else if (!posts.isModifiable()) {
-            throw new IllegalStateException(NOT_MODIFIABLE_POSTS);
+            throw new InvalidRequestException(NOT_MODIFIABLE_POSTS);
         }
     }
 }
