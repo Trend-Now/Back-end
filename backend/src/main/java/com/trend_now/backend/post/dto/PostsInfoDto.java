@@ -20,11 +20,12 @@ public class PostsInfoDto {
     private final String content;
     private final int viewCount;
     private final int likeCount;
+    private final boolean modifiable;
     private final List<ImageInfoDto> imageInfos;
     private final LocalDateTime updatedAt;
 
     public static PostsInfoDto of(Posts posts, int likeCount, List<ImageInfoDto> imageInfos) {
         return new PostsInfoDto(posts.getTitle(), posts.getWriter(), posts.getContent(),
-                posts.getViewCount(), likeCount, imageInfos, posts.getUpdatedAt());
+                posts.getViewCount(), likeCount, posts.isModifiable(), imageInfos, posts.getUpdatedAt());
     }
 }

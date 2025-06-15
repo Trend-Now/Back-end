@@ -88,11 +88,11 @@ public class PostsController {
     @PutMapping("/posts/{postId}")
     public ResponseEntity<String> updatePosts(
         @Valid @RequestBody PostsUpdateRequestDto postsUpdateRequestDto,
+        @PathVariable(value = "boardId") Long boardId,
         @PathVariable(value = "postId") Long postId,
-        @AuthenticationPrincipal(expression = "members") Members members
-    ) {
+        @AuthenticationPrincipal(expression = "members") Members members) {
 
-        postsService.updatePostsById(postsUpdateRequestDto, postId, members.getId());
+        postsService.updatePostsById(postsUpdateRequestDto, boardId, postId, members.getId());
 
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_UPDATE_POSTS_MESSAGE);
     }
@@ -100,11 +100,12 @@ public class PostsController {
     @Operation(summary = "게시글 삭제", description = "작성한 게시글을 삭제합니다.")
     @DeleteMapping("/posts/{postId}")
     public ResponseEntity<String> deletePosts(
+        @PathVariable(value = "boardId") Long boardId,
         @PathVariable(value = "postId") Long postId,
         @AuthenticationPrincipal(expression = "members") Members members
     ) {
 
-        postsService.deletePostsById(postId, members.getId());
+        postsService.deletePostsById(boardId, postId, members.getId());
 
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_POSTS_MESSAGE);
     }
