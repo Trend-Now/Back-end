@@ -2,6 +2,8 @@ package com.trend_now.backend.post.presentation;
 
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.ScrapService;
+import com.trend_now.backend.post.domain.ScrapAction;
+import com.trend_now.backend.post.dto.ScrapResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -21,16 +23,18 @@ public class ScrapController {
 
     private final ScrapService scrapService;
 
-    private static final String SUCCESS_SCRAP_POST_MESSAGE = "게시글 스크랩 요청 처리 성공";
+    private static final String SUCCESS_SCRAPPED_POST_MESSAGE = "게시글 스크랩 등록 성공";
+    private static final String SUCCESS_UNSCRAPPED_POST_MESSAGE = "게시글 스크랩 취소 성공";
 
     @PostMapping
     @Operation(summary = "게시글 스크랩", description = "게시글을 스크랩합니다.")
-    public ResponseEntity<String> scarpPost(
+    public ResponseEntity<ScrapResponseDto> scarpPost(
         @AuthenticationPrincipal(expression = "members") Members members,
         @PathVariable Long postId) {
 
-        scrapService.scrapPost(members.getId(), postId);
+        ScrapAction scrapAction = scrapService.scrapPost(members.getId(), postId);
+        String message = scrapAction == ScrapAction.SCRAPPED ? SUCCESS_SCRAPPED_POST_MESSAGE : SUCCESS_UNSCRAPPED_POST_MESSAGE;
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(SUCCESS_SCRAP_POST_MESSAGE);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ScrapResponseDto.of(message, scrapAction));
     }
 }
