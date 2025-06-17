@@ -10,13 +10,14 @@ import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class PostListPagingResponseDto {
+public class PostListResponseDto {
 
     private final String message;
     private final int totalPageCount;
+    private final long totalCount;
     private final List<PostSummaryDto> postsInfoListDto;
 
-    public static PostListPagingResponseDto of(String message, int totalPageCount, List<PostSummaryDto> postsInfoListDto) {
-        return new PostListPagingResponseDto(message, totalPageCount, postsInfoListDto);
+    public static PostListResponseDto of(String message, int totalPageCount, long totalCount, List<PostSummaryDto> postsInfoListDto) {
+        return new PostListResponseDto(message, totalPageCount, totalCount, postsInfoListDto);
     }
 }

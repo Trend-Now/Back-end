@@ -8,6 +8,7 @@ import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.exception.CustomException.InvalidRequestException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
@@ -193,11 +194,11 @@ public class PostsServiceTest {
         //then
         assertThatThrownBy(
             () -> postsService.deletePostsById(boards.getId(), posts.getId(), members.getId()))
-            .isInstanceOf(IllegalStateException.class)
+            .isInstanceOf(InvalidRequestException.class)
             .hasMessageContaining("타이머가 종료된 게시판입니다. 타이머가 남아있는 게시판에서만 요청할 수 있습니다.");
         assertThatThrownBy(() -> postsService.updatePostsById(postsUpdateRequestDto,
             boards.getId(), posts.getId(), members.getId()))
-            .isInstanceOf(IllegalStateException.class)
+            .isInstanceOf(InvalidRequestException.class)
             .hasMessageContaining("타이머가 종료된 게시판입니다. 타이머가 남아있는 게시판에서만 요청할 수 있습니다.");
     }
 
@@ -230,12 +231,12 @@ public class PostsServiceTest {
             "updateContent", null, null);
         assertThatThrownBy(() -> postsService.updatePostsById(postsUpdateRequestDto,
             boards.getId(), posts.getId(), members.getId()))
-            .isInstanceOf(IllegalStateException.class)
+            .isInstanceOf(InvalidRequestException.class)
             .hasMessageContaining("게시글이 수정/삭제 불가능한 상태입니다.");
         // 게시글 삭제
         assertThatThrownBy(
             () -> postsService.deletePostsById(boards.getId(), posts.getId(), members.getId()))
-            .isInstanceOf(IllegalStateException.class)
+            .isInstanceOf(InvalidRequestException.class)
             .hasMessageContaining("게시글이 수정/삭제 불가능한 상태입니다.");
     }
 
