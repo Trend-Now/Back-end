@@ -6,7 +6,6 @@ import com.trend_now.backend.image.domain.Images;
 import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.image.dto.ImageUploadRequestDto;
 import com.trend_now.backend.image.repository.ImagesRepository;
-import com.trend_now.backend.post.domain.Posts;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,8 +52,8 @@ public class ImagesService {
     /**
      * 게시글 이미지 조회
      */
-    public List<ImageInfoDto> findImagesByPost(Posts post) {
-        List<Images> images = imagesRepository.findAllByPosts_Id(post.getId());
+    public List<ImageInfoDto> findImagesByPost(Long postId) {
+        List<Images> images = imagesRepository.findAllByPosts_Id(postId);
         return images.stream().map(
             image -> ImageInfoDto.of(image.getId(), image.getImageUrl())
         ).toList();

@@ -1,5 +1,6 @@
 package com.trend_now.backend.board.application;
 
+import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
@@ -68,7 +69,11 @@ public class BoardRedisService {
         return redisTemplate.hasKey(key);
     }
 
-    public boolean isNotRealTimeBoard(String boardName, Long boardId) {
+    // 타이머가 남아있는 게시판이면 true 반환, 고정 게시판이면 false 반환 (true 반환하면 예외 던짐)
+    public boolean isNotRealTimeBoard(String boardName, Long boardId, BoardCategory boardCategory) {
+        if (boardCategory == BoardCategory.FIXED) {
+            return false;
+        }
         String key = boardName + BOARD_KEY_DELIMITER + boardId;
         return !redisTemplate.hasKey(key);
     }
