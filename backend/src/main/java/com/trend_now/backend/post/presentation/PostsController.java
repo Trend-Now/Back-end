@@ -1,12 +1,14 @@
 package com.trend_now.backend.post.presentation;
 
+import com.trend_now.backend.image.application.ImagesService;
+import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.dto.PostInfoResponseDto;
 import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
-import com.trend_now.backend.post.dto.PostListPagingResponseDto;
+import com.trend_now.backend.post.dto.PostListResponseDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,10 +43,11 @@ public class PostsController {
     private static final String SUCCESS_DELETE_POSTS_MESSAGE = "게시글을 삭제하는 데 성공했습니다.";
 
     private final PostsService postsService;
+    private final ImagesService imagesService;
 
     @Operation(summary = "게시글 목록 조회", description = "게시판의 모든 게시글을 페이징하여 조회합니다.")
     @GetMapping("/posts")
-    public ResponseEntity<PostListPagingResponseDto> findAllPostsByBoardId(
+    public ResponseEntity<PostListResponseDto> findAllPostsByBoardId(
         @PathVariable Long boardId,
         @RequestParam(required = false, defaultValue = "0") int page,
         @RequestParam(required = false, defaultValue = "10") int size) {
@@ -56,8 +59,8 @@ public class PostsController {
             postsPagingRequestDto);
 
         return ResponseEntity.status(HttpStatus.OK)
-            .body(PostListPagingResponseDto.of(SUCCESS_PAGING_POSTS_MESSAGE,
-                postSummaryDtoPage.getTotalPages(), postSummaryDtoPage.getContent()));
+            .body(PostListResponseDto.of(SUCCESS_PAGING_POSTS_MESSAGE,
+                postSummaryDtoPage.getTotalPages(), postSummaryDtoPage.getTotalElements(), postSummaryDtoPage.getContent()));
     }
 
     @Operation(summary = "게시글 상세 조회", description = "게시판의 게시글을 상세 조회합니다.")
@@ -68,9 +71,10 @@ public class PostsController {
     ) {
 
         PostsInfoDto postInfo = postsService.findPostsById(boardId, postId);
+        List<ImageInfoDto> imagesByPost = imagesService.findImagesByPost(postId);
 
         return ResponseEntity.status(HttpStatus.OK)
-            .body(PostInfoResponseDto.of(SUCCESS_FIND_POSTS_MESSAGE, postInfo));
+            .body(PostInfoResponseDto.of(SUCCESS_FIND_POSTS_MESSAGE, postInfo, imagesByPost));
     }
 
     @Operation(summary = "게시글 저장", description = "게시판에 게시글을 저장합니다.")
@@ -88,11 +92,11 @@ public class PostsController {
     @PutMapping("/posts/{postId}")
     public ResponseEntity<String> updatePosts(
         @Valid @RequestBody PostsUpdateRequestDto postsUpdateRequestDto,
+        @PathVariable(value = "boardId") Long boardId,
         @PathVariable(value = "postId") Long postId,
-        @AuthenticationPrincipal(expression = "members") Members members
-    ) {
+        @AuthenticationPrincipal(expression = "members") Members members) {
 
-        postsService.updatePostsById(postsUpdateRequestDto, postId, members.getId());
+        postsService.updatePostsById(postsUpdateRequestDto, boardId, postId, members.getId());
 
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_UPDATE_POSTS_MESSAGE);
     }
@@ -100,11 +104,12 @@ public class PostsController {
     @Operation(summary = "게시글 삭제", description = "작성한 게시글을 삭제합니다.")
     @DeleteMapping("/posts/{postId}")
     public ResponseEntity<String> deletePosts(
+        @PathVariable(value = "boardId") Long boardId,
         @PathVariable(value = "postId") Long postId,
         @AuthenticationPrincipal(expression = "members") Members members
     ) {
 
-        postsService.deletePostsById(postId, members.getId());
+        postsService.deletePostsById(boardId, postId, members.getId());
 
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_POSTS_MESSAGE);
     }

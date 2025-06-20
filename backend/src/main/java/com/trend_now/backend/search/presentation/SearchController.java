@@ -23,7 +23,7 @@ public class SearchController {
     private final SearchService searchService;
 
     @Operation(summary = "검색어로 게시글 조회", description = "검색어 기반으로 요구사항에 맞게 게시글을 조회합니다.")
-    @GetMapping("/posts")
+    @GetMapping("/result")
     public ResponseEntity<SearchResponseDto> findAllPostsByBoardId(
         @RequestParam String keyword,
         @RequestParam(required = false, defaultValue = "0") int page,
