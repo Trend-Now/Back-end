@@ -26,9 +26,9 @@ public class SearchController {
     @GetMapping("/result")
     public ResponseEntity<SearchResponseDto> findAllPostsByBoardId(
         @RequestParam String keyword,
-        @RequestParam(required = false, defaultValue = "0") int page,
+        @RequestParam(required = false, defaultValue = "1") int page,
         @RequestParam(required = false, defaultValue = "10") int size) {
-        SearchResponseDto response = searchService.findBoardAndPostByKeyword(keyword, page, size);
+        SearchResponseDto response = searchService.findBoardAndPostByKeyword(keyword, page - 1, size);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
