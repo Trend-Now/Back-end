@@ -30,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,7 +67,7 @@ public class PostsService {
         }
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
-            postsPagingRequestDto.getSize());
+            postsPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt"));
 
         // boardsId에 속하는 게시글 조회
         return postsRepository.findAllByBoardsId(
@@ -182,7 +184,7 @@ public class PostsService {
 
     // 회원이 작성한 게시글 조회 - 가변 타이머 작동 중에만 가능
     public Page<PostWithBoardSummaryDto> getPostsByMemberId(Long memberId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Direction.DESC, "createdAt"));
         return postsRepository.findByMemberId(memberId, pageable);
     }
 
