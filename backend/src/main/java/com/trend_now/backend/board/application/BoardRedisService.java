@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -110,7 +112,7 @@ public class BoardRedisService {
             .collect(Collectors.toList());
 
         PageRequest pageRequest = PageRequest.of(boardPagingRequestDto.getPage(),
-            boardPagingRequestDto.getSize());
+            boardPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt"));
         int start = (int) pageRequest.getOffset();
         int end = Math.min(start + pageRequest.getPageSize(), boardInfoDtos.size());
 
