@@ -224,11 +224,11 @@ public class BoardsRedisServiceTest {
 
     @ParameterizedTest
     @CsvSource({
-            "0, 5, B0",  // 첫 번째 페이지, 5개씩 -> 첫 번째 항목은 B0
-            "1, 5, B5",  // 두 번째 페이지, 5개씩 -> 첫 번째 항목은 B5
-            "2, 5, B10", // 세 번째 페이지, 5개씩 -> 첫 번째 항목은 B10
-            "0, 10, B0", // 첫 번째 페이지, 10개씩 -> 첫 번째 항목은 B0
-            "1, 10, B10" // 두 번째 페이지, 10개씩 -> 첫 번째 항목은 B10
+            "1, 5, B0",  // 첫 번째 페이지, 5개씩 -> 첫 번째 항목은 B0
+            "2, 5, B5",  // 두 번째 페이지, 5개씩 -> 첫 번째 항목은 B5
+            "3, 5, B10", // 세 번째 페이지, 5개씩 -> 첫 번째 항목은 B10
+            "1, 10, B0", // 첫 번째 페이지, 10개씩 -> 첫 번째 항목은 B0
+            "2, 10, B10" // 두 번째 페이지, 10개씩 -> 첫 번째 항목은 B10
     })
     @DisplayName("페이지와 사이즈가 주어지면 적절한 페이지를 반환한다")
     public void 페이지네이션_기본기능(int page, int size, String expectedBoardName) throws Exception {
@@ -259,9 +259,9 @@ public class BoardsRedisServiceTest {
 
     @ParameterizedTest
     @CsvSource({
-            "0, 10, B19",  // 첫 번째 페이지(0번 페이지)에서 가장 TTL이 높은 B19가 나와야 함
-            "1, 10, B0",   // 두 번째 페이지(1번 페이지)에서 B9가 나와야 함
-            "3, 5, B5"     // 네 번째 페이지(3번 페이지)에서 B5가 나와야 함
+            "1, 10, B19",  // 첫 번째 페이지(0번 페이지)에서 가장 TTL이 높은 B19가 나와야 함
+            "2, 10, B0",   // 두 번째 페이지(1번 페이지)에서 B9가 나와야 함
+            "4, 5, B5"     // 네 번째 페이지(3번 페이지)에서 B5가 나와야 함
     })
     @DisplayName("TTL이 큰 순서대로 페이지네이션이 실행되어 반환된다")
     public void TTL_페이지네이션(int page, int size, String expectedBoardName) throws Exception {
@@ -295,15 +295,14 @@ public class BoardsRedisServiceTest {
 
                     Long currentExpire = redisTemplate.getExpire(dynamicKey, TimeUnit.SECONDS);
                     if (currentExpire > 0) {
-                        currentExpire += (long) (pagination_boards.indexOf(board)
-                                * 10);  // i 값을 board의 인덱스 값으로 계산
+                        currentExpire += (long) (pagination_boards.indexOf(board) * 10);  // i 값을 board의 인덱스 값으로 계산
                     }
                     redisTemplate.expire(dynamicKey, currentExpire, TimeUnit.SECONDS);
                 });
 
         //when
         BoardPagingResponseDto allRealTimeBoardPaging = boardRedisService.findAllRealTimeBoardPaging(
-                new BoardPagingRequestDto(page, size));
+                new BoardPagingRequestDto(page - 1, size));
 
         //then
         assertThat(allRealTimeBoardPaging).isNotNull();
@@ -315,9 +314,9 @@ public class BoardsRedisServiceTest {
 
     @ParameterizedTest
     @CsvSource({
-            "0, 10, B0",   // 첫 번째 페이지(0번 페이지)에서 score이 가장 작은 B0가 나와야 함
-            "1, 10, B5",   // 두 번째 페이지(1번 페이지)에서 B5가 나와야 함
-            "3, 5, B17"     // 네 번째 페이지(3번 페이지)에서 B17가 나와야 함
+            "1, 10, B0",   // 첫 번째 페이지(0번 페이지)에서 score이 가장 작은 B0가 나와야 함
+            "2, 10, B5",   // 두 번째 페이지(1번 페이지)에서 B5가 나와야 함
+            "4, 5, B17"     // 네 번째 페이지(3번 페이지)에서 B17가 나와야 함
     })
     @DisplayName("TTL이 같다면 score은 오름차순 정렬되어 반환된다")
     public void TTL_같을경우_score_오름차순_페이지네이션(int page, int size, String expectedBoardName)

@@ -115,9 +115,9 @@ public class PostsServiceTest {
 
     @ParameterizedTest
     @CsvSource({
-        "0, 5",  // 첫 번째 페이지, 5개 게시글
-        "1, 5",  // 두 번째 페이지, 5개 게시글
-        "0, 10", // 첫 번째 페이지, 10개 게시글 (모두 가져오기)
+        "1, 5",  // 첫 번째 페이지, 5개 게시글
+        "2, 5",  // 두 번째 페이지, 5개 게시글
+        "1, 10", // 첫 번째 페이지, 10개 게시글 (모두 가져오기)
     })
     @DisplayName("게시판별 게시글 페이징 조회")
     public void 게시글_페이징_조회(int page, int size) {
@@ -126,7 +126,7 @@ public class PostsServiceTest {
             PostsSaveDto postsSaveDto = PostsSaveDto.of("title" + i, "content" + i, null);
             postsService.savePosts(postsSaveDto, members, boards.getId());
         }
-        PostsPagingRequestDto requestDto = PostsPagingRequestDto.of(boards.getId(), page, size);
+        PostsPagingRequestDto requestDto = PostsPagingRequestDto.of(boards.getId(), page - 1, size);
 
         //when
         Page<PostSummaryDto> result = postsService.findAllPostsPagingByBoardId(requestDto);

@@ -49,10 +49,10 @@ public class PostsController {
     @GetMapping("/posts")
     public ResponseEntity<PostListResponseDto> findAllPostsByBoardId(
         @PathVariable Long boardId,
-        @RequestParam(required = false, defaultValue = "0") int page,
+        @RequestParam(required = false, defaultValue = "1") int page,
         @RequestParam(required = false, defaultValue = "10") int size) {
 
-        PostsPagingRequestDto postsPagingRequestDto = PostsPagingRequestDto.of(boardId, page,
+        PostsPagingRequestDto postsPagingRequestDto = PostsPagingRequestDto.of(boardId, page - 1,
             size);
 
         Page<PostSummaryDto> postSummaryDtoPage = postsService.findAllPostsPagingByBoardId(

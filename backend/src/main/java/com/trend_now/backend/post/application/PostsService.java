@@ -18,6 +18,7 @@ import com.trend_now.backend.image.domain.Images;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostSummaryDto;
+import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
@@ -180,7 +181,7 @@ public class PostsService {
     }
 
     // 회원이 작성한 게시글 조회 - 가변 타이머 작동 중에만 가능
-    public Page<PostSummaryDto> getPostsByMemberId(Long memberId, int page, int size) {
+    public Page<PostWithBoardSummaryDto> getPostsByMemberId(Long memberId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return postsRepository.findByMemberId(memberId, pageable);
     }
