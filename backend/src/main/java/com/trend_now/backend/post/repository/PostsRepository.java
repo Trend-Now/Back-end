@@ -39,25 +39,23 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     void deleteAllByMembers_Id(Long membersId);
 
     @Query("""
-        SELECT new com.trend_now.backend.post.dto.PostSummaryDto(
+        SELECT new com.trend_now.backend.post.dto.PostWithBoardSummaryDto(
                 p.id,
                 p.title,
                 p.writer,
                 p.viewCount,
-                (SELECT COUNT(c)
-                FROM Comments c
-                WHERE c.posts.id = p.id),
-                (SELECT COUNT(pl)
-                FROM PostLikes pl
-                WHERE pl.posts.id = p.id),
+                (SELECT COUNT(c) FROM Comments c WHERE c.posts.id = p.id),
+                (SELECT COUNT(pl) FROM PostLikes pl WHERE pl.posts.id = p.id),
                 p.modifiable,
                 p.createdAt,
-                p.updatedAt
+                p.updatedAt,
+                p.boards.id,
+                p.boards.name
         )
         FROM Posts p
         WHERE p.members.id = :membersId
         """)
-    Page<PostSummaryDto> findByMemberId(@Param("membersId") Long membersId, Pageable pageable);
+    Page<PostWithBoardSummaryDto> findByMemberId(@Param("membersId") Long membersId, Pageable pageable);
 
     // 게시글 제목, 내용에 키워드가 포함된 게시글 중, 실시간 검색어 게시판에 속한 게시물 조회
     @Query("""
