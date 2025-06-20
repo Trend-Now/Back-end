@@ -1,5 +1,6 @@
 package com.trend_now.backend.board.application;
 
+import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
@@ -11,6 +12,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,6 +71,15 @@ public class BoardRedisService {
         return redisTemplate.hasKey(key);
     }
 
+    // 타이머가 남아있는 게시판이면 true 반환, 고정 게시판이면 false 반환 (true 반환하면 예외 던짐)
+    public boolean isNotRealTimeBoard(String boardName, Long boardId, BoardCategory boardCategory) {
+        if (boardCategory == BoardCategory.FIXED) {
+            return false;
+        }
+        String key = boardName + BOARD_KEY_DELIMITER + boardId;
+        return !redisTemplate.hasKey(key);
+    }
+
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
         BoardPagingRequestDto boardPagingRequestDto) {
         Set<String> allBoardName = getBoardRank();
@@ -100,7 +112,7 @@ public class BoardRedisService {
             .collect(Collectors.toList());
 
         PageRequest pageRequest = PageRequest.of(boardPagingRequestDto.getPage(),
-            boardPagingRequestDto.getSize());
+            boardPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt"));
         int start = (int) pageRequest.getOffset();
         int end = Math.min(start + pageRequest.getPageSize(), boardInfoDtos.size());
 

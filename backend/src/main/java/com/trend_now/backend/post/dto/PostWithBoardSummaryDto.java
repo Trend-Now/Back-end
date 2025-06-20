@@ -6,14 +6,16 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class PostSummaryDto {
+public class PostWithBoardSummaryDto {
     private Long postId;
     private String title;
     private String writer;
     private int viewCount;
-    private Long likeCount;
     private Long commentCount;
+    private Long likeCount;
     private boolean modifiable;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime createAt;
+    private LocalDateTime updateAt;
+    private Long boardId;
+    private String boardName;
 }

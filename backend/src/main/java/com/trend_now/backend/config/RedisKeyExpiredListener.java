@@ -2,6 +2,7 @@ package com.trend_now.backend.config;
 
 import com.trend_now.backend.board.application.RedisPublisher;
 import com.trend_now.backend.board.dto.RealTimeBoardKeyExpiredEvent;
+import com.trend_now.backend.post.application.PostsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.listener.KeyExpirationEventMessageListener;
@@ -14,13 +15,17 @@ public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
 
     private final RedisPublisher redisPublisher;
     private final RedisMessageListenerContainer listenerContainer;
+    private final PostsService postsService;
+
+    private static final String BOARD_KEY_DELIMITER = ":";
 
     public RedisKeyExpiredListener(
             RedisMessageListenerContainer listenerContainer,
-            RedisPublisher redisPublisher) {
+            RedisPublisher redisPublisher, PostsService postsService) {
         super(listenerContainer);
         this.redisPublisher = redisPublisher;
         this.listenerContainer = listenerContainer;
+        this.postsService = postsService;
     }
 
     @Override
@@ -36,6 +41,11 @@ public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
     @Override
     public void onMessage(Message message, byte[] pattern) {
         String messageToStr = message.toString();
+
+        // 게시판이 만료 되면 게시판에 속한 게시글의 modifiable를 false로 변경
+        String[] key = messageToStr.split(BOARD_KEY_DELIMITER);
+        postsService.updateModifiable(Long.parseLong(key[1]));
+
         log.info("RedisKeyExpiredListener에서 수신된 데이터 : {}", messageToStr);
         redisPublisher.publishRealTimeBoardExpiredEvent(
                 RealTimeBoardKeyExpiredEvent.of(messageToStr));

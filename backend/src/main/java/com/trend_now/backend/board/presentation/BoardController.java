@@ -29,9 +29,9 @@ public class BoardController {
     @Operation(summary = "실시간 게시판 리스트 조회", description = "실시간 게시판 리스트를 페이징하여 가져옵니다.")
     @GetMapping("/list")
     public ResponseEntity<BoardPagingResponseDto> findAllRealTimeBoards(
-            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int size) {
-        BoardPagingRequestDto boardPagingRequestDto = new BoardPagingRequestDto(page, size);
+        BoardPagingRequestDto boardPagingRequestDto = new BoardPagingRequestDto(page - 1, size);
         BoardPagingResponseDto allRealTimeBoardPaging = boardRedisService.findAllRealTimeBoardPaging(
                 boardPagingRequestDto);
         return ResponseEntity.status(HttpStatus.OK).body(allRealTimeBoardPaging);

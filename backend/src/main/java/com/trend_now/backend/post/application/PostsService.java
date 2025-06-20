@@ -6,16 +6,19 @@
  */
 package com.trend_now.backend.post.application;
 
+import com.trend_now.backend.board.application.BoardRedisService;
+import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.repository.CommentsRepository;
+import com.trend_now.backend.exception.CustomException.InvalidRequestException;
+import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.image.application.ImagesService;
 import com.trend_now.backend.image.domain.Images;
-import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
-import com.trend_now.backend.post.dto.PostListPagingResponseDto;
 import com.trend_now.backend.post.dto.PostSummaryDto;
+import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
@@ -25,9 +28,10 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,58 +44,69 @@ public class PostsService {
     private static final String NOT_EXIST_BOARD = "선택하신 게시판이 존재하지 않습니다.";
     private static final String NOT_EXIST_POSTS = "선택하신 게시글이 존재하지 않습니다.";
     private static final String NOT_SAME_WRITER = "작성자가 일치하지 않습니다.";
+    private static final String NOT_REAL_TIME_BOARD = "타이머가 종료된 게시판입니다. 타이머가 남아있는 게시판에서만 요청할 수 있습니다.";
+    private static final String NOT_MODIFIABLE_POSTS = "게시글이 수정/삭제 불가능한 상태입니다.";
+
+    private final BoardRedisService boardRedisService;
+    private final ImagesService imagesService;
 
     private final PostsRepository postsRepository;
     private final BoardRepository boardRepository;
-    private final ImagesService imagesService;
-    private final PostLikesService postLikesService;
     private final CommentsRepository commentsRepository;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
     public Page<PostSummaryDto> findAllPostsPagingByBoardId(
         PostsPagingRequestDto postsPagingRequestDto) {
-        //TODO: 게시판 타이머 작동 조건 추가
+
+        // 게시판이 가변 타이머가 작동 중인지 확인
+        Boards boards = boardRepository.findById(postsPagingRequestDto.getBoardId()).
+            orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+
+        if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(), boards.getBoardCategory())) {
+            throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
+        }
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
-            postsPagingRequestDto.getSize());
+            postsPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt"));
 
         // boardsId에 속하는 게시글 조회
-        Page<Posts> postsPage = postsRepository.findAllByBoards_Id(
+        return postsRepository.findAllByBoardsId(
             postsPagingRequestDto.getBoardId(), pageable);
-        // 게시글 목록을 PostSummaryDto 변환
-        List<PostSummaryDto> postSummaryDtoList = postsPage.getContent().stream()
-            .map(post -> {
-                int postLikesCount = postLikesService.getPostLikesCount(
-                    postsPagingRequestDto.getBoardId(),
-                    post.getId());
-                return PostSummaryDto.of(post, postLikesCount);
-            }).toList();
-        return new PageImpl<>(postSummaryDtoList, pageable, postsPage.getTotalElements());
     }
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
     public PostsInfoDto findPostsById(Long boardId, Long postId) {
-        //TODO: 게시판 타이머 작동 조건 추가
-        Posts posts = postsRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
-        List<ImageInfoDto> imagesByPost = imagesService.findImagesByPost(posts);
-        int postLikesCount = postLikesService.getPostLikesCount(boardId, postId);
+        // 게시판이 가변 타이머가 작동 중인지 확인
+        Boards boards = boardRepository.findById(boardId).
+            orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
 
-        return PostsInfoDto.of(posts, postLikesCount, imagesByPost);
+        if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(), boards.getBoardCategory())) {
+            throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
+        }
+
+        // 게시글 정보 조회
+        return postsRepository.findPostInfoById(postId).orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
     }
 
     //게시글 작성 - 가변 타이머 작동 중에만 가능
     @Transactional
     public Long savePosts(PostsSaveDto postsSaveDto, Members members, Long boardId) {
-        Boards findBoards = boardRepository.findById(boardId)
-            .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_BOARD));
+        Boards boards = boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+
+        // 게시판이 가변 타이머가 작동 중인지 확인
+        if (boards.getBoardCategory() == BoardCategory.REALTIME) {
+            if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(), boards.getBoardCategory())) {
+                throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
+            }
+        }
 
         Posts posts = Posts.builder()
             .title(postsSaveDto.getTitle())
-            .content(postsSaveDto.getContent())
             .writer(members.getName())
+            .content(postsSaveDto.getContent())
+            .boards(boards)
             .members(members)
-            .boards(findBoards)
             .build();
         Posts savePost = postsRepository.save(posts);
 
@@ -109,15 +124,22 @@ public class PostsService {
 
     //게시글 수정 - 가변 타이머 작동 중에만 가능
     @Transactional
-    public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long postId,
+    public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long boardId,
+        Long postId,
         Long memberId) {
-        //TODO: 게시판 타이머 작동 조건 추가
+        Boards boards = boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
         Posts posts = postsRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
 
+        // 게시글이 수정 불가능한 상태면 예외 발생
+        isModifiable(boards.getId(), boards.getName(), boards.getBoardCategory(), posts);
+
+        // 게시글 작성자와 요청한 회원이 일치하지 않으면 예외 발생
         if (posts.isNotSameId(memberId)) {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
         }
+
         // 삭제된 이미지 서버에서 삭제
         List<Long> deleteImageIdList = postsUpdateRequestDto.getDeleteImageIdList();
         if (deleteImageIdList != null && !deleteImageIdList.isEmpty()) {
@@ -139,13 +161,19 @@ public class PostsService {
 
     //게시글 삭제 - 상시 가능
     @Transactional
-    public void deletePostsById(Long postId, Long memberId) {
+    public void deletePostsById(Long boardId, Long postId, Long memberId) {
         Posts posts = postsRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException(NOT_EXIST_POSTS));
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
+        Boards boards = boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+
+        // 게시글이 수정 불가능한 상태면 예외 발생
+        isModifiable(boards.getId(), boards.getName(), boards.getBoardCategory(), posts);
 
         if (posts.isNotSameId(memberId)) {
-            throw new IllegalArgumentException(NOT_SAME_WRITER);
+            throw new InvalidRequestException(NOT_SAME_WRITER);
         }
+
         // 게시글에 연관된 댓글 삭제
         commentsRepository.deleteByPosts_Id(postId);
         // 게시글에 등록된 이미지 삭제
@@ -154,15 +182,26 @@ public class PostsService {
         postsRepository.deleteById(postId);
     }
 
-    public Page<PostSummaryDto> getPostsByMemberId(Long memberId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Posts> posts = postsRepository.findByMembers_Id(memberId, pageable);
-        List<PostSummaryDto> postSummaryDtoList = posts.getContent().stream().map(post -> {
-            int postLikesCount = postLikesService.getPostLikesCount(post.getBoards().getId(),
-                post.getId());
-            return PostSummaryDto.of(post, postLikesCount);
-        }).toList();
+    // 회원이 작성한 게시글 조회 - 가변 타이머 작동 중에만 가능
+    public Page<PostWithBoardSummaryDto> getPostsByMemberId(Long memberId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Direction.DESC, "createdAt"));
+        return postsRepository.findByMemberId(memberId, pageable);
+    }
 
-        return new PageImpl<>(postSummaryDtoList, pageable, posts.getTotalElements());
+    /**
+     * 게시글이 속한 게시판의 타이머가 만료됐을 경우 modifiable 필드의 값을 false로 변경합니다. modifiable = false
+     * 불가능
+     */
+    @Transactional
+    public void updateModifiable(Long boardId) {
+        postsRepository.updateFlagByBoardId(boardId);
+    }
+
+    private void isModifiable(Long boardId, String boardName, BoardCategory boardCategory, Posts posts) {
+        if (boardRedisService.isNotRealTimeBoard(boardName, boardId, boardCategory)) {
+            throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
+        } else if (!posts.isModifiable()) {
+            throw new InvalidRequestException(NOT_MODIFIABLE_POSTS);
+        }
     }
 }
