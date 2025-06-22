@@ -33,7 +33,7 @@ public class CommentsService {
     private static final String BOARD_KEY_DELIMITER  = ":";
     private static final String NOT_COMMENT_WRITER = "댓글 작성자가 아닙니다.";
     private static final String NOT_EXIST_BOARD_TTL = "Redis에 BOARD_TTL 정보가 없습니다.";
-    private static final String NOT_MODIFIABLE_POSTS = "게시글이 수정/삭제 불가능한 상태입니다.";
+    private static final String NOT_MODIFIABLE_COMMENTS = "댓글이 수정/삭제 불가능한 상태입니다.";
 
     private final CommentsRepository commentsRepository;
     private final PostsRepository postsRepository;
@@ -83,7 +83,7 @@ public class CommentsService {
 
             // modifiable이 true인 경우에만 삭제 가능
             if (!comments.isModifiable()) {
-                throw new InvalidRequestException(NOT_MODIFIABLE_POSTS);
+                throw new InvalidRequestException(NOT_MODIFIABLE_COMMENTS);
             }
 
             // 댓글 삭제 처리
@@ -123,7 +123,7 @@ public class CommentsService {
 
             // modifiable이 true인 경우에만 삭제 가능
             if (!comments.isModifiable()) {
-                throw new InvalidRequestException(NOT_MODIFIABLE_POSTS);
+                throw new InvalidRequestException(NOT_MODIFIABLE_COMMENTS);
             }
 
             // 댓글 수정 처리

@@ -362,11 +362,11 @@ class CommentsServiceTest {
         assertThatThrownBy(
                 () -> commentsService.deleteCommentsByCommentId(testMembers, deleteCommentsDto))
                 .isInstanceOf(InvalidRequestException.class)
-                .hasMessage("게시글이 수정/삭제 불가능한 상태입니다.");
+                .hasMessage("댓글이 수정/삭제 불가능한 상태입니다.");
 
         assertThatThrownBy(() -> commentsService.updateCommentsByMembersAndCommentId(testMembers,
                 updateCommentsDto))
                 .isInstanceOf(InvalidRequestException.class)
-                .hasMessage("게시글이 수정/삭제 불가능한 상태입니다.");
+                .hasMessage("댓글이 수정/삭제 불가능한 상태입니다.");
     }
 }
