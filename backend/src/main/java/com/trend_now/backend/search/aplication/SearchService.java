@@ -5,7 +5,6 @@ import com.trend_now.backend.board.cache.RealTimeBoardCache;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSummaryDto;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.post.application.PostLikesService;
 import com.trend_now.backend.post.dto.PostListResponseDto;
 import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
@@ -34,7 +33,6 @@ public class SearchService {
 
     private final PostsRepository postsRepository;
     private final RealTimeBoardCache realTimeBoardCache;
-    private final PostLikesService postLikesService;
     private final BoardRepository boardRepository;
 
     /**

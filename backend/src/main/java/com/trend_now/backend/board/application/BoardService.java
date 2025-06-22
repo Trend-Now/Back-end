@@ -3,9 +3,11 @@ package com.trend_now.backend.board.application;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSaveDto;
+import com.trend_now.backend.board.dto.BoardSummaryDto;
 import com.trend_now.backend.board.dto.FixedBoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.board.cache.RealTimeBoardCache;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,5 +61,17 @@ public class BoardService {
                 .boardCategory(BoardCategory.FIXED)
                 .build());
         realTimeBoardCache.initFixedBoard();
+    }
+
+    public List<BoardSummaryDto> getFixedBoardList() {
+        List<Boards> boardList = boardRepository.findByBoardCategory(BoardCategory.FIXED);
+        return boardList.stream()
+            .map(board -> BoardSummaryDto.builder()
+                .boardId(board.getId())
+                .boardName(board.getName())
+                .updatedAt(board.getUpdatedAt())
+                .createdAt(board.getCreatedAt())
+                .build())
+            .toList();
     }
 }
