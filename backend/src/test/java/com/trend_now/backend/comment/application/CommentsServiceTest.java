@@ -104,7 +104,7 @@ class CommentsServiceTest {
     void BOARD_TTL_여부에_따라_boardTtlStatus가_결정() {
         // given
         // redis에 게시판 저장
-        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
+        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testBoards.getId();
         redisTemplate.opsForValue().set(key, "실시간 게시판");
 
         SaveCommentsDto testSaveCommentsDto =
@@ -146,7 +146,7 @@ class CommentsServiceTest {
     void BOARD_TTL_여부에_따라_댓글_삭제_결정() {
         // given
         // redis에 게시판 저장 및 댓글 2개 저장
-        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
+        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testBoards.getId();
         redisTemplate.opsForValue().set(key, "실시간 게시판");
 
         SaveCommentsDto testSaveCommentsDto =
@@ -189,7 +189,7 @@ class CommentsServiceTest {
     void BOARD_TTL_여부에_따라_댓글_수정_결정() {
         // given
         // redis에 게시판 저장 및 댓글 2개 저장
-        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
+        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testBoards.getId();
         redisTemplate.opsForValue().set(key, "실시간 게시판");
 
         SaveCommentsDto testSaveCommentsDto =
@@ -238,7 +238,7 @@ class CommentsServiceTest {
     void 댓글_작성자만_수정_또는_삭제_가능() {
         // given
         // redis에 게시판 저장 (BOARD_TTL이 존재하는 상태로 만들기)
-        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testPost.getId();
+        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testBoards.getId();
         redisTemplate.opsForValue().set(key, "실시간 게시판");
 
         // testMembers가 comments1 댓글 작성
