@@ -75,12 +75,15 @@ public class CommentsService {
             // 댓글 존재 확인
             Comments comments = commentsRepository.findById(deleteCommentsDto.getCommentId())
                     .orElseThrow(() -> new NotFoundException(NOT_EXIST_COMMENTS));
-            if (!comments.isModifiable()) {
-                throw new InvalidRequestException(NOT_MODIFIABLE_POSTS);
-            }
+
             // 본인이 작성한 댓글만 삭제가 가능
             if(!comments.isCommentsWriter(comments, member)) {
                 throw new InvalidRequestException(NOT_COMMENT_WRITER);
+            }
+
+            // modifiable이 true인 경우에만 삭제 가능
+            if (!comments.isModifiable()) {
+                throw new InvalidRequestException(NOT_MODIFIABLE_POSTS);
             }
 
             // 댓글 삭제 처리
@@ -113,13 +116,14 @@ public class CommentsService {
             Comments comments = commentsRepository.findById(updateCommentsDto.getCommentId())
                     .orElseThrow(() -> new NotFoundException(NOT_EXIST_COMMENTS));
 
-            if (!comments.isModifiable()) {
-                throw new InvalidRequestException(NOT_MODIFIABLE_POSTS);
-            }
-
             // 본인이 작성한 댓글만 수정이 가능
             if(!comments.isCommentsWriter(comments, members)) {
                 throw new InvalidRequestException(NOT_COMMENT_WRITER);
+            }
+
+            // modifiable이 true인 경우에만 삭제 가능
+            if (!comments.isModifiable()) {
+                throw new InvalidRequestException(NOT_MODIFIABLE_POSTS);
             }
 
             // 댓글 수정 처리
