@@ -15,4 +15,6 @@ public interface BoardRepository extends JpaRepository<Boards, Long> {
     List<Boards> findByNameLikeAndBoardCategory(String name, BoardCategory boardCategory);
 
     List<Boards> findByIdIn(Collection<Long> ids);
+
+    List<Boards> findByBoardCategory(BoardCategory boardCategory);
 }

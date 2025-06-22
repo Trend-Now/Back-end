@@ -4,9 +4,12 @@ import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.application.BoardService;
 import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
+import com.trend_now.backend.board.dto.BoardSummaryDto;
 import com.trend_now.backend.board.dto.FixedBoardSaveDto;
+import com.trend_now.backend.board.repository.BoardRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +38,14 @@ public class BoardController {
         BoardPagingResponseDto allRealTimeBoardPaging = boardRedisService.findAllRealTimeBoardPaging(
                 boardPagingRequestDto);
         return ResponseEntity.status(HttpStatus.OK).body(allRealTimeBoardPaging);
+    }
+
+    @Operation(summary = "고정 게시판 리스트 조회", description = "고정 게시판 리스트를 가져옵니다.")
+    @GetMapping("/fixedList")
+    public ResponseEntity<List<BoardSummaryDto>> findAllFixedBoards() {
+        List<BoardSummaryDto> fixedBoardList = boardService.getFixedBoardList();
+
+        return ResponseEntity.status(HttpStatus.OK).body(fixedBoardList);
     }
 
     @Operation(summary = "고정 게시판 추가", description = "고정 게시판 항목을 추가합니다.")
