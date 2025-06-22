@@ -45,14 +45,14 @@ public class CommentsService {
      * - BOARD_TTL 여부에 따라 BOARD_TTL_STATUS 컬럼 값이 결정
      */
     @Transactional
-    public void saveComments(Members member, SaveCommentsDto saveCommentsDto) {
+    public Comments saveComments(Members member, SaveCommentsDto saveCommentsDto) {
         Posts posts = postsRepository.findById(saveCommentsDto.getPostId())
                 .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS)
                 );
 
         BoardTtlStatus boardTtlStatus = checkBoardTtlStatus(saveCommentsDto.getBoardName(), saveCommentsDto.getBoardId());
 
-        commentsRepository.save(Comments.builder()
+        return commentsRepository.save(Comments.builder()
                 .content(saveCommentsDto.getContent())
                 .members(member)
                 .posts(posts)
@@ -152,5 +152,14 @@ public class CommentsService {
     public Page<CommentInfoDto> getCommentsByMemberId(Long memberId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         return commentsRepository.findByMemberIdWithPost(memberId, pageable);
+    }
+
+    /**
+     * 게시글이 속한 게시판의 타이머가 만료됐을 경우 modifiable 필드의 값을 false로 변경합니다.
+     * modifiable = false가 수정/삭제 불가능
+     */
+    @Transactional
+    public void updateModifiable(Long boardId) {
+        commentsRepository.updateFlagByBoardId(boardId);
     }
 }

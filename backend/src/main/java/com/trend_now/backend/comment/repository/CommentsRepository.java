@@ -7,6 +7,7 @@ import com.trend_now.backend.member.domain.Members;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -60,4 +61,8 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
         Pageable pageable);
 
     void deleteByPosts_Id(Long postsId);
+
+    @Modifying
+    @Query("UPDATE Comments c SET c.modifiable = false WHERE c.posts.boards.id = :boardId AND c.modifiable = true")
+    void updateFlagByBoardId(@Param("boardId") Long boardId);
 }

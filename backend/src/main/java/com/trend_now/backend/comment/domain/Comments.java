@@ -23,6 +23,7 @@ public class Comments extends BaseEntity {
     @Column(nullable = false)
     private String content;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean modifiable = true;
 

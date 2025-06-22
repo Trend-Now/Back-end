@@ -3,8 +3,10 @@ package com.trend_now.backend.comment.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.trend_now.backend.board.application.BoardService;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
+import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.data.dto.CommentInfoDto;
 import com.trend_now.backend.comment.data.dto.CommentListPagingResponseDto;
@@ -21,6 +23,8 @@ import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.domain.Posts;
+import com.trend_now.backend.post.dto.PostsSaveDto;
+import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -51,6 +55,9 @@ class CommentsServiceTest {
 
     @Autowired
     private CommentsService commentsService;
+
+    @Autowired
+    private BoardService boardService;
 
     @Autowired
     private CommentsRepository commentsRepository;
@@ -313,5 +320,53 @@ class CommentsServiceTest {
         assertThat(commentsByMemberId.getContent().getFirst().getContent()).isEqualTo("testContent10");
         assertThat(commentsByMemberId.getContent().getLast().getPostTitle()).isEqualTo(testPost.getTitle());
 
+    }
+
+    @Test
+    @DisplayName("게시판이 재등록 시 기존에 작성된 댓글은 수정, 삭제가 불가능하다")
+    public void 게시판_재등록_시_기존에_작성된_게시글은_수정_삭제가_불가능하다() {
+        //given
+        // 댓글 작성 후, 게시판 활성화 시간이 끝나 삭제되고 추후에 재생성된다.
+
+        // 게시판 활성화
+        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testBoards.getId();
+        redisTemplate.opsForValue().set(key, "실시간 게시판");
+
+        // 댓글 작성
+        SaveCommentsDto testSaveCommentsDto = SaveCommentsDto.of(testBoards.getId(),
+                testPost.getId(), testBoards.getName(), "testContent");
+        Comments testComments = commentsService.saveComments(testMembers, testSaveCommentsDto);
+
+        // 게시판 활성화 시간 끝과 동시에 작성된 댓글은 수정/삭제 비활성화
+        redisTemplate.delete(key);
+        BoardSaveDto boardSaveDto = new BoardSaveDto(
+                testBoards.getId(), testBoards.getName(), testBoards.getBoardCategory());
+        boardService.updateBoardIsDeleted(boardSaveDto, false);
+        commentsService.updateModifiable(testBoards.getId()); // SignalKeywordJobListener에서 하는 일 직접 실행
+        em.flush();
+        em.clear();
+
+        // 게시판 재생성
+        boardService.updateBoardIsDeleted(boardSaveDto, true);
+        redisTemplate.opsForValue().set(key, "실시간 게시판");
+
+        //when & then
+        // 게시판 재생성 되기 전의 기존의 댓글은 수정과 삭제가 불가능해야 한다.
+        DeleteCommentsDto deleteCommentsDto = DeleteCommentsDto.of(
+                testBoards.getId(), testPost.getId(), testBoards.getName(), testComments.getId());
+
+        UpdateCommentsDto updateCommentsDto = UpdateCommentsDto.of(
+                testBoards.getId(), testPost.getId(), testBoards.getName(), testComments.getId(),
+                "updated content");
+
+        assertThatThrownBy(
+                () -> commentsService.deleteCommentsByCommentId(testMembers, deleteCommentsDto))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessage("게시글이 수정/삭제 불가능한 상태입니다.");
+
+        assertThatThrownBy(() -> commentsService.updateCommentsByMembersAndCommentId(testMembers,
+                updateCommentsDto))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessage("게시글이 수정/삭제 불가능한 상태입니다.");
     }
 }
