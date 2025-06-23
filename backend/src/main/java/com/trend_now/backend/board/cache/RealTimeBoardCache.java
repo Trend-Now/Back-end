@@ -33,8 +33,6 @@ public class RealTimeBoardCache {
 
     @Getter
     private final Cache<Long, BoardCacheEntry> fixedBoardCacheMap = Caffeine.newBuilder()
-        // write 작업이 일어난 이후 30분 뒤 캐시 만료
-        .expireAfterWrite(30, TimeUnit.MINUTES)
         // 캐시의 최대 크기 설정
         .maximumSize(MAXIMUM_SIZE)
         .build();
