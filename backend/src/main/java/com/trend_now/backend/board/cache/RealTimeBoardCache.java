@@ -63,8 +63,7 @@ public class RealTimeBoardCache {
         fixedBoardCacheMap.invalidateAll();
 
         // 캐시 생성
-        List<Boards> fixedBoardList = boardRepository.findByNameLikeAndBoardCategory(
-            "%", BoardCategory.FIXED);
+        List<Boards> fixedBoardList = boardRepository.findByBoardCategory(BoardCategory.FIXED);
         fixedBoardList.forEach(
             fixedBoard -> fixedBoardCacheMap.put(fixedBoard.getId(), BoardCacheEntry.builder()
                 .boardName(fixedBoard.getName())
