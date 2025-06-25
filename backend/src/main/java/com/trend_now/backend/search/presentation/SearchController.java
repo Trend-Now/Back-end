@@ -1,6 +1,6 @@
 package com.trend_now.backend.search.presentation;
 
-import com.trend_now.backend.board.dto.BoardSummaryDto;
+import com.trend_now.backend.board.dto.RealtimeBoardListDto;
 import com.trend_now.backend.post.dto.PostListResponseDto;
 import com.trend_now.backend.post.dto.RealtimePostSearchDto;
 import com.trend_now.backend.search.aplication.SearchService;
@@ -35,7 +35,7 @@ public class SearchController {
     @Operation(summary = "검색어에 따른 실시간 게시판 목록 조회", description = "검색어에 해당하는 게시판 목록을 조회합니다.")
     @GetMapping("/realtimeBoards")
     public ResponseEntity<SearchResponseDto> findRealtimeBoards(@RequestParam String keyword) {
-        List<BoardSummaryDto> realtimeBoardsByKeyword = searchService.findRealtimeBoardsByKeyword(
+        List<RealtimeBoardListDto> realtimeBoardsByKeyword = searchService.findRealtimeBoardsByKeyword(
             keyword);
 
         log.info("실시간 게시판 목록 검색 완료, 검색어: {}", keyword);
