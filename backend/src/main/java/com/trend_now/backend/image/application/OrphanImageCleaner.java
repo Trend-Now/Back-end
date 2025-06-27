@@ -1,6 +1,6 @@
 package com.trend_now.backend.image.application;
 
-import com.trend_now.backend.aws.s3.application.S3Service;
+import com.trend_now.backend.infra.s3.application.S3Service;
 import com.trend_now.backend.image.repository.ImagesRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
