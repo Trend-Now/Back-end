@@ -1,4 +1,4 @@
-package com.trend_now.backend.aws.s3.application;
+package com.trend_now.backend.infra.s3.application;
 
 import com.trend_now.backend.exception.CustomException.S3FileUploadException;
 import java.io.IOException;
