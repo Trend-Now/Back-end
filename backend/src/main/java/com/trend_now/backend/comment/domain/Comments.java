@@ -35,11 +35,6 @@ public class Comments extends BaseEntity {
     @JoinColumn(name = "post_id")
     private Posts posts;
 
-    // BOARD_TTL 시간 안에 작성된 댓글은 boardTtlStatus 필드가 BOARD_TTL_BEFORE, 아니면 BOARD_TTL_AFTER 할당
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, name = "board_ttl_status")
-    private BoardTtlStatus boardTtlStatus;
-
     public void update(UpdateCommentsDto updateCommentsDto) {
         this.content = updateCommentsDto.getUpdatedComments();
     }

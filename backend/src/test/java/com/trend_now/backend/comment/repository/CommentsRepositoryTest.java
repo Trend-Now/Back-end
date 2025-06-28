@@ -4,7 +4,6 @@ import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.data.dto.FindAllCommentsDto;
-import com.trend_now.backend.comment.domain.BoardTtlStatus;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
@@ -92,14 +91,12 @@ class CommentsRepositoryTest {
                 .content("첫 번째 댓글입니다.")
                 .posts(testPost)
                 .members(testMembers)
-                .boardTtlStatus(BoardTtlStatus.BOARD_TTL_BEFORE)
                 .build();
 
         Comments comment2 = Comments.builder()
                 .content("두 번째 댓글입니다.")
                 .posts(testPost)
                 .members(testMembers)
-                .boardTtlStatus(BoardTtlStatus.BOARD_TTL_BEFORE)
                 .build();
 
         commentsRepository.save(comment1);
@@ -141,7 +138,6 @@ class CommentsRepositoryTest {
             assertThat(actual.getId()).isEqualTo(expected.getId());
             assertThat(actual.getContent()).isEqualTo(expected.getContent());
             assertThat(actual.getCreatedAt()).isEqualToIgnoringNanos(expected.getCreatedAt());
-            assertThat(actual.getBoardTtlStatus()).isEqualTo(expected.getBoardTtlStatus());
         }
 
         System.out.println("actualDtos > " + actualDtos.toString());
@@ -154,7 +150,6 @@ class CommentsRepositoryTest {
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
-                .boardTtlStatus(comment.getBoardTtlStatus())
                 .build();
     }
 }

@@ -28,7 +28,7 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
      */
     @Query("""
         SELECT new com.trend_now.backend.comment.data.dto.FindAllCommentsDto(
-               c.createdAt, c.updatedAt, c.id, c.content, c.boardTtlStatus
+               c.createdAt, c.updatedAt, c.id, c.content
             )
         FROM Comments c
         WHERE c.posts.id = :postId
