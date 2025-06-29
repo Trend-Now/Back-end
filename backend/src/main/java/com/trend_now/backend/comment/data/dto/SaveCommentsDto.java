@@ -1,12 +1,11 @@
 package com.trend_now.backend.comment.data.dto;
 
 import com.trend_now.backend.board.application.BoardKeyProvider;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
+@ToString
 public class SaveCommentsDto implements BoardKeyProvider {
 
     /**
@@ -16,6 +15,7 @@ public class SaveCommentsDto implements BoardKeyProvider {
      */
     private Long boardId;
     private Long postId;
+    @Setter
     private String boardName;
     private String content;
 

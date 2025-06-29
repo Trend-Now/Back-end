@@ -43,7 +43,7 @@ public class CommentsController {
             , @RequestBody SaveCommentsRequest saveCommentsRequest) {
         Util.checkMemberExist(member);
         commentsService.saveComments(member, SaveCommentsDto.of(
-                boardId, postId, saveCommentsRequest.getBoardName(), saveCommentsRequest.getContent()));
+                boardId, postId, null, saveCommentsRequest.getContent()));
         return ResponseEntity.status(HttpStatus.CREATED).body(SUCCESS_SAVE_COMMENT);
     }
 

@@ -1,6 +1,8 @@
 package com.trend_now.backend.comment.application;
 
 import com.trend_now.backend.board.application.BoardRedisService;
+import com.trend_now.backend.board.domain.Boards;
+import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.data.dto.CommentInfoDto;
 import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
 import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
@@ -14,6 +16,7 @@ import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.repository.PostsRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +25,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -32,13 +36,14 @@ public class CommentsService {
     private static final String BOARD_EXPIRATION = "게시판 활성 시간이 만료되었습니다.";
     private static final String BOARD_KEY_DELIMITER  = ":";
     private static final String NOT_COMMENT_WRITER = "댓글 작성자가 아닙니다.";
-    private static final String NOT_EXIST_BOARD_TTL = "Redis에 BOARD_TTL 정보가 없습니다.";
     private static final String NOT_MODIFIABLE_COMMENTS = "댓글이 수정/삭제 불가능한 상태입니다.";
+    private static final String NOT_EXIST_BOARD = "선택하신 게시판이 존재하지 않습니다.";
 
     private final CommentsRepository commentsRepository;
     private final PostsRepository postsRepository;
     private final RedisTemplate<String, String> redisTemplate;
     private final BoardRedisService boardRedisService;
+    private final BoardRepository boardRepository;
 
     /**
      * 댓글 작성
@@ -47,6 +52,13 @@ public class CommentsService {
      */
     @Transactional
     public Comments saveComments(Members member, SaveCommentsDto saveCommentsDto) {
+        // boardName을 DB와 통신하여 획득
+        Boards boards = boardRepository.findById(saveCommentsDto.getBoardId())
+                .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+
+        saveCommentsDto.setBoardName(boards.getName());
+        log.info("saveCommentsDto : {}", saveCommentsDto.toString());
+
         // 게시판 비활성화인 경우, 댓글 작성 불가능 예외
         if(!boardRedisService.isRealTimeBoard(saveCommentsDto)) {
             throw new BoardExpiredException(BOARD_EXPIRATION);
