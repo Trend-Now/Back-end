@@ -1,12 +1,13 @@
 package com.trend_now.backend.comment.data.dto;
 
+import com.trend_now.backend.board.application.BoardKeyProvider;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class SaveCommentsDto {
+public class SaveCommentsDto implements BoardKeyProvider {
 
     /**
      * 댓글에 게시판 식별자와 게시판 이름이 필요한 이유
@@ -20,5 +21,10 @@ public class SaveCommentsDto {
 
     public static SaveCommentsDto of(Long boardId, Long postId, String boardName, String content) {
         return new SaveCommentsDto(boardId, postId, boardName, content);
+    }
+
+    @Override
+    public String getName() {
+        return boardName;
     }
 }
