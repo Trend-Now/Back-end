@@ -5,7 +5,6 @@ import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
 import com.trend_now.backend.comment.data.dto.FindAllCommentsDto;
 import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
 import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
-import com.trend_now.backend.comment.data.vo.DeleteCommentsRequest;
 import com.trend_now.backend.comment.data.vo.SaveCommentsRequest;
 import com.trend_now.backend.comment.data.vo.UpdateCommentsRequest;
 import com.trend_now.backend.comment.repository.CommentsRepository;
@@ -59,11 +58,10 @@ public class CommentsController {
             @PathVariable Long boardId
             , @PathVariable Long postId
             , @PathVariable Long commentId
-            , @AuthenticationPrincipal(expression = "members") Members member
-            , @RequestBody DeleteCommentsRequest deleteCommentsRequest) {
+            , @AuthenticationPrincipal(expression = "members") Members member) {
         Util.checkMemberExist(member);
         commentsService.deleteCommentsByCommentId(member, DeleteCommentsDto.of(
-                boardId, postId, deleteCommentsRequest.getBoardName(), commentId));
+                boardId, postId, null, commentId));
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_COMMENT);
     }
 

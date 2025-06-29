@@ -88,6 +88,8 @@ public class CommentsService {
      * 댓글 삭제 조건
      * - 댓글 식별자에 맞는 댓글이 존재
      * - 본인 댓글만 삭제 가능
+     * - 게시판 활성화 동안에만 삭제 가능
+     * - modifiable = true 조건에서 삭제 가능
      */
     @Transactional
     public void deleteCommentsByCommentId(Members member, DeleteCommentsDto deleteCommentsDto) {
@@ -98,6 +100,16 @@ public class CommentsService {
         // 본인이 작성한 댓글만 삭제가 가능
         if(!comments.isCommentsWriter(comments, member)) {
             throw new InvalidRequestException(NOT_COMMENT_WRITER);
+        }
+
+        // 게시판 활성화 동안에만 삭제 가능
+        // board 객체를 posts 그래프 탐색을 통해 획득 및 검증 후, boardName 초기화
+        Boards boards = comments.getPosts().getBoards();
+        validateBoard(boards);
+        deleteCommentsDto.setBoardName(boards.getName());
+
+        if(!boardRedisService.isRealTimeBoard(deleteCommentsDto)) {
+            throw new BoardExpiredException(BOARD_EXPIRATION);
         }
 
         // modifiable이 true인 경우에만 삭제 가능
