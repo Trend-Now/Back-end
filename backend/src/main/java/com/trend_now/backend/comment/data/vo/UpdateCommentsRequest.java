@@ -8,6 +8,5 @@ import lombok.Getter;
 @AllArgsConstructor(access = AccessLevel.PUBLIC)
 public class UpdateCommentsRequest {
 
-    private final String boardName;
     private final String updateContent;
 }
