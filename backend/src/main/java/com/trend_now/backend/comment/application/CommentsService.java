@@ -1,5 +1,6 @@
 package com.trend_now.backend.comment.application;
 
+import com.trend_now.backend.board.application.BoardKeyProvider;
 import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
@@ -52,27 +53,35 @@ public class CommentsService {
      */
     @Transactional
     public Comments saveComments(Members member, SaveCommentsDto saveCommentsDto) {
-        // boardName을 DB와 통신하여 획득
-        Boards boards = boardRepository.findById(saveCommentsDto.getBoardId())
-                .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+        // fetch join을 통한 게시글과 게시판 조회
+        Posts posts = postsRepository.findByIdWithBoard(saveCommentsDto.getPostId())
+                .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS)
+                );
 
+        // board 객체를 posts 그래프 탐색을 통해 획득 및 검증 후, boardName 초기화
+        Boards boards = posts.getBoards();
+        validateBoard(boards);
         saveCommentsDto.setBoardName(boards.getName());
-        log.info("saveCommentsDto : {}", saveCommentsDto.toString());
 
         // 게시판 비활성화인 경우, 댓글 작성 불가능 예외
         if(!boardRedisService.isRealTimeBoard(saveCommentsDto)) {
             throw new BoardExpiredException(BOARD_EXPIRATION);
         }
 
-        Posts posts = postsRepository.findById(saveCommentsDto.getPostId())
-                .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS)
-                );
-
         return commentsRepository.save(Comments.builder()
                 .content(saveCommentsDto.getContent())
                 .members(member)
                 .posts(posts)
                 .build());
+    }
+
+    /**
+     * 그래프 탐색으로 획득한 게시판의 유효성 검사
+     */
+    private void validateBoard(Boards boards) {
+        if(boards == null || boards.getId() == null || boards.getId().equals(0L)) {
+            throw new NotFoundException(NOT_EXIST_BOARD);
+        }
     }
 
     /**
