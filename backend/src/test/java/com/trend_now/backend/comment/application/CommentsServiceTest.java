@@ -165,11 +165,16 @@ class CommentsServiceTest {
     @DisplayName("내가 작성한 댓글을 조회할 수 있다.")
     public void 내가_작성한_댓글_조회() throws Exception {
         //given
+        // 게시판 활성화
+        String key = testBoards.getName() + BOARD_KEY_DELIMITER + testBoards.getId();
+        redisTemplate.opsForValue().set(key, "실시간 게시판");
+
         for (int i = 1; i <= 10; i++) {
             SaveCommentsDto testSaveCommentsDto = SaveCommentsDto.of(testBoards.getId(),
                 testPost.getId(), testBoards.getName(), "testContent" + i);
             commentsService.saveComments(testMembers, testSaveCommentsDto);
         }
+
         //when
         Page<CommentInfoDto> commentsByMemberId = commentsService.getCommentsByMemberId(
             testMembers.getId(), 0, 5);
