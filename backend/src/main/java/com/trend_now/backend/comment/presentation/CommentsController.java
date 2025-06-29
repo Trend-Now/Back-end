@@ -76,7 +76,7 @@ public class CommentsController {
         Util.checkMemberExist(members);
         commentsService.updateCommentsByMembersAndCommentId(members,
                 UpdateCommentsDto.of(
-                        boardId, postId, updateCommentsRequest.getBoardName(), commentId, updateCommentsRequest.getUpdateContent()
+                        boardId, postId, null, commentId, updateCommentsRequest.getUpdateContent()
                 ));
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_UPDATE_COMMENT);
     }
