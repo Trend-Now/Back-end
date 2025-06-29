@@ -1,11 +1,13 @@
 package com.trend_now.backend.comment.application;
 
+import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.comment.data.dto.CommentInfoDto;
 import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
 import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
 import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
+import com.trend_now.backend.exception.CustomException.BoardExpiredException;
 import com.trend_now.backend.exception.CustomException.InvalidRequestException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
@@ -27,7 +29,7 @@ public class CommentsService {
 
     private static final String NOT_EXIST_POSTS = "선택하신 게시글이 존재하지 않습니다.";
     private static final String NOT_EXIST_COMMENTS = "댓글이 없습니다.";
-    private static final String BOARD_TTL_EXPIRATION = "게시판 활성 시간이 만료되었습니다.";
+    private static final String BOARD_EXPIRATION = "게시판 활성 시간이 만료되었습니다.";
     private static final String BOARD_KEY_DELIMITER  = ":";
     private static final String NOT_COMMENT_WRITER = "댓글 작성자가 아닙니다.";
     private static final String NOT_EXIST_BOARD_TTL = "Redis에 BOARD_TTL 정보가 없습니다.";
@@ -36,13 +38,20 @@ public class CommentsService {
     private final CommentsRepository commentsRepository;
     private final PostsRepository postsRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private final BoardRedisService boardRedisService;
 
     /**
      * 댓글 작성
      * - 회원만 가능, 컨트롤러에서 사용자 인증 객체 members를 받음
+     * - 게시판 활성화인 경우에만 댓글 작성 가능
      */
     @Transactional
     public Comments saveComments(Members member, SaveCommentsDto saveCommentsDto) {
+        // 게시판 비활성화인 경우, 댓글 작성 불가능 예외
+        if(!boardRedisService.isRealTimeBoard(saveCommentsDto)) {
+            throw new BoardExpiredException(BOARD_EXPIRATION);
+        }
+
         Posts posts = postsRepository.findById(saveCommentsDto.getPostId())
                 .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS)
                 );
