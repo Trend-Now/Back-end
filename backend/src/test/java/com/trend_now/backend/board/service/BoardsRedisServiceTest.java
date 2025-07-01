@@ -248,7 +248,7 @@ public class BoardsRedisServiceTest {
 
         //when
         BoardPagingResponseDto allRealTimeBoardPaging = boardRedisService.findAllRealTimeBoardPaging(
-                new BoardPagingRequestDto(page, size));
+                new BoardPagingRequestDto(page - 1, size));
 
         //then
         assertThat(allRealTimeBoardPaging).isNotNull();
@@ -351,7 +351,7 @@ public class BoardsRedisServiceTest {
 
         //when
         BoardPagingResponseDto allRealTimeBoardPaging = boardRedisService.findAllRealTimeBoardPaging(
-                new BoardPagingRequestDto(page, size));
+                new BoardPagingRequestDto(page - 1, size));
 
         //then
         assertThat(allRealTimeBoardPaging).isNotNull();
