@@ -155,6 +155,7 @@ class CommentsRepositoryTest {
             assertThat(dto.getTotalPageCount()).isEqualTo(3);
             assertThat(dto.getContent()).isNotBlank();
             assertThat(dto.getId()).isNotNull();
+            assertThat(dto.getWriter()).isEqualTo("testUser");
             assertThat(dto.getCreatedAt()).isNotNull();
         });
 
@@ -165,6 +166,7 @@ class CommentsRepositoryTest {
             assertThat(dto.getTotalPageCount()).isEqualTo(3);
             assertThat(dto.getContent()).isNotBlank();
             assertThat(dto.getId()).isNotNull();
+            assertThat(dto.getWriter()).isEqualTo("testUser");
             assertThat(dto.getCreatedAt()).isNotNull();
         });
 
@@ -175,6 +177,7 @@ class CommentsRepositoryTest {
             assertThat(dto.getTotalPageCount()).isEqualTo(3);
             assertThat(dto.getContent()).isNotBlank();
             assertThat(dto.getId()).isNotNull();
+            assertThat(dto.getWriter()).isEqualTo("testUser");
             assertThat(dto.getCreatedAt()).isNotNull();
         });
 

@@ -22,13 +22,17 @@ public class FindAllCommentsDto {
     // 전체 댓글 페이지 수
     private final int totalPageCount;
 
+    // 댓글 작성자
+    private final String writer;
+
     // 기본 댓글 정보 JPQL 프로젝션용 생성자
-    public FindAllCommentsDto(LocalDateTime createdAt, LocalDateTime updatedAt, Long id, String content, boolean modifiable) {
+    public FindAllCommentsDto(LocalDateTime createdAt, LocalDateTime updatedAt, Long id, String content, boolean modifiable, String writer) {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.id = id;
         this.content = content;
         this.modifiable = modifiable;
+        this.writer = writer;
 
         // count 집계 전에는 기본값 0 부여하고 서비스 계층에서 실제 값 초기화
         this.totalCommentsCount = 0;

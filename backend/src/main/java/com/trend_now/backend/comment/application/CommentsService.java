@@ -197,6 +197,7 @@ public class CommentsService {
                         .id(comment.getId())
                         .content(comment.getContent())
                         .modifiable(comment.isModifiable())
+                        .writer(comment.getWriter())
                         .totalCommentsCount(totalCommentsCount)
                         .totalPageCount(totalPageCount)
                         .build())
