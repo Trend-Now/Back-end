@@ -180,6 +180,7 @@ public class CommentsService {
         int totalCommentsCount = commentsRepository.countByPostsId(postId);
         int totalPageCount = (int) Math.ceil((double) totalCommentsCount / pageable.getPageSize());
 
+
         // 댓글 데이터 조회 (기본 필드만)
         List<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId, pageable);
 
@@ -190,6 +191,7 @@ public class CommentsService {
                         .updatedAt(comment.getUpdatedAt())
                         .id(comment.getId())
                         .content(comment.getContent())
+                        .modifiable(comment.isModifiable())
                         .totalCommentsCount(totalCommentsCount)
                         .totalPageCount(totalPageCount)
                         .build())
