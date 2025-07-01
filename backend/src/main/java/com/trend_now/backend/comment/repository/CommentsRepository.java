@@ -26,6 +26,17 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
      * - DTO 객체로 쿼리 결과를 반환하기 위해선 SELECT 부분에 new 키워드와 해당 DTO 경로를 지정해줘야 한다.
      * </pre>
      */
+//    @Query("""
+//        SELECT new com.trend_now.backend.comment.data.dto.FindAllCommentsDto(
+//               c.createdAt, c.updatedAt, c.id, c.content
+//            )
+//        FROM Comments c
+//        WHERE c.posts.id = :postId
+//        ORDER BY c.createdAt DESC
+//        """)
+//    List<FindAllCommentsDto> findByPostsIdOrderByCreatedAtDesc(
+//        @Param("postId") Long postId);
+
     @Query("""
         SELECT new com.trend_now.backend.comment.data.dto.FindAllCommentsDto(
                c.createdAt, c.updatedAt, c.id, c.content
@@ -35,7 +46,8 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
         ORDER BY c.createdAt DESC
         """)
     List<FindAllCommentsDto> findByPostsIdOrderByCreatedAtDesc(
-        @Param("postId") Long postId);
+            @Param("postId") Long postId, Pageable pageable);
+
 
     void deleteByIdAndMembers(Long commentId, Members members);
 
