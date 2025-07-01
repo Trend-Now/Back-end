@@ -23,6 +23,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -180,6 +181,10 @@ public class CommentsService {
         int totalCommentsCount = commentsRepository.countByPostsId(postId);
         int totalPageCount = (int) Math.ceil((double) totalCommentsCount / pageable.getPageSize());
 
+        // totalCommentsCount = 0 이면, 댓글이 없으므로 바로 return
+        if(totalCommentsCount == 0) {
+            return Collections.emptyList();
+        }
 
         // 댓글 데이터 조회 (기본 필드만)
         List<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId, pageable);
