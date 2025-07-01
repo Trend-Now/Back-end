@@ -56,67 +56,73 @@ public class PostsService {
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
     public Page<PostSummaryDto> findAllPostsPagingByBoardId(
-        PostsPagingRequestDto postsPagingRequestDto) {
+            PostsPagingRequestDto postsPagingRequestDto) {
 
         // 게시판이 가변 타이머가 작동 중인지 확인
         Boards boards = boardRepository.findById(postsPagingRequestDto.getBoardId()).
-            orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+                orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
 
-        if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(), boards.getBoardCategory())) {
+        if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(),
+                boards.getBoardCategory())) {
             throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         }
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
-            postsPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt"));
+                postsPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt"));
 
         // boardsId에 속하는 게시글 조회
         return postsRepository.findAllByBoardsId(
-            postsPagingRequestDto.getBoardId(), pageable);
+                postsPagingRequestDto.getBoardId(), pageable);
     }
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
     public PostsInfoDto findPostsById(Long boardId, Long postId) {
         // 게시판이 가변 타이머가 작동 중인지 확인
         Boards boards = boardRepository.findById(boardId).
-            orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+                orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
 
-        if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(), boards.getBoardCategory())) {
+        if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(),
+                boards.getBoardCategory())) {
             throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         }
 
         // 게시글 정보 조회
-        return postsRepository.findPostInfoById(postId).orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
+        return postsRepository.findPostInfoById(postId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
     }
 
     //게시글 작성 - 가변 타이머 작동 중에만 가능
     @Transactional
     public Long savePosts(PostsSaveDto postsSaveDto, Members members, Long boardId) {
         Boards boards = boardRepository.findById(boardId)
-            .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+                .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
 
         // 게시판이 가변 타이머가 작동 중인지 확인
         if (boards.getBoardCategory() == BoardCategory.REALTIME) {
-            if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(), boards.getBoardCategory())) {
+            if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(),
+                    boards.getBoardCategory())) {
                 throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
             }
         }
 
         Posts posts = Posts.builder()
-            .title(postsSaveDto.getTitle())
-            .writer(members.getName())
-            .content(postsSaveDto.getContent())
-            .boards(boards)
-            .members(members)
-            .build();
+                .title(postsSaveDto.getTitle())
+                .writer(members.getName())
+                .content(postsSaveDto.getContent())
+                .boards(boards)
+                .members(members)
+                .build();
+
+        boardRedisService.updatePostCountAndExpireTime(boards.getId(), boards.getName());
         Posts savePost = postsRepository.save(posts);
 
         // 저장돼 있던 이미지와 등록된 게시글 연관관계 설정
         if (postsSaveDto.getImageIds() != null) {
             postsSaveDto.getImageIds().forEach(
-                imageId -> {
-                    Images image = imagesService.findImageById(imageId);
-                    image.setPosts(savePost);
-                }
+                    imageId -> {
+                        Images image = imagesService.findImageById(imageId);
+                        image.setPosts(savePost);
+                    }
             );
         }
         return posts.getId();
@@ -125,12 +131,12 @@ public class PostsService {
     //게시글 수정 - 가변 타이머 작동 중에만 가능
     @Transactional
     public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long boardId,
-        Long postId,
-        Long memberId) {
+            Long postId,
+            Long memberId) {
         Boards boards = boardRepository.findById(boardId)
-            .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+                .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
         Posts posts = postsRepository.findById(postId)
-            .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
+                .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
 
         // 게시글이 수정 불가능한 상태면 예외 발생
         isModifiable(boards.getId(), boards.getName(), boards.getBoardCategory(), posts);
@@ -149,10 +155,10 @@ public class PostsService {
         List<Long> newImageIdList = postsUpdateRequestDto.getNewImageIdList();
         if (newImageIdList != null && !newImageIdList.isEmpty()) {
             newImageIdList.forEach(
-                imageId -> {
-                    Images image = imagesService.findImageById(imageId);
-                    image.setPosts(posts);
-                }
+                    imageId -> {
+                        Images image = imagesService.findImageById(imageId);
+                        image.setPosts(posts);
+                    }
             );
         }
         // 제목, 내용 업데이트
@@ -163,9 +169,9 @@ public class PostsService {
     @Transactional
     public void deletePostsById(Long boardId, Long postId, Long memberId) {
         Posts posts = postsRepository.findById(postId)
-            .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
+                .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
         Boards boards = boardRepository.findById(boardId)
-            .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+                .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
 
         // 게시글이 수정 불가능한 상태면 예외 발생
         isModifiable(boards.getId(), boards.getName(), boards.getBoardCategory(), posts);
@@ -178,6 +184,8 @@ public class PostsService {
         commentsRepository.deleteByPosts_Id(postId);
         // 게시글에 등록된 이미지 삭제
         imagesService.deleteImageByPostId(posts.getId());
+
+        boardRedisService.decrementPostCountAndExpireTime(posts.getBoards().getId(), posts.getBoards().getName());
         // 게시글 삭제
         postsRepository.deleteById(postId);
     }
@@ -189,15 +197,15 @@ public class PostsService {
     }
 
     /**
-     * 게시글이 속한 게시판의 타이머가 만료됐을 경우 modifiable 필드의 값을 false로 변경합니다. modifiable = false
-     * 불가능
+     * 게시글이 속한 게시판의 타이머가 만료됐을 경우 modifiable 필드의 값을 false로 변경합니다. modifiable = false 불가능
      */
     @Transactional
     public void updateModifiable(Long boardId) {
         postsRepository.updateFlagByBoardId(boardId);
     }
 
-    private void isModifiable(Long boardId, String boardName, BoardCategory boardCategory, Posts posts) {
+    private void isModifiable(Long boardId, String boardName, BoardCategory boardCategory,
+            Posts posts) {
         if (boardRedisService.isNotRealTimeBoard(boardName, boardId, boardCategory)) {
             throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         } else if (!posts.isModifiable()) {
