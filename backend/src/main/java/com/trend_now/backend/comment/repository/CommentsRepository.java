@@ -77,4 +77,7 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
     @Modifying
     @Query("UPDATE Comments c SET c.modifiable = false WHERE c.posts.boards.id = :boardId AND c.modifiable = true")
     void updateFlagByBoardId(@Param("boardId") Long boardId);
+
+    // 특정 게시글의 전체 댓글 수 조회
+    int countByPostsId(Long postId);
 }

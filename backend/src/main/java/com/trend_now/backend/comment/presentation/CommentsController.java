@@ -53,7 +53,7 @@ public class CommentsController {
         // PageRequest 객체 생성 (page는 0부터 시작하므로 -1)
         Pageable pageable = PageRequest.of(page - 1, size);
         return ResponseEntity.status(HttpStatus.OK)
-                .body(commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId, pageable));
+                .body(commentsService.findAllCommentsByPostId(postId, pageable));
     }
 
     @Operation(summary = "댓글 삭제", description = "특정 게시판의 BOARD_TTL 만료 시간 안의 댓글을 삭제합니다.")

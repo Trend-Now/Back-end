@@ -4,10 +4,7 @@ import com.trend_now.backend.board.application.BoardKeyProvider;
 import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.comment.data.dto.CommentInfoDto;
-import com.trend_now.backend.comment.data.dto.DeleteCommentsDto;
-import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
-import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
+import com.trend_now.backend.comment.data.dto.*;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.exception.CustomException.BoardExpiredException;
@@ -25,6 +22,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -170,5 +170,29 @@ public class CommentsService {
     @Transactional
     public void updateModifiable(Long boardId) {
         commentsRepository.updateFlagByBoardId(boardId);
+    }
+
+    /**
+     * 댓글을 조회할 때, 페이지네이션에 따른 기본 댓글 정보와 총 댓글 개수와 페이지 개수를 같이 제공
+     */
+    public List<FindAllCommentsDto> findAllCommentsByPostId(Long postId, Pageable pageable) {
+        // 전체 댓글 수 및 페이지 수 계산
+        int totalCommentsCount = commentsRepository.countByPostsId(postId);
+        int totalPageCount = (int) Math.ceil((double) totalCommentsCount / pageable.getPageSize());
+
+        // 댓글 데이터 조회 (기본 필드만)
+        List<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId, pageable);
+
+        // totalCommentsCount와 totalPageCount를 포함한 새로운 DTO 리스트 생성하여 반환
+        return comments.stream()
+                .map(comment -> FindAllCommentsDto.builder()
+                        .createdAt(comment.getCreatedAt())
+                        .updatedAt(comment.getUpdatedAt())
+                        .id(comment.getId())
+                        .content(comment.getContent())
+                        .totalCommentsCount(totalCommentsCount)
+                        .totalPageCount(totalPageCount)
+                        .build())
+                .collect(Collectors.toList());
     }
 }

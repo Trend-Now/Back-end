@@ -3,6 +3,7 @@ package com.trend_now.backend.comment.repository;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.comment.application.CommentsService;
 import com.trend_now.backend.comment.data.dto.FindAllCommentsDto;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.member.domain.Members;
@@ -25,6 +26,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -53,6 +55,9 @@ class CommentsRepositoryTest {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private CommentsService commentsService;
 
     private Posts testPost;
     private Members testMembers;
@@ -85,10 +90,10 @@ class CommentsRepositoryTest {
     }
 
     @Test
-    @DisplayName("findByPostsIdOrderByCreatedAtDesc가 페이지네이션과 함께 FindAllCommentsDto로 프로젝션되는지 검증")
+    @DisplayName("findAllCommentsByPostId가 페이지네이션과 함께 totalCommentsCount, totalPageCount를 포함하여 반환하는지 검증")
     public void 게시글_모든_댓글_조회_결과_확인() {
         // Given
-        // 댓글 4개를 동일 게시글에 저장 (페이지네이션 테스트를 위해 더 많은 데이터)
+        // 댓글 5개를 동일 게시글에 저장
         Comments comment1 = Comments.builder()
                 .content("첫 번째 댓글입니다.")
                 .posts(testPost)
@@ -113,84 +118,86 @@ class CommentsRepositoryTest {
                 .members(testMembers)
                 .build();
 
+        Comments comment5 = Comments.builder()
+                .content("다섯 번째 댓글입니다.")
+                .posts(testPost)
+                .members(testMembers)
+                .build();
+
         commentsRepository.save(comment1);
         commentsRepository.save(comment2);
         commentsRepository.save(comment3);
         commentsRepository.save(comment4);
+        commentsRepository.save(comment5);
 
         em.flush();
         em.clear();
 
         // When
-        // 첫 번째 페이지 조회 (페이지 크기: 2)
+        // 5개 댓글을 페이지 당 2개로 하여, 3 페이지를 생성
+        // 첫 번째 페이지 조회
         Pageable pageable1 = PageRequest.of(0, 2);
-        List<FindAllCommentsDto> actualDtos1 = commentsRepository.findByPostsIdOrderByCreatedAtDesc(testPost.getId(), pageable1);
+        List<FindAllCommentsDto> actualDtos1 = commentsService.findAllCommentsByPostId(testPost.getId(), pageable1);
 
-        // 두 번째 페이지 조회 (페이지 크기: 2)
+        // 두 번째 페이지 조회
         Pageable pageable2 = PageRequest.of(1, 2);
-        List<FindAllCommentsDto> actualDtos2 = commentsRepository.findByPostsIdOrderByCreatedAtDesc(testPost.getId(), pageable2);
+        List<FindAllCommentsDto> actualDtos2 = commentsService.findAllCommentsByPostId(testPost.getId(), pageable2);
 
-        // findAll()로 조회한 후 수동으로 변환
-        List<Comments> allComments = commentsRepository.findAll().stream()
-                .filter(comment -> comment.getPosts().getId().equals(testPost.getId()))
-                .collect(Collectors.toList());
-
-        // 생성일 기준 내림차순 정렬
-        allComments.sort(Comparator.comparing(Comments::getCreatedAt).reversed());
-
-        // 첫 번째 페이지 예상 결과 (0번째, 1번째 댓글)
-        List<FindAllCommentsDto> expectedDtos1 = allComments.stream()
-                .limit(2)
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-
-        // 두 번째 페이지 예상 결과 (2번째, 3번째 댓글)
-        List<FindAllCommentsDto> expectedDtos2 = allComments.stream()
-                .skip(2)
-                .limit(2)
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        // 세 번째 페이지 조회
+        Pageable pageable3 = PageRequest.of(2, 2);
+        List<FindAllCommentsDto> actualDtos3 = commentsService.findAllCommentsByPostId(testPost.getId(), pageable3);
 
         // Then
-        // 첫 번째 페이지 검증
+        // 첫 번째 페이지 검증 (2개 댓글)
         assertThat(actualDtos1).hasSize(2);
-        assertThat(expectedDtos1).hasSize(2);
+        actualDtos1.forEach(dto -> {
+            assertThat(dto.getTotalCommentsCount()).isEqualTo(5);
+            assertThat(dto.getTotalPageCount()).isEqualTo(3);
+            assertThat(dto.getContent()).isNotBlank();
+            assertThat(dto.getId()).isNotNull();
+            assertThat(dto.getCreatedAt()).isNotNull();
+        });
 
-        for (int i = 0; i < actualDtos1.size(); i++) {
-            FindAllCommentsDto actual = actualDtos1.get(i);
-            FindAllCommentsDto expected = expectedDtos1.get(i);
-
-            System.out.println("첫 번째 페이지 " + i + "번째 actualDtos > " + actual.toString());
-            System.out.println("첫 번째 페이지 " + i + "번째 expectedDtos > " + expected.toString());
-
-            assertThat(actual.getId()).isEqualTo(expected.getId());
-            assertThat(actual.getContent()).isEqualTo(expected.getContent());
-            assertThat(actual.getCreatedAt()).isEqualToIgnoringNanos(expected.getCreatedAt());
-        }
-
-        // 두 번째 페이지 검증
+        // 두 번째 페이지 검증 (2개 댓글)
         assertThat(actualDtos2).hasSize(2);
-        assertThat(expectedDtos2).hasSize(2);
+        actualDtos2.forEach(dto -> {
+            assertThat(dto.getTotalCommentsCount()).isEqualTo(5);
+            assertThat(dto.getTotalPageCount()).isEqualTo(3);
+            assertThat(dto.getContent()).isNotBlank();
+            assertThat(dto.getId()).isNotNull();
+            assertThat(dto.getCreatedAt()).isNotNull();
+        });
 
-        for (int i = 0; i < actualDtos2.size(); i++) {
-            FindAllCommentsDto actual = actualDtos2.get(i);
-            FindAllCommentsDto expected = expectedDtos2.get(i);
+        // 세 번째 페이지 검증 (1개 댓글)
+        assertThat(actualDtos3).hasSize(1);
+        actualDtos3.forEach(dto -> {
+            assertThat(dto.getTotalCommentsCount()).isEqualTo(5);
+            assertThat(dto.getTotalPageCount()).isEqualTo(3);
+            assertThat(dto.getContent()).isNotBlank();
+            assertThat(dto.getId()).isNotNull();
+            assertThat(dto.getCreatedAt()).isNotNull();
+        });
 
-            System.out.println("두 번째 페이지 " + i + "번째 actualDtos > " + actual.toString());
-            System.out.println("두 번째 페이지 " + i + "번째 expectedDtos > " + expected.toString());
+        // 생성일 기준 내림차순 정렬 확인
+        List<FindAllCommentsDto> allDtos = new ArrayList<>();
+        allDtos.addAll(actualDtos1);
+        allDtos.addAll(actualDtos2);
+        allDtos.addAll(actualDtos3);
 
-            assertThat(actual.getId()).isEqualTo(expected.getId());
-            assertThat(actual.getContent()).isEqualTo(expected.getContent());
-            assertThat(actual.getCreatedAt()).isEqualToIgnoringNanos(expected.getCreatedAt());
+        for (int i = 0; i < allDtos.size() - 1; i++) {
+            assertThat(allDtos.get(i).getCreatedAt())
+                    .isAfterOrEqualTo(allDtos.get(i + 1).getCreatedAt());
         }
 
-        System.out.println("첫 번째 페이지 actualDtos > " + actualDtos1.toString());
-        System.out.println("두 번째 페이지 actualDtos > " + actualDtos2.toString());
-        System.out.println("전체 allComments > " + allComments.toString());
+        System.out.println("첫 번째 페이지 댓글 수: " + actualDtos1.size());
+        System.out.println("두 번째 페이지 댓글 수: " + actualDtos2.size());
+        System.out.println("세 번째 페이지 댓글 수: " + actualDtos3.size());
+        System.out.println("전체 댓글 수: " + actualDtos1.get(0).getTotalCommentsCount());
+        System.out.println("전체 페이지 수: " + actualDtos1.get(0).getTotalPageCount());
     }
 
     @Test
-    @DisplayName("페이지 크기가 전체 댓글 수보다 클 때 모든 댓글이 조회되는지 검증")
+    @DisplayName("페이지 크기가 전체 댓글 수보다 클 때 totalPageCount가 1이 되는지 검증")
     public void 페이지_크기가_큰_경우_테스트() {
         // Given
         Comments comment1 = Comments.builder()
@@ -214,10 +221,14 @@ class CommentsRepositoryTest {
         // When
         // 페이지 크기를 전체 댓글 수보다 크게 설정
         Pageable pageable = PageRequest.of(0, 10);
-        List<FindAllCommentsDto> actualDtos = commentsRepository.findByPostsIdOrderByCreatedAtDesc(testPost.getId(), pageable);
+        List<FindAllCommentsDto> actualDtos = commentsService.findAllCommentsByPostId(testPost.getId(), pageable);
 
         // Then
         assertThat(actualDtos).hasSize(2);
+        actualDtos.forEach(dto -> {
+            assertThat(dto.getTotalCommentsCount()).isEqualTo(2);
+            assertThat(dto.getTotalPageCount()).isEqualTo(1);
+        });
 
         // 생성일 기준 내림차순으로 정렬되었는지 확인
         assertThat(actualDtos.get(0).getCreatedAt()).isAfter(actualDtos.get(1).getCreatedAt());
@@ -241,17 +252,57 @@ class CommentsRepositoryTest {
         // When
         // 존재하지 않는 페이지 조회 (전체 댓글 1개인데 2번째 페이지 조회)
         Pageable pageable = PageRequest.of(1, 10);
-        List<FindAllCommentsDto> actualDtos = commentsRepository.findByPostsIdOrderByCreatedAtDesc(testPost.getId(), pageable);
+        List<FindAllCommentsDto> actualDtos = commentsService.findAllCommentsByPostId(testPost.getId(), pageable);
 
         // Then
         assertThat(actualDtos).isEmpty();
     }
-    private FindAllCommentsDto convertToDto(Comments comment) {
-        return FindAllCommentsDto.builder()
-                .id(comment.getId())
-                .content(comment.getContent())
-                .createdAt(comment.getCreatedAt())
-                .updatedAt(comment.getUpdatedAt())
-                .build();
+
+    @Test
+    @DisplayName("댓글이 없는 게시글 조회 시 빈 리스트와 0개 카운트가 반환되는지 검증")
+    public void 댓글이_없는_게시글_조회_테스트() {
+        // Given
+        // 댓글을 저장하지 않음
+
+        // When
+        Pageable pageable = PageRequest.of(0, 10);
+        List<FindAllCommentsDto> actualDtos = commentsService.findAllCommentsByPostId(testPost.getId(), pageable);
+
+        // Then
+        assertThat(actualDtos).isEmpty();
+    }
+
+    @Test
+    @DisplayName("totalPageCount 계산이 정확한지 검증")
+    public void totalPageCount_계산_검증() {
+        // Given
+        // 3개의 댓글 저장
+        for (int i = 1; i <= 3; i++) {
+            Comments comment = Comments.builder()
+                    .content(i + "번째 댓글입니다.")
+                    .posts(testPost)
+                    .members(testMembers)
+                    .build();
+            commentsRepository.save(comment);
+        }
+
+        em.flush();
+        em.clear();
+
+        // When & Then
+        // 페이지 크기 2일 때, 3개 댓글은 2페이지로 계산
+        Pageable pageable1 = PageRequest.of(0, 2);
+        List<FindAllCommentsDto> result1 = commentsService.findAllCommentsByPostId(testPost.getId(), pageable1);
+        assertThat(result1.get(0).getTotalPageCount()).isEqualTo(2);
+
+        // 페이지 크기 3일 때, 3개 댓글은 1페이지로 계산
+        Pageable pageable2 = PageRequest.of(0, 3);
+        List<FindAllCommentsDto> result2 = commentsService.findAllCommentsByPostId(testPost.getId(), pageable2);
+        assertThat(result2.get(0).getTotalPageCount()).isEqualTo(1);
+
+        // 페이지 크기 1일 때, 3개 댓글은 3페이지로 계산
+        Pageable pageable3 = PageRequest.of(0, 1);
+        List<FindAllCommentsDto> result3 = commentsService.findAllCommentsByPostId(testPost.getId(), pageable3);
+        assertThat(result3.get(0).getTotalPageCount()).isEqualTo(3);
     }
 }
