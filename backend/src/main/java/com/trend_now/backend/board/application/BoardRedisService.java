@@ -5,6 +5,7 @@ import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
 import com.trend_now.backend.board.dto.BoardSaveDto;
+import com.trend_now.backend.board.dto.RealTimeBoardTimeUpEvent;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +48,7 @@ public class BoardRedisService {
     private static final int POSTS_INCREMENT_UNIT = 1;
 
     private final RedisTemplate<String, String> redisTemplate;
+    private final RedisPublisher redisPublisher;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, int score) {
         String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
@@ -105,6 +108,10 @@ public class BoardRedisService {
             String thresholdKey) {
         redisTemplate.expire(key, currentExpireTime + additionalSeconds, TimeUnit.SECONDS);
         redisTemplate.opsForSet().add(BOARD_THRESHOLD_KEY, thresholdKey);
+
+        String boardName = key.split(Pattern.quote(BOARD_KEY_DELIMITER))[0];
+        redisPublisher.publishRealTimeBoardTimeUpEvent(
+                RealTimeBoardTimeUpEvent.from(boardName, additionalSeconds));
     }
 
     /**
