@@ -17,8 +17,6 @@ public interface ScrapRepository extends JpaRepository<Scraps, Long> {
             p.id,
             p.title,
             p.writer,
-            p.viewCount,
-            (SELECT COUNT(pl) FROM PostLikes pl WHERE pl.posts.id = p.id),
             (SELECT COUNT(c) FROM Comments c WHERE c.posts.id = p.id),
             p.modifiable,
             p.createdAt,

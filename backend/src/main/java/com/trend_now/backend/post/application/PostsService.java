@@ -53,6 +53,8 @@ public class PostsService {
     private final PostsRepository postsRepository;
     private final BoardRepository boardRepository;
     private final CommentsRepository commentsRepository;
+    private final PostViewService postViewService;
+    private final PostLikesService postLikesService;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
     public Page<PostSummaryDto> findAllPostsPagingByBoardId(
@@ -61,23 +63,33 @@ public class PostsService {
         // 게시판이 가변 타이머가 작동 중인지 확인
         Boards boards = boardRepository.findById(postsPagingRequestDto.getBoardId()).
             orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
-
         if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(), boards.getBoardCategory())) {
             throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         }
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
-            postsPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt"));
+            postsPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt")); // 최신순으로 조회
 
         // boardsId에 속하는 게시글 조회
-        return postsRepository.findAllByBoardsId(
+        Page<PostSummaryDto> postSummmaryPage = postsRepository.findAllByBoardsId(
             postsPagingRequestDto.getBoardId(), pageable);
+
+        // 만약 redis에 저장된 게시글 조회수와 게시글 좋아요 수가 있다면, 해당 조회수를 PostSummaryDto에 설정 (Look Aside)
+        postSummmaryPage.forEach(postSummaryDto -> {
+            int postViewCount = postViewService.getPostViewCount(postSummaryDto.getPostId());
+            postSummaryDto.setViewCount(postViewCount);
+            int postLikesCount = postLikesService.getPostLikesCount(boards.getId(), postSummaryDto.getPostId());
+            postSummaryDto.setLikeCount(postLikesCount);
+        });
+
+        return postSummmaryPage;
     }
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
     @Transactional
     public PostsInfoDto findPostsById(Long boardId, Long postId) {
         // 게시판이 가변 타이머가 작동 중인지 확인
+
         Boards boards = boardRepository.findById(boardId).
             orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
 
@@ -86,12 +98,19 @@ public class PostsService {
         }
 
         // 조회 시 조회수 증가
-        Posts posts = postsRepository.findById(postId)
-            .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
-        posts.incrementViewCount();
+        postViewService.incrementPostView(postId);
 
         // 게시글 정보 조회
-        return postsRepository.findPostInfoById(postId).orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
+        PostsInfoDto postsInfoDto = postsRepository.findPostInfoById(postId)
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
+
+        // 만약 redis에 저장된 게시글 조회수와 게시글 좋아요 수가 있다면, 해당 조회수를 postsInfoDto에 설정 (Look Aside)
+        int postViewCount = postViewService.getPostViewCount(postId);
+        postsInfoDto.setViewCount(postViewCount);
+        int postLikesCount = postLikesService.getPostLikesCount(boards.getId(), postId);
+        postsInfoDto.setLikeCount(postLikesCount);
+
+        return postsInfoDto;
     }
 
     //게시글 작성 - 가변 타이머 작동 중에만 가능

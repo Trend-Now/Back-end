@@ -6,6 +6,8 @@ import com.trend_now.backend.board.cache.BoardCacheEntry;
 import com.trend_now.backend.board.cache.RealTimeBoardCache;
 import com.trend_now.backend.board.dto.RealtimeBoardListDto;
 import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.post.application.PostLikesService;
+import com.trend_now.backend.post.application.PostViewService;
 import com.trend_now.backend.post.dto.PostListResponseDto;
 import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
@@ -36,6 +38,8 @@ public class SearchService {
     private final RealTimeBoardCache realTimeBoardCache;
     private final BoardRepository boardRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private final PostLikesService postLikesService;
+    private final PostViewService postViewService;
 
     /**
      * 검색어에 따른 실시간 인기 게시판 조회
@@ -73,6 +77,14 @@ public class SearchService {
         Set<Long> boardIds = boardCacheEntryMap.keySet();
         Page<PostWithBoardSummaryDto> postWithBoardSummaryList = postsRepository.findByKeywordAndRealTimeBoard(
             keyword, boardIds, pageable);
+        postWithBoardSummaryList.forEach(postWithBoardSummary -> {
+            // 만약 redis에 저장된 게시글 조회수와 게시글 좋아요 수가 있다면, 해당 조회수를 PostSummaryDto에 설정 (Look Aside)
+            int postViewCount = postViewService.getPostViewCount(postWithBoardSummary.getPostId());
+            postWithBoardSummary.setViewCount(postViewCount);
+            int postLikesCount = postLikesService.getPostLikesCount(
+                postWithBoardSummary.getBoardId(), postWithBoardSummary.getPostId());
+            postWithBoardSummary.setLikeCount(postLikesCount);
+        });
         return RealtimePostSearchDto.of(
             postWithBoardSummaryList.getTotalPages(), postWithBoardSummaryList.getTotalElements(),
             postWithBoardSummaryList.getContent());
@@ -98,6 +110,14 @@ public class SearchService {
             // fixBoard에 속한 게시글 중, 내용 또는 제목에 keyword가 포함된 게시글 조회
             Page<PostSummaryDto> postSummaryDtoList = postsRepository.findByFixBoardsAndKeyword(
                 keyword, fixBoardId, pageable);
+            postSummaryDtoList.forEach(postSummaryDto -> {
+                // 만약 redis에 저장된 게시글 조회수와 게시글 좋아요 수가 있다면, 해당 조회수를 PostSummaryDto에 설정 (Look Aside)
+                int postViewCount = postViewService.getPostViewCount(postSummaryDto.getPostId());
+                postSummaryDto.setViewCount(postViewCount);
+                int postLikesCount = postLikesService.getPostLikesCount(fixBoardId,
+                    postSummaryDto.getPostId());
+                postSummaryDto.setLikeCount(postLikesCount);
+            });
             // 게시판 이름을 Key 값으로 사용
             String boardName = fixedBoardCacheMap.get(fixBoardId).getBoardName();
             // {고정게시판이름 : [게시글 리스트]} 형식

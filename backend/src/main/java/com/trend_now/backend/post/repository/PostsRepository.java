@@ -20,10 +20,6 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                p.viewCount,
-                (SELECT COUNT(pl)
-                FROM PostLikes pl
-                WHERE pl.posts.id = p.id),
                 (SELECT COUNT(c)
                 FROM Comments c
                 WHERE c.posts.id = p.id),
@@ -43,9 +39,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                p.viewCount,
                 (SELECT COUNT(c) FROM Comments c WHERE c.posts.id = p.id),
-                (SELECT COUNT(pl) FROM PostLikes pl WHERE pl.posts.id = p.id),
                 p.modifiable,
                 p.createdAt,
                 p.updatedAt,
@@ -63,13 +57,9 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                p.viewCount,
                 (SELECT COUNT(c)
                 FROM Comments c
                 WHERE c.posts.id = p.id),
-                (SELECT COUNT(pl)
-                FROM PostLikes pl
-                WHERE pl.posts.id = p.id),
                 p.modifiable,
                 p.createdAt,
                 p.updatedAt,
@@ -88,13 +78,9 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                p.viewCount,
                 (SELECT COUNT(c)
                 FROM Comments c
                 WHERE c.posts.id = p.id),
-                (SELECT COUNT(pl)
-                FROM PostLikes pl
-                WHERE pl.posts.id = p.id),
                 p.modifiable,
                 p.createdAt,
                 p.updatedAt
@@ -115,10 +101,6 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.title,
                 p.writer,
                 p.content,
-                p.viewCount,
-                (SELECT COUNT(pl)
-                FROM PostLikes pl
-                WHERE pl.posts.id = p.id),
                 (SELECT COUNT(c)
                 FROM Comments c
                 WHERE c.posts.id = p.id),
@@ -130,4 +112,6 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
         WHERE p.id = :postId
     """)
     Optional<PostsInfoDto> findPostInfoById(Long postId);
+
+    int findViewCountById(Long postId);
 }
