@@ -6,6 +6,7 @@ import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.data.dto.*;
+import com.trend_now.backend.comment.data.vo.FindCommentsResponse;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.exception.CustomException.BoardExpiredException;
@@ -183,12 +184,12 @@ public class CommentsService {
     /**
      * 댓글을 조회할 때, 페이지네이션에 따른 기본 댓글 정보와 총 댓글 개수와 페이지 개수를 같이 제공
      */
-    public List<FindAllCommentsDto> findAllCommentsByPostId(Long postId, Pageable pageable) {
+    public FindCommentsResponse findAllCommentsByPostId(Long postId, Pageable pageable) {
         // Page객체를 이용하여 댓글 데이터 조회
         Page<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId, pageable);
 
-        // totalCommentsCount와 totalPageCount를 포함한 새로운 DTO 리스트 생성하여 반환
-        return comments.getContent().stream()
+        // Page 객체에서 필요한 데이터만 사용하기 위해 List 객체로 변환해줌
+        List<FindAllCommentsDto> commentsList = comments.getContent().stream()
                 .map(comment -> FindAllCommentsDto.builder()
                         .createdAt(comment.getCreatedAt())
                         .updatedAt(comment.getUpdatedAt())
@@ -196,9 +197,9 @@ public class CommentsService {
                         .content(comment.getContent())
                         .modifiable(comment.isModifiable())
                         .writer(comment.getWriter())
-                        .totalCommentsCount((int) comments.getTotalElements())
-                        .totalPageCount(comments.getTotalPages())
                         .build())
                 .toList();
+
+        return new FindCommentsResponse((int) comments.getTotalElements(), comments.getTotalPages(), commentsList);
     }
 }

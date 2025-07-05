@@ -2,6 +2,7 @@ package com.trend_now.backend.comment.presentation;
 
 import com.trend_now.backend.comment.application.CommentsService;
 import com.trend_now.backend.comment.data.dto.*;
+import com.trend_now.backend.comment.data.vo.FindCommentsResponse;
 import com.trend_now.backend.comment.data.vo.SaveCommentsRequest;
 import com.trend_now.backend.comment.data.vo.UpdateCommentsRequest;
 import com.trend_now.backend.comment.repository.CommentsRepository;
@@ -47,7 +48,7 @@ public class CommentsController {
 
     @Operation(summary = "댓글 조회", description = "게시글에 댓글을 조회합니다.")
     @GetMapping()
-    public ResponseEntity<List<FindAllCommentsDto>> findAllCommentsByPostId(@PathVariable Long postId
+    public ResponseEntity<FindCommentsResponse> findAllCommentsByPostId(@PathVariable Long postId
     , @RequestParam(required = false, defaultValue = "1") int page
     , @RequestParam(required = false, defaultValue = "1") int size) {
         // PageRequest 객체 생성 (page는 0부터 시작하므로 -1)
