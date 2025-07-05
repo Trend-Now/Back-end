@@ -36,7 +36,7 @@ public class BoardRedisService {
     private final RedisTemplate<String, String> redisTemplate;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, int score) {
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         long keyLiveTime = KEY_LIVE_TIME;
 
         Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
@@ -72,7 +72,7 @@ public class BoardRedisService {
      * - isRealTimeBoard 메서드에 접근할려는 DTO는 BoardKeyProvider 인터페이스를 구현체로 진행
      */
     public boolean isRealTimeBoard(BoardKeyProvider provider) {
-        String key = provider.getName() + BOARD_KEY_DELIMITER + provider.getBoardId();
+        String key = provider.getBoardName() + BOARD_KEY_DELIMITER + provider.getBoardId();
         return redisTemplate.hasKey(key);
     }
 

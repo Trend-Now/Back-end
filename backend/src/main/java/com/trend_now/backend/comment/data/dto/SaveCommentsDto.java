@@ -22,9 +22,4 @@ public class SaveCommentsDto implements BoardKeyProvider {
     public static SaveCommentsDto of(Long boardId, Long postId, String boardName, String content) {
         return new SaveCommentsDto(boardId, postId, boardName, content);
     }
-
-    @Override
-    public String getName() {
-        return boardName;
-    }
 }

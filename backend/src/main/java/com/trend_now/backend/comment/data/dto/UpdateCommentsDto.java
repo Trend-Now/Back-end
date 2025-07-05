@@ -18,9 +18,4 @@ public class UpdateCommentsDto implements BoardKeyProvider {
             Long boardId, Long postId, String boardName, Long commentId, String updatedComments) {
         return new UpdateCommentsDto(boardId, postId, boardName, commentId, updatedComments);
     }
-
-    @Override
-    public String getName() {
-        return boardName;
-    }
 }

@@ -16,9 +16,4 @@ public class DeleteCommentsDto implements BoardKeyProvider {
     public static DeleteCommentsDto of(Long boardId, Long postId, String boardName, Long commentId) {
         return new DeleteCommentsDto(boardId, postId, boardName, commentId);
     }
-
-    @Override
-    public String getName() {
-        return boardName;
-    }
 }
