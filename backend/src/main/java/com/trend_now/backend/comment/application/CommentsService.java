@@ -201,6 +201,6 @@ public class CommentsService {
                         .totalCommentsCount(totalCommentsCount)
                         .totalPageCount(totalPageCount)
                         .build())
-                .collect(Collectors.toList());
+                .toList();
     }
 }
