@@ -97,8 +97,6 @@ public class PostsService {
             throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         }
 
-        // 조회 시 조회수 증가
-        postViewService.incrementPostView(postId);
 
         // 게시글 정보 조회
         PostsInfoDto postsInfoDto = postsRepository.findPostInfoById(postId)
@@ -109,6 +107,9 @@ public class PostsService {
         postsInfoDto.setViewCount(postViewCount);
         int postLikesCount = postLikesService.getPostLikesCount(boards.getId(), postId);
         postsInfoDto.setLikeCount(postLikesCount);
+
+        // 조회 시 조회수 증가
+        postViewService.incrementPostView(postId);
 
         return postsInfoDto;
     }
