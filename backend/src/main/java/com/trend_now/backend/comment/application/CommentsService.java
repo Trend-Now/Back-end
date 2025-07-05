@@ -109,13 +109,13 @@ public class CommentsService {
         validateBoard(boards);
         deleteCommentsDto.setBoardName(boards.getName());
 
-        if(!boardRedisService.isRealTimeBoard(deleteCommentsDto)) {
-            throw new BoardExpiredException(BOARD_EXPIRATION);
-        }
-
         // modifiable이 true인 경우에만 삭제 가능
         if (!comments.isModifiable()) {
             throw new InvalidRequestException(NOT_MODIFIABLE_COMMENTS);
+        }
+
+        if(!boardRedisService.isRealTimeBoard(deleteCommentsDto)) {
+            throw new BoardExpiredException(BOARD_EXPIRATION);
         }
 
         // 댓글 삭제 처리
@@ -146,13 +146,13 @@ public class CommentsService {
         validateBoard(boards);
         updateCommentsDto.setBoardName(boards.getName());
 
-        if(!boardRedisService.isRealTimeBoard(updateCommentsDto)) {
-            throw new BoardExpiredException(BOARD_EXPIRATION);
-        }
-
-        // modifiable이 true인 경우에만 삭제 가능
+        // modifiable이 true인 경우에만 수정 가능
         if (!comments.isModifiable()) {
             throw new InvalidRequestException(NOT_MODIFIABLE_COMMENTS);
+        }
+
+        if(!boardRedisService.isRealTimeBoard(updateCommentsDto)) {
+            throw new BoardExpiredException(BOARD_EXPIRATION);
         }
 
         // 댓글 수정 처리
