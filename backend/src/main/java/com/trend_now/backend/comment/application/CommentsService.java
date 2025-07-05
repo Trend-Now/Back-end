@@ -2,6 +2,7 @@ package com.trend_now.backend.comment.application;
 
 import com.trend_now.backend.board.application.BoardKeyProvider;
 import com.trend_now.backend.board.application.BoardRedisService;
+import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.data.dto.*;
@@ -50,7 +51,8 @@ public class CommentsService {
     /**
      * 댓글 작성
      * - 회원만 가능, 컨트롤러에서 사용자 인증 객체 members를 받음
-     * - 게시판 활성화인 경우에만 댓글 작성 가능
+     * - 게시판 활성화인 경우에는 댓글 작성 가능
+     * - 고정 게시판은 항상 작성 가능
      */
     @Transactional
     public Comments saveComments(Members member, SaveCommentsDto saveCommentsDto) {
@@ -64,16 +66,21 @@ public class CommentsService {
         validateBoard(boards);
         saveCommentsDto.setBoardName(boards.getName());
 
-        // 게시판 비활성화인 경우, 댓글 작성 불가능 예외
-        if(!boardRedisService.isRealTimeBoard(saveCommentsDto)) {
-            throw new BoardExpiredException(BOARD_EXPIRATION);
+        // 게시판이 활성화되어 있거나, 고정 게시판 경우에는 댓글 작성 가능
+        if (boards.getBoardCategory().equals(BoardCategory.FIXED)
+                || boardRedisService.isRealTimeBoard(saveCommentsDto)) {
+
+            return commentsRepository.save(Comments.builder()
+                    .content(saveCommentsDto.getContent())
+                    .members(member)
+                    .posts(posts)
+                    .build());
         }
 
-        return commentsRepository.save(Comments.builder()
-                .content(saveCommentsDto.getContent())
-                .members(member)
-                .posts(posts)
-                .build());
+        // 비활성화 게시판인 경우, 예외 처리
+        else {
+            throw new BoardExpiredException(BOARD_EXPIRATION);
+        }
     }
 
     /**
@@ -89,8 +96,8 @@ public class CommentsService {
      * 댓글 삭제 조건
      * - 댓글 식별자에 맞는 댓글이 존재
      * - 본인 댓글만 삭제 가능
-     * - 게시판 활성화 동안에만 삭제 가능
-     * - modifiable = true 조건에서 삭제 가능
+     * - modifiable = true 조건에서 삭제 가능(게시판이 비활성화 되면 modifiable = false가 되므로 게시판 활성화 여부 파악은 필요하지 않음)
+     * - 고정 게시판은 항상 삭제 가능
      */
     @Transactional
     public void deleteCommentsByCommentId(Members member, DeleteCommentsDto deleteCommentsDto) {
@@ -109,25 +116,25 @@ public class CommentsService {
         validateBoard(boards);
         deleteCommentsDto.setBoardName(boards.getName());
 
-        // modifiable이 true인 경우에만 삭제 가능
-        if (!comments.isModifiable()) {
+        // modifiable = true인 경우 또는 고정 게시판인 경우에 삭제 가능
+        if (comments.isModifiable()
+                || boards.getBoardCategory().equals(BoardCategory.FIXED)) {
+
+            commentsRepository.deleteById(deleteCommentsDto.getCommentId());
+        }
+
+        // modifiable = false인 경우에는 변경 불가능 예외 반환
+        else {
             throw new InvalidRequestException(NOT_MODIFIABLE_COMMENTS);
         }
-
-        if(!boardRedisService.isRealTimeBoard(deleteCommentsDto)) {
-            throw new BoardExpiredException(BOARD_EXPIRATION);
-        }
-
-        // 댓글 삭제 처리
-        commentsRepository.deleteById(deleteCommentsDto.getCommentId());
     }
 
     /**
      * 댓글 수정 조건
      * - 댓글 식별자에 맞는 댓글이 존재
      * - 본인 댓글만 수정 가능
-     * - 게시판 활성화 동안에만 삭제 가능
-     * - modifiable = true 조건에서 삭제 가능
+     * - modifiable = true 조건에서 수정 가능(게시판이 비활성화 되면 modifiable = false가 되므로 게시판 활성화 여부 파악은 필요하지 않음)
+     * - 고정 게시판은 항상 수정 가능
      */
     @Transactional
     public void updateCommentsByMembersAndCommentId(Members members, UpdateCommentsDto updateCommentsDto) {
@@ -146,17 +153,17 @@ public class CommentsService {
         validateBoard(boards);
         updateCommentsDto.setBoardName(boards.getName());
 
-        // modifiable이 true인 경우에만 수정 가능
-        if (!comments.isModifiable()) {
+        // modifiable = true인 경우 또는 고정 게시판인 경우에 수정 가능
+        if (comments.isModifiable()
+                || boards.getBoardCategory().equals(BoardCategory.FIXED)) {
+
+            comments.update(updateCommentsDto);
+        }
+
+        // modifiable = false인 경우에는 변경 불가능 예외 반환
+        else {
             throw new InvalidRequestException(NOT_MODIFIABLE_COMMENTS);
         }
-
-        if(!boardRedisService.isRealTimeBoard(updateCommentsDto)) {
-            throw new BoardExpiredException(BOARD_EXPIRATION);
-        }
-
-        // 댓글 수정 처리
-        comments.update(updateCommentsDto);
     }
 
     public Page<CommentInfoDto> getCommentsByMemberId(Long memberId, int page, int size) {
