@@ -48,13 +48,15 @@ public class CommentsController {
 
     @Operation(summary = "댓글 조회", description = "게시글에 댓글을 조회합니다.")
     @GetMapping()
-    public ResponseEntity<FindCommentsResponse> findAllCommentsByPostId(@PathVariable Long postId
-    , @RequestParam(required = false, defaultValue = "1") int page
-    , @RequestParam(required = false, defaultValue = "1") int size) {
+    public ResponseEntity<FindCommentsResponse> findAllCommentsByPostId(
+            @RequestHeader(value = "jwt", required = false) String jwt
+            , @PathVariable Long postId
+            , @RequestParam(required = false, defaultValue = "1") int page
+            , @RequestParam(required = false, defaultValue = "1") int size) {
         // PageRequest 객체 생성 (page는 0부터 시작하므로 -1)
         Pageable pageable = PageRequest.of(page - 1, size);
         return ResponseEntity.status(HttpStatus.OK)
-                .body(commentsService.findAllCommentsByPostId(postId, pageable));
+                .body(commentsService.findAllCommentsByPostId(postId, pageable, jwt));
     }
 
     @Operation(summary = "댓글 삭제", description = "특정 게시판의 BOARD_TTL 만료 시간 안의 댓글을 삭제합니다.")

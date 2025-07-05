@@ -9,6 +9,7 @@ import com.trend_now.backend.comment.data.dto.*;
 import com.trend_now.backend.comment.data.vo.FindCommentsResponse;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
+import com.trend_now.backend.config.auth.JwtTokenFilter;
 import com.trend_now.backend.exception.CustomException.BoardExpiredException;
 import com.trend_now.backend.exception.CustomException.InvalidRequestException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
@@ -48,6 +49,7 @@ public class CommentsService {
     private final RedisTemplate<String, String> redisTemplate;
     private final BoardRedisService boardRedisService;
     private final BoardRepository boardRepository;
+    private final JwtTokenFilter jwtTokenFilter;
 
     /**
      * 댓글 작성
@@ -183,8 +185,10 @@ public class CommentsService {
 
     /**
      * 댓글을 조회할 때, 페이지네이션에 따른 기본 댓글 정보와 총 댓글 개수와 페이지 개수를 같이 제공
+     * 로그인 유저인 경우, 자신이 작성한 댓글인지 여부도 같이 제공
+     * 비로그인 유저인 경우, 자신이 작성한 댓글인지 여부는 항상 false로 제공
      */
-    public FindCommentsResponse findAllCommentsByPostId(Long postId, Pageable pageable) {
+    public FindCommentsResponse findAllCommentsByPostId(Long postId, Pageable pageable, String jwt) {
         // Page객체를 이용하여 댓글 데이터 조회
         Page<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId, pageable);
 
@@ -197,6 +201,8 @@ public class CommentsService {
                         .content(comment.getContent())
                         .modifiable(comment.isModifiable())
                         .writer(comment.getWriter())
+                        .writerId(comment.getWriterId())
+                        .isMyComments(jwtTokenFilter.checkMemberIdFromToken(comment.getWriterId(), jwt))
                         .build())
                 .toList();
 
