@@ -75,6 +75,7 @@ public class PostsService {
     }
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
+    @Transactional
     public PostsInfoDto findPostsById(Long boardId, Long postId) {
         // 게시판이 가변 타이머가 작동 중인지 확인
         Boards boards = boardRepository.findById(boardId).
@@ -83,6 +84,11 @@ public class PostsService {
         if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(), boards.getBoardCategory())) {
             throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         }
+
+        // 조회 시 조회수 증가
+        Posts posts = postsRepository.findById(postId)
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
+        posts.incrementViewCount();
 
         // 게시글 정보 조회
         return postsRepository.findPostInfoById(postId).orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));

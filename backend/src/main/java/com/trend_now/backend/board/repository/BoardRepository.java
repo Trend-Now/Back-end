@@ -23,6 +23,7 @@ public interface BoardRepository extends JpaRepository<Boards, Long> {
                 b.id,
                 b.name,
                 (SELECT COUNT(p) FROM Posts p WHERE p.boards.id = b.id),
+                (SELECT SUM(p.viewCount) FROM Posts p WHERE p.boards.id = b.id),
                 b.createdAt,
                 b.updatedAt
         )
