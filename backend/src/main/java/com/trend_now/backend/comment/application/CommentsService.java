@@ -177,20 +177,11 @@ public class CommentsService {
      * 댓글을 조회할 때, 페이지네이션에 따른 기본 댓글 정보와 총 댓글 개수와 페이지 개수를 같이 제공
      */
     public List<FindAllCommentsDto> findAllCommentsByPostId(Long postId, Pageable pageable) {
-        // 전체 댓글 수 및 페이지 수 계산
-        int totalCommentsCount = commentsRepository.countByPostsId(postId);
-        int totalPageCount = (int) Math.ceil((double) totalCommentsCount / pageable.getPageSize());
-
-        // totalCommentsCount = 0 이면, 댓글이 없으므로 바로 return
-        if(totalCommentsCount == 0) {
-            return Collections.emptyList();
-        }
-
-        // 댓글 데이터 조회 (기본 필드만)
-        List<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId, pageable);
+        // Page객체를 이용하여 댓글 데이터 조회
+        Page<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId, pageable);
 
         // totalCommentsCount와 totalPageCount를 포함한 새로운 DTO 리스트 생성하여 반환
-        return comments.stream()
+        return comments.getContent().stream()
                 .map(comment -> FindAllCommentsDto.builder()
                         .createdAt(comment.getCreatedAt())
                         .updatedAt(comment.getUpdatedAt())
@@ -198,8 +189,8 @@ public class CommentsService {
                         .content(comment.getContent())
                         .modifiable(comment.isModifiable())
                         .writer(comment.getWriter())
-                        .totalCommentsCount(totalCommentsCount)
-                        .totalPageCount(totalPageCount)
+                        .totalCommentsCount((int) comments.getTotalElements())
+                        .totalPageCount(comments.getTotalPages())
                         .build())
                 .toList();
     }
