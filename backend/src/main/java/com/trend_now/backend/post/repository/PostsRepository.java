@@ -108,7 +108,8 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 WHERE c.posts.id = p.id),
                 p.modifiable,
                 p.createdAt,
-                p.updatedAt
+                p.updatedAt,
+                p.members.id
         )
         FROM Posts p
         WHERE p.id = :postId

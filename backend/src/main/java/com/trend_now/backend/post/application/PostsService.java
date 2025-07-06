@@ -104,10 +104,10 @@ public class PostsService {
 
         // 만약 redis에 저장된 게시글 조회수와 게시글 좋아요 수가 있다면, 해당 조회수를 postsInfoDto에 설정 (Look Aside)
         int postViewCount = postViewService.getPostViewCount(postId);
-        postsInfoDto.setViewCount(postViewCount);
+        postsInfoDto.setViewCount(postViewCount + 1);
         int postLikesCount = postLikesService.getPostLikesCount(boards.getId(), postId);
         // 현재 조회된 조회수는 조회수 증가 전이므로, 조회수에 1을 더한 값을 응답 값으로 세팅
-        postsInfoDto.setViewCount(postViewCount + 1);
+        postsInfoDto.setLikeCount(postLikesCount);
 
         // 조회 시 조회수 증가
         postViewService.incrementPostView(postId);

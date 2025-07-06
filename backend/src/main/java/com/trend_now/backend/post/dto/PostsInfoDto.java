@@ -20,9 +20,11 @@ public class PostsInfoDto {
     private final boolean modifiable;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
+    private final Long memberId;
+
 
     public PostsInfoDto(String title, String writer, String content, Long commentCount,
-        boolean modifiable, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        boolean modifiable, LocalDateTime createdAt, LocalDateTime updatedAt, Long memberId) {
         this.title = title;
         this.writer = writer;
         this.content = content;
@@ -30,5 +32,6 @@ public class PostsInfoDto {
         this.modifiable = modifiable;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.memberId = memberId;
     }
 }
