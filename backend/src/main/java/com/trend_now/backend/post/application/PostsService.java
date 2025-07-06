@@ -107,7 +107,7 @@ public class PostsService {
         postsInfoDto.setViewCount(postViewCount);
         int postLikesCount = postLikesService.getPostLikesCount(boards.getId(), postId);
         // 현재 조회된 조회수는 조회수 증가 전이므로, 조회수에 1을 더한 값을 응답 값으로 세팅
-        postsInfoDto.setLikeCount(postLikesCount + 1);
+        postsInfoDto.setViewCount(postViewCount + 1);
 
         // 조회 시 조회수 증가
         postViewService.incrementPostView(postId);
@@ -152,8 +152,7 @@ public class PostsService {
     //게시글 수정 - 가변 타이머 작동 중에만 가능
     @Transactional
     public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long boardId,
-        Long postId,
-        Long memberId) {
+        Long postId, Long memberId) {
         Boards boards = boardRepository.findById(boardId)
             .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
         Posts posts = postsRepository.findById(postId)
