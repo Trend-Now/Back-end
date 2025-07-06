@@ -31,7 +31,7 @@ public class QuartzJobConfig {
     private static final String POST_VIEW_SYNC_DB_JOB = "PostViewSyncDbJob";
     private static final String POST_VIEW_SYNC_DB_JOB_GROUP = "PostViewSyncDbJobGroup";
     private static final String POST_VIEW_SYNC_DB_JOB_TRIGGER = "PostViewSyncDbJobTrigger";
-    private static final int POST_VIEW_SYNC_DB_JOB_INTERVAL_SECONDS = 10;
+    private static final int POST_VIEW_SYNC_DB_JOB_INTERVAL_SECONDS = 301;
 
     private final ApplicationContext applicationContext;
 
