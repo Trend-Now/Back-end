@@ -1,5 +1,6 @@
-package com.trend_now.backend.post.dto;
+package com.trend_now.backend.search.dto;
 
+import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -32,7 +32,7 @@ public class RealTimeBoardCache {
         .build();
 
     @Getter
-    private final Cache<Long, BoardCacheEntry> fixedBoardCacheMap = Caffeine.newBuilder()
+    private final Cache<String, Long> fixedBoardCacheMap = Caffeine.newBuilder()
         // 캐시의 최대 크기 설정
         .maximumSize(MAXIMUM_SIZE)
         .build();
@@ -65,9 +65,7 @@ public class RealTimeBoardCache {
         // 캐시 생성
         List<Boards> fixedBoardList = boardRepository.findByBoardCategory(BoardCategory.FIXED);
         fixedBoardList.forEach(
-            fixedBoard -> fixedBoardCacheMap.put(fixedBoard.getId(), BoardCacheEntry.builder()
-                .boardName(fixedBoard.getName())
-                .build())
+            fixedBoard -> fixedBoardCacheMap.put(fixedBoard.getName(), fixedBoard.getId())
         );
     }
 }
