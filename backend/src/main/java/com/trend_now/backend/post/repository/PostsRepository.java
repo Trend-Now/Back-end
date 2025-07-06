@@ -130,4 +130,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
         WHERE p.id = :postId
     """)
     Optional<PostsInfoDto> findPostInfoById(Long postId);
+
+    @Query("SELECT p FROM Posts p JOIN FETCH p.boards WHERE p.id = :postId")
+    Optional<Posts> findByIdWithBoard(@Param("postId") Long postId);
 }
