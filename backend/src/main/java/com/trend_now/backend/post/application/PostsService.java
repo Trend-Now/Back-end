@@ -106,7 +106,8 @@ public class PostsService {
         int postViewCount = postViewService.getPostViewCount(postId);
         postsInfoDto.setViewCount(postViewCount);
         int postLikesCount = postLikesService.getPostLikesCount(boards.getId(), postId);
-        postsInfoDto.setLikeCount(postLikesCount);
+        // 현재 조회된 조회수는 조회수 증가 전이므로, 조회수에 1을 더한 값을 응답 값으로 세팅
+        postsInfoDto.setLikeCount(postLikesCount + 1);
 
         // 조회 시 조회수 증가
         postViewService.incrementPostView(postId);

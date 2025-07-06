@@ -4,6 +4,8 @@ import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -113,5 +115,8 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     """)
     Optional<PostsInfoDto> findPostInfoById(Long postId);
 
+    @Query("SELECT p.viewCount FROM Posts p WHERE p.id = :postId")
     int findViewCountById(Long postId);
+
+    List<Posts> findByIdIn(Collection<Long> ids);
 }
