@@ -125,8 +125,7 @@ public class PostsService {
     //게시글 수정 - 가변 타이머 작동 중에만 가능
     @Transactional
     public void updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long boardId,
-        Long postId,
-        Long memberId) {
+        Long postId, Long memberId) {
         Boards boards = boardRepository.findById(boardId)
             .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
         Posts posts = postsRepository.findById(postId)
