@@ -125,16 +125,26 @@ public class MemberService {
         log.info("닉네임 변경 완료 - {}", member.getName());
     }
 
+    /**
+     * test jwt 값을 얻기 위해서 test 계정을 이용하여 JWT 값 생성 및 반환
+     * - test 계정이 있으면 해당 계정의 id 값을 가져와 JWT 값 생성
+     * - test 계정이 없으면 해당 계정을 저장 후, id 값을 가져와 JWT 값 생성
+     */
     @Transactional
     public String getTestJwt() {
-        Members testMember = Members.builder()
-                .name("test_name")
-                .email("test_email")
-                .provider(Provider.TEST)
-                .snsId("test_snsId")
-                .build();
+        Members testMember = memberRepository.findBySnsId("test_snsId")
+                .orElseGet(
+                        () -> memberRepository.save(
+                                Members.builder()
+                                        .name("test_name")
+                                        .email("test_email")
+                                        .provider(Provider.TEST)
+                                        .snsId("test_snsId")
+                                        .build()
+                        )
+                );
 
-        String testJwt = jwtTokenProvider.createToken(memberRepository.save(testMember).getId());
+        String testJwt = jwtTokenProvider.createToken(testMember.getId());
         log.info("[MemberService.getTestJwt] : 테스트용 JWT = {}", testJwt);
         return testJwt;
     }

@@ -14,12 +14,12 @@ import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.application.ScrapService;
-import com.trend_now.backend.post.dto.PostSummaryDto;
-import com.trend_now.backend.post.dto.PostListPagingResponseDto;
+import com.trend_now.backend.post.dto.PostListResponseDto;
+import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
+import com.trend_now.backend.post.dto.MyPostListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -147,16 +147,16 @@ public class MemberController {
      */
     @GetMapping("/scrap")
     @Operation(summary = "스크랩한 게시글 목록 조회", description = "회원이 스크랩한 게시글을 조회합니다.")
-    public ResponseEntity<PostListPagingResponseDto> getMemberScrapPosts(
+    public ResponseEntity<MyPostListResponse> getMemberScrapPosts(
         @AuthenticationPrincipal(expression = "members") Members member,
-        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "10") int size) {
 
-        Page<PostSummaryDto> scrappedPostsByMemberId = scrapService.getScrappedPostsByMemberId(
-            member.getId(), page, size);
+        Page<PostWithBoardSummaryDto> scrappedPostsByMemberId = scrapService.getScrappedPostsByMemberId(
+            member.getId(), page - 1, size);
         return new ResponseEntity<>(
-            PostListPagingResponseDto.of(FIND_SCRAP_POSTS_SUCCESS_MESSAGE,
-                scrappedPostsByMemberId.getTotalPages(), scrappedPostsByMemberId.getContent()),
+            MyPostListResponse.of(FIND_SCRAP_POSTS_SUCCESS_MESSAGE,
+                scrappedPostsByMemberId.getTotalPages() + 1, scrappedPostsByMemberId.getTotalElements(), scrappedPostsByMemberId.getContent()),
             HttpStatus.OK);
     }
 
@@ -165,25 +165,25 @@ public class MemberController {
      */
     @GetMapping("/posts")
     @Operation(summary = "회원이 작성한 게시글 목록 조회", description = "회원이 작성한 게시글을 조회합니다.")
-    public ResponseEntity<PostListPagingResponseDto> getMemberPosts(
+    public ResponseEntity<MyPostListResponse> getMemberPosts(
         @AuthenticationPrincipal(expression = "members") Members member,
-        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "10") int size) {
-        Page<PostSummaryDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page,
+        Page<PostWithBoardSummaryDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page - 1,
             size);
 
-        return new ResponseEntity<>(PostListPagingResponseDto.of(FIND_MEMBER_POSTS_SUCCESS_MESSAGE,
-            postsByMemberId.getTotalPages(), postsByMemberId.getContent()), HttpStatus.OK);
+        return new ResponseEntity<>(MyPostListResponse.of(FIND_MEMBER_POSTS_SUCCESS_MESSAGE,
+            postsByMemberId.getTotalPages(), postsByMemberId.getTotalElements(), postsByMemberId.getContent()), HttpStatus.OK);
     }
 
     @GetMapping("/comments")
     @Operation(summary = "회원이 작성한 댓글 목록 조회", description = "회원이 작성한 댓글을 조회합니다.")
     public ResponseEntity<CommentListPagingResponseDto> getMemberComments(
         @AuthenticationPrincipal(expression = "members") Members member,
-        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "10") int size) {
         Page<CommentInfoDto> commentsByMemberId = commentsService.getCommentsByMemberId(
-            member.getId(), page, size);
+            member.getId(), page - 1, size);
         return new ResponseEntity<>(
             CommentListPagingResponseDto.of(FIND_MEMBER_COMMENTS_SUCCESS_MESSAGE,
                 commentsByMemberId.getTotalPages(), commentsByMemberId.getContent()),

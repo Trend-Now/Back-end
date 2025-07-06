@@ -79,10 +79,10 @@ public class BoardsControllerTest {
 
     @ParameterizedTest
     @CsvSource({
-            "0, 5",  // page=0, size=5 -> 총 5개 항목, 전체 20개, 총 4페이지
-            "1, 10", // page=1, size=10 -> 총 10개 항목, 전체 20개, 총 2페이지
-            "2, 10",  // page=2, size=10 -> 데이터 없음 (out of range)
-            "0, 20"  // page=0, size=20 -> 총 20개 항목, 전체 20개, 총 1페이지
+            "1, 5",  // page=0, size=5 -> 총 5개 항목, 전체 20개, 총 4페이지
+            "2, 10", // page=1, size=10 -> 총 10개 항목, 전체 20개, 총 2페이지
+            "3, 10",  // page=2, size=10 -> 데이터 없음 (out of range)
+            "1, 20"  // page=0, size=20 -> 총 20개 항목, 전체 20개, 총 1페이지
     })
     public void getBoards_Pagination_Success(int page, int size) throws Exception {
         mockMvc.perform(get("/api/v1/boards/list")

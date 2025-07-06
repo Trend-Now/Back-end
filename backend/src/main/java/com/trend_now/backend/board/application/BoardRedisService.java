@@ -1,5 +1,6 @@
 package com.trend_now.backend.board.application;
 
+import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
@@ -11,6 +12,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +36,7 @@ public class BoardRedisService {
     private final RedisTemplate<String, String> redisTemplate;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, int score) {
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         long keyLiveTime = KEY_LIVE_TIME;
 
         Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
@@ -63,9 +66,23 @@ public class BoardRedisService {
             .forEach(key -> redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, key));
     }
 
-    public boolean isRealTimeBoard(BoardSaveDto boardSaveDto) {
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+    /**
+     * BoardKeyProvider 인터페이스를 통해서 isRealTimeBoard 메서드에 접근한다.
+     * - 특정 DTO에만 종속되는 한계에서 확장성을 고려하여 설계
+     * - isRealTimeBoard 메서드에 접근할려는 DTO는 BoardKeyProvider 인터페이스를 구현체로 진행
+     */
+    public boolean isRealTimeBoard(BoardKeyProvider provider) {
+        String key = provider.getBoardName() + BOARD_KEY_DELIMITER + provider.getBoardId();
         return redisTemplate.hasKey(key);
+    }
+
+    // 타이머가 남아있는 게시판이면 true 반환, 고정 게시판이면 false 반환 (true 반환하면 예외 던짐)
+    public boolean isNotRealTimeBoard(String boardName, Long boardId, BoardCategory boardCategory) {
+        if (boardCategory == BoardCategory.FIXED) {
+            return false;
+        }
+        String key = boardName + BOARD_KEY_DELIMITER + boardId;
+        return !redisTemplate.hasKey(key);
     }
 
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
@@ -100,7 +117,7 @@ public class BoardRedisService {
             .collect(Collectors.toList());
 
         PageRequest pageRequest = PageRequest.of(boardPagingRequestDto.getPage(),
-            boardPagingRequestDto.getSize());
+            boardPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt"));
         int start = (int) pageRequest.getOffset();
         int end = Math.min(start + pageRequest.getPageSize(), boardInfoDtos.size());
 

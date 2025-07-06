@@ -3,7 +3,7 @@ package com.trend_now.backend.post.repository;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.domain.Scraps;
-import java.util.List;
+import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,13 +16,24 @@ import org.springframework.stereotype.Repository;
 public interface ScrapRepository extends JpaRepository<Scraps, Long> {
 
     @Query("""
-            SELECT s.posts
+            SELECT new com.trend_now.backend.post.dto.PostWithBoardSummaryDto(
+            p.id,
+            p.title,
+            p.writer,
+            p.viewCount,
+            (SELECT COUNT(pl) FROM PostLikes pl WHERE pl.posts.id = p.id),
+            (SELECT COUNT(c) FROM Comments c WHERE c.posts.id = p.id),
+            p.modifiable,
+            p.createdAt,
+            p.updatedAt,
+            p.boards.id,
+            p.boards.name
+            )
             FROM Scraps s
             JOIN s.posts p
-            JOIN FETCH p.boards
             WHERE s.members.id = :memberId
         """)
-    Page<Posts> findScrapPostsByMemberId(@Param("memberId") Long memberId, Pageable pageable);
+    Page<PostWithBoardSummaryDto> findScrapPostsByMemberId(@Param("memberId") Long memberId, Pageable pageable);
 
     void deleteAllByMembers_Id(Long membersId);
 

@@ -1,4 +1,4 @@
-package com.trend_now.backend.aws.s3.config;
+package com.trend_now.backend.infra.s3.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

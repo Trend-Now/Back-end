@@ -23,6 +23,10 @@ public class Comments extends BaseEntity {
     @Column(nullable = false)
     private String content;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean modifiable = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Members members;
@@ -31,17 +35,12 @@ public class Comments extends BaseEntity {
     @JoinColumn(name = "post_id")
     private Posts posts;
 
-    // BOARD_TTL 시간 안에 작성된 댓글은 boardTtlStatus 필드가 BOARD_TTL_BEFORE, 아니면 BOARD_TTL_AFTER 할당
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, name = "board_ttl_status")
-    private BoardTtlStatus boardTtlStatus;
-
     public void update(UpdateCommentsDto updateCommentsDto) {
         this.content = updateCommentsDto.getUpdatedComments();
     }
 
     // 댓글 작성자와 API 요청자가 동일한지 확인하는 메서드
-    public boolean iscommentsWriter(Comments comments, Members member) {
+    public boolean isCommentsWriter(Comments comments, Members member) {
         return comments.getMembers().getId().equals(member.getId());
     }
 }

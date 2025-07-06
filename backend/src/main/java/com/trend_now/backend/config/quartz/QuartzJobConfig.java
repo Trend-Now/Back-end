@@ -20,11 +20,11 @@ public class QuartzJobConfig {
     private static final String SIGNAL_KEYWORD_GROUP = "SignalGroup";
     private static final String SIGNAL_KEYWORD_JOB = "SignalKeywordJob";
     private static final String SIGNAL_KEYWORD_TRIGGER = "SignalKeywordTrigger";
-    private static final int SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS = 11;
+    private static final int SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS = 61;
     private static final String POST_LIKES_SYNC_DB_JOB = "PostLikesSyncDbJob";
     private static final String POST_LIKES_SYNC_DB_JOB_GROUP = "PostLikesSyncDbJobGroup";
     private static final String POST_LIKES_SYNC_DB_JOB_TRIGGER = "PostLikesSyncDbJobTrigger";
-    private static final int POST_LIKES_SYNC_DB_JOB_INTERVAL_SECONDS = 11;
+    private static final int POST_LIKES_SYNC_DB_JOB_INTERVAL_SECONDS = 301;
 
     private final ApplicationContext applicationContext;
 

@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -36,12 +37,17 @@ public class Posts extends BaseEntity {
     @Column(nullable = false)
     private String writer;
 
-    @Column(nullable = false)
+    @Lob
+    @Column(nullable = false, length = 1000)
     private String content;
 
     @Builder.Default
     @Column(nullable = false)
     private int viewCount = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean modifiable = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")
