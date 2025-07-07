@@ -6,7 +6,6 @@ package com.trend_now.backend.post.dto;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Setter;
 
 @Data
 @AllArgsConstructor
@@ -20,11 +19,11 @@ public class PostsInfoDto {
     private final boolean modifiable;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
-    private final Long memberId;
+    private final Long writerId;
 
 
     public PostsInfoDto(String title, String writer, String content, Long commentCount,
-        boolean modifiable, LocalDateTime createdAt, LocalDateTime updatedAt, Long memberId) {
+        boolean modifiable, LocalDateTime createdAt, LocalDateTime updatedAt, Long writerId) {
         this.title = title;
         this.writer = writer;
         this.content = content;
@@ -32,6 +31,6 @@ public class PostsInfoDto {
         this.modifiable = modifiable;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.memberId = memberId;
+        this.writerId = writerId;
     }
 }
