@@ -60,16 +60,16 @@ public class SearchController {
             .body(SearchResponseDto.of(REALTIME_POST_SEARCH_SUCCESS, realtimePostsByKeyword));
     }
 
-    @Operation(summary = "검색어에 따른 자유 게시판의 게시글 조회", description = "검색어에 해당하는 자유 게시판의 게시글 목록을 조회합니다.")
+    @Operation(summary = "검색어에 따른 고정 게시판의 게시글 조회", description = "검색어에 해당하는 고정 게시판의 게시글 목록을 조회합니다.")
     @GetMapping("/fixedPosts")
     public ResponseEntity<SearchResponseDto> findFixedPosts(
         @RequestParam String keyword,
-        @RequestParam String boardName,
+        @RequestParam Long boardId,
         @RequestParam(required = false, defaultValue = "1") int page,
         @RequestParam(required = false, defaultValue = "10") int size) {
 
         FixedPostSearchDto freePostsByKeyword = searchService.findFixedPostsByKeyword(
-            keyword, boardName, page, size);
+            keyword, boardId, page, size);
 
         log.info("고정 게시판의 게시글 목록 검색 완료, 검색어: {}", keyword);
 
