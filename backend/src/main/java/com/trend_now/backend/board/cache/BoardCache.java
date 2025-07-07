@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class RealTimeBoardCache {
+public class BoardCache {
 
     public static final int EXPIRATION_TIME = 30; // 캐시 만료 시간 (분 단위)
     public static final int MAXIMUM_SIZE = 1000; // 캐시 최대 크기
@@ -65,9 +65,11 @@ public class RealTimeBoardCache {
         // 캐시 생성
         List<Boards> fixedBoardList = boardRepository.findByBoardCategory(BoardCategory.FIXED);
         fixedBoardList.forEach(
-            fixedBoard -> fixedBoardCacheMap.put(fixedBoard.getId(), BoardCacheEntry.builder()
-                .boardName(fixedBoard.getName())
-                .build())
+            fixedBoard -> fixedBoardCacheMap.put(fixedBoard.getId(),
+                BoardCacheEntry.builder()
+                    .boardName(fixedBoard.getName())
+                    .build()
+            )
         );
     }
 }
