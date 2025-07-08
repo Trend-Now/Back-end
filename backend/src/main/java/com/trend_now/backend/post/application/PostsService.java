@@ -86,7 +86,6 @@ public class PostsService {
     }
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
-    @Transactional
     public PostsInfoDto findPostsById(Long boardId, Long postId) {
         // 게시판이 가변 타이머가 작동 중인지 확인
 
