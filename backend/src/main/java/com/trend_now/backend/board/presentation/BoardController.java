@@ -2,10 +2,11 @@ package com.trend_now.backend.board.presentation;
 
 import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.application.BoardService;
+import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
-import com.trend_now.backend.board.dto.RealtimeBoardListDto;
 import com.trend_now.backend.board.dto.FixedBoardSaveDto;
+import com.trend_now.backend.board.dto.RealtimeBoardListDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -52,5 +53,13 @@ public class BoardController {
     public ResponseEntity<String> addFixedBoard(@RequestBody FixedBoardSaveDto fixedBoardSaveDto) {
         boardService.addFixedBoard(fixedBoardSaveDto);
         return ResponseEntity.status(HttpStatus.OK).body("고정 게시판 항목이 추가되었습니다.");
+    }
+
+    @Operation(summary = "실시간 게시판 정보 반환", description = "실시간 게시판 입장 시 필요한 정보를 반환합니다.")
+    @GetMapping("/realtime")
+    public ResponseEntity<BoardInfoDto> getBoardInfo(
+            @RequestParam Long boardId) {
+        BoardInfoDto boardInfo = boardRedisService.getBoardInfo(boardId);
+        return ResponseEntity.status(HttpStatus.OK).body(boardInfo);
     }
 }
