@@ -78,4 +78,8 @@ public class ScrapService {
 
         return scrapPostsByMemberId;
     }
+
+    public boolean isScrapedPost(Long id, Long postId) {
+        return scrapRepository.existsScrapsByPosts_IdAndMembers_Id(postId, id);
+    }
 }

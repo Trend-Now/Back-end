@@ -20,6 +20,7 @@ public class PostsInfoDto {
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final Long writerId;
+    private boolean isScraped;
 
 
     public PostsInfoDto(String title, String writer, String content, Long commentCount,

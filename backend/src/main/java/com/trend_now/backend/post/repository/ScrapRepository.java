@@ -36,4 +36,6 @@ public interface ScrapRepository extends JpaRepository<Scraps, Long> {
     void deleteAllByMembers_Id(Long membersId);
 
     Optional<Scraps> findByMembersAndPosts(Members members, Posts posts);
+
+    boolean existsScrapsByPosts_IdAndMembers_Id(Long postsId, Long membersId);
 }
