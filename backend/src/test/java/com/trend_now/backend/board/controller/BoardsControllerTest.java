@@ -13,6 +13,8 @@ import com.trend_now.backend.board.dto.Top10;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -92,4 +94,21 @@ public class BoardsControllerTest {
                 .andExpect(status().isOk())
                 .andDo(print());
     }
+
+    @Test
+    @DisplayName("실시간 게시판을 들어갔을 때 실시간 게시판의 정보를 받을 수 있다")
+    public void 실시간_게시판_정보() throws Exception {
+        //given
+        Long boardId = 5L;
+
+        //when
+
+        //then
+        mockMvc.perform(get("/api/v1/boards/realtime")
+                        .param("boardId", String.valueOf(boardId))
+                )
+                .andExpect(status().isOk())
+                .andDo(print());
+    }
+
 }
