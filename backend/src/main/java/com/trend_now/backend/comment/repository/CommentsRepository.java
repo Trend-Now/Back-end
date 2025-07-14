@@ -7,6 +7,7 @@ import com.trend_now.backend.member.domain.Members;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -27,14 +28,15 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
      */
     @Query("""
         SELECT new com.trend_now.backend.comment.data.dto.FindAllCommentsDto(
-               c.createdAt, c.updatedAt, c.id, c.content, c.boardTtlStatus
+               c.createdAt, c.updatedAt, c.id, c.content, c.modifiable, c.members.name, c.members.id
             )
         FROM Comments c
         WHERE c.posts.id = :postId
         ORDER BY c.createdAt DESC
         """)
-    List<FindAllCommentsDto> findByPostsIdOrderByCreatedAtDesc(
-        @Param("postId") Long postId);
+    Page<FindAllCommentsDto> findByPostsIdOrderByCreatedAtDesc(
+            @Param("postId") Long postId, Pageable pageable);
+
 
     void deleteByIdAndMembers(Long commentId, Members members);
 
@@ -60,4 +62,11 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
         Pageable pageable);
 
     void deleteByPosts_Id(Long postsId);
+
+    @Modifying
+    @Query("UPDATE Comments c SET c.modifiable = false WHERE c.posts.boards.id = :boardId AND c.modifiable = true")
+    void updateFlagByBoardId(@Param("boardId") Long boardId);
+
+    // 특정 게시글의 전체 댓글 수 조회
+    int countByPostsId(Long postId);
 }

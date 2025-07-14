@@ -2,7 +2,8 @@ package com.trend_now.backend.search.presentation;
 
 import com.trend_now.backend.board.dto.RealtimeBoardListDto;
 import com.trend_now.backend.post.dto.PostListResponseDto;
-import com.trend_now.backend.post.dto.RealtimePostSearchDto;
+import com.trend_now.backend.search.dto.FixedPostSearchDto;
+import com.trend_now.backend.search.dto.RealtimePostSearchDto;
 import com.trend_now.backend.search.aplication.SearchService;
 import com.trend_now.backend.search.dto.AutoCompleteDto;
 import com.trend_now.backend.search.dto.SearchResponseDto;
@@ -63,16 +64,17 @@ public class SearchController {
     @GetMapping("/fixedPosts")
     public ResponseEntity<SearchResponseDto> findFixedPosts(
         @RequestParam String keyword,
+        @RequestParam Long boardId,
         @RequestParam(required = false, defaultValue = "1") int page,
         @RequestParam(required = false, defaultValue = "10") int size) {
 
-        Map<String, PostListResponseDto> fixedPostsByKeyword = searchService.findFixedPostsByKeyword(
-            keyword, page, size);
+        FixedPostSearchDto freePostsByKeyword = searchService.findFixedPostsByKeyword(
+            keyword, boardId, page, size);
 
         log.info("고정 게시판의 게시글 목록 검색 완료, 검색어: {}", keyword);
 
         return ResponseEntity.status(HttpStatus.OK)
-            .body(SearchResponseDto.of(FIXED_POST_SEARCH_SUCCESS, fixedPostsByKeyword));
+            .body(SearchResponseDto.of(FIXED_POST_SEARCH_SUCCESS, freePostsByKeyword));
     }
 
     @Operation(summary = "검색어 자동완성", description = "게시판 이름 중 prefix가 포함된 게시판이 있으면 해당 리스트를 반환한다.")

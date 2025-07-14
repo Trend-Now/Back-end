@@ -83,7 +83,7 @@ class CommentsControllerTest {
     void 비회원_댓글_작성_불가능() {
         // given
         // 로그인 안한 상태로 댓글 작성을 요청
-        SaveCommentsRequest saveCommentsRequest = new SaveCommentsRequest(testBoards.getName(), "testContent");
+        SaveCommentsRequest saveCommentsRequest = new SaveCommentsRequest("testContent");
 
         // when & then
         // 유저 인증 객체 members에 대한 정보가 null 이므로 댓글 작성이 불가능해야 한다.

@@ -6,7 +6,7 @@ import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.RealtimeBoardListDto;
 import com.trend_now.backend.board.dto.FixedBoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.board.cache.RealTimeBoardCache;
+import com.trend_now.backend.board.cache.BoardCache;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,14 +18,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class BoardService {
 
     private final BoardRepository boardRepository;
-    private final RealTimeBoardCache realTimeBoardCache;
+    private final BoardCache boardCache;
 
     @Transactional
     public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto) {
-        Boards board = boardRepository.findByName(boardSaveDto.getName())
+        Boards board = boardRepository.findByName(boardSaveDto.getBoardName())
             .orElseGet(() -> boardRepository.save(
                     Boards.builder()
-                        .name(boardSaveDto.getName())
+                        .name(boardSaveDto.getBoardName())
                         .boardCategory(boardSaveDto.getBoardCategory())
                         .build()
                 )
@@ -37,9 +37,9 @@ public class BoardService {
     @Transactional
     public void updateBoardIsDeleted(BoardSaveDto boardSaveDto, boolean isInRedis) {
         // 요구사항을 기반으로 Redis에 있는 게시판 데이터는 DB에도 존재해야 한다.
-        Boards findBoards = boardRepository.findByName(boardSaveDto.getName())
+        Boards findBoards = boardRepository.findByName(boardSaveDto.getBoardName())
             .orElseThrow(
-                () -> new IllegalStateException("해당 게시판이 존재하지 않습니다: " + boardSaveDto.getName())
+                () -> new IllegalStateException("해당 게시판이 존재하지 않습니다: " + boardSaveDto.getBoardName())
             );
 
         if (isInRedis) {
@@ -60,7 +60,7 @@ public class BoardService {
                 .name(fixedBoardSaveDto.getBoardName())
                 .boardCategory(BoardCategory.FIXED)
                 .build());
-        realTimeBoardCache.initFixedBoard();
+        boardCache.initFixedBoard();
     }
 
     public List<RealtimeBoardListDto> getFixedBoardList() {

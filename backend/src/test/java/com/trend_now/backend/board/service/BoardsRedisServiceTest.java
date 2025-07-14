@@ -374,7 +374,7 @@ public class BoardsRedisServiceTest {
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
         //then
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("0");
     }
 
@@ -390,13 +390,13 @@ public class BoardsRedisServiceTest {
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
         String postCount = "49";
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         redisTemplate.opsForValue().set(key, postCount);
         redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
 
         //when
         //게시판에 게시글이 1개 등록된다면
-        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getName());
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
 
         //then
         //원래 게시판의 시간에 5분이 증가한다
@@ -416,13 +416,13 @@ public class BoardsRedisServiceTest {
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
         String postCount = "99";
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         redisTemplate.opsForValue().set(key, postCount);
         redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
 
         //when
         //게시판에 게시글이 1개 등록된다면
-        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getName());
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
 
         //then
         //원래 게시판의 시간에 10분이 증가한다
@@ -442,13 +442,13 @@ public class BoardsRedisServiceTest {
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
         String postCount = "199";
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         redisTemplate.opsForValue().set(key, postCount);
         redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
 
         //when
         //게시판에 게시글이 1개 등록된다면
-        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getName());
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
 
         //then
         //원래 게시판의 시간에 10분이 증가한다
@@ -470,12 +470,12 @@ public class BoardsRedisServiceTest {
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
         String postCount = "50";
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         redisTemplate.opsForValue().set(key, postCount);
         redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
 
         //when
-        boardRedisService.decrementPostCountAndExpireTime(boardId, boardSaveDto.getName());
+        boardRedisService.decrementPostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
 
         //then
         assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("49");
@@ -496,14 +496,14 @@ public class BoardsRedisServiceTest {
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
         String postCount = "49";
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         redisTemplate.opsForValue().set(key, postCount);
         redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
-        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getName());
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
 
         //when
-        boardRedisService.decrementPostCountAndExpireTime(boardId, boardSaveDto.getName());
-        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getName());
+        boardRedisService.decrementPostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
 
         //then
         assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("50");
@@ -521,10 +521,10 @@ public class BoardsRedisServiceTest {
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
         String postCount = "49";
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         redisTemplate.opsForValue().set(key, postCount);
         redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
-        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getName());
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
 
         //when
         redisTemplate.delete(key);

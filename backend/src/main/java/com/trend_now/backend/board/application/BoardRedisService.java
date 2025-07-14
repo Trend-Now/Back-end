@@ -1,11 +1,14 @@
 package com.trend_now.backend.board.application;
 
 import com.trend_now.backend.board.domain.BoardCategory;
+import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.RealTimeBoardTimeUpEvent;
+import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.exception.CustomException.NotFoundException;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,11 +50,14 @@ public class BoardRedisService {
     private static final int BOARD_TIME_UP_100_THRESHOLD = 100;
     private static final int POSTS_INCREMENT_UNIT = 1;
 
+    private static final String NOT_EXIST_BOARD = "선택하신 게시판이 존재하지 않습니다.";
+
     private final RedisTemplate<String, String> redisTemplate;
     private final RedisPublisher redisPublisher;
+    private final BoardRepository boardRepository;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, int score) {
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         long keyLiveTime = KEY_LIVE_TIME;
 
         Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
@@ -152,8 +158,12 @@ public class BoardRedisService {
                 .forEach(key -> redisTemplate.opsForSet().remove(BOARD_THRESHOLD_KEY, key));
     }
 
-    public boolean isRealTimeBoard(BoardSaveDto boardSaveDto) {
-        String key = boardSaveDto.getName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+    /**
+     * BoardKeyProvider 인터페이스를 통해서 isRealTimeBoard 메서드에 접근한다. - 특정 DTO에만 종속되는 한계에서 확장성을 고려하여 설계 -
+     * isRealTimeBoard 메서드에 접근할려는 DTO는 BoardKeyProvider 인터페이스를 구현체로 진행
+     */
+    public boolean isRealTimeBoard(BoardKeyProvider provider) {
+        String key = provider.getBoardName() + BOARD_KEY_DELIMITER + provider.getBoardId();
         return redisTemplate.hasKey(key);
     }
 
@@ -212,5 +222,19 @@ public class BoardRedisService {
 
     public String getBoardRankValidTime() {
         return redisTemplate.opsForValue().get(BOARD_RANK_VALID_KEY);
+    }
+
+    public BoardInfoDto getBoardInfo(Long boardId) {
+        Boards findBoard = boardRepository.findById(boardId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+
+        String key = findBoard.getName() + BOARD_KEY_DELIMITER + findBoard.getId();
+        Long boardLiveTime = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+
+        return BoardInfoDto.builder()
+                .boardId(findBoard.getId())
+                .boardName(findBoard.getName())
+                .boardLiveTime(boardLiveTime)
+                .build();
     }
 }
