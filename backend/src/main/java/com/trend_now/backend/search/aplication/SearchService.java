@@ -53,7 +53,10 @@ public class SearchService {
             .map(Entry::getKey)
             .toList();
 
+        // 검색될 경우 게시판에 대한 총 조회수를 보여줘야 하기 때문에 강제로 Redis와 DB를 동기화
+        postViewService.syncViewCountToDatabase();
         List<RealtimeBoardListDto> realtimeBoardList = boardRepository.findRealtimeBoardsByIds(filteredBoardIds);
+
         // 실시간 게시판 만료 시간 데이터 DTO에 추가
         realtimeBoardList.forEach(board -> {
             String key = board.getBoardName() + BOARD_KEY_DELIMITER + board.getBoardId();

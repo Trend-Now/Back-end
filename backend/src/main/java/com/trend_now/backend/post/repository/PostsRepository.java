@@ -22,15 +22,15 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                (SELECT COUNT(c)
-                FROM Comments c
-                WHERE c.posts.id = p.id),
+                COALESCE(COUNT(c.id), 0),
                 p.modifiable,
                 p.createdAt,
                 p.updatedAt
         )
         FROM Posts p
+        LEFT JOIN Comments c ON c.posts.id = p.id
         WHERE p.boards.id = :boardsId
+        GROUP BY p.id, p.title, p.writer, p.modifiable, p.createdAt, p.updatedAt
     """)
     Page<PostSummaryDto> findAllByBoardsId(@Param("boardsId") Long boardsId, Pageable pageable);
 
@@ -41,7 +41,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                (SELECT COUNT(c) FROM Comments c WHERE c.posts.id = p.id),
+                COALESCE(COUNT(c.id), 0),
                 p.modifiable,
                 p.createdAt,
                 p.updatedAt,
@@ -49,7 +49,9 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.boards.name
         )
         FROM Posts p
+        LEFT JOIN Comments c ON c.posts.id = p.id
         WHERE p.members.id = :membersId
+        GROUP BY p.id, p.title, p.writer, p.modifiable, p.createdAt, p.updatedAt
         """)
     Page<PostWithBoardSummaryDto> findByMemberId(@Param("membersId") Long membersId, Pageable pageable);
 
@@ -59,9 +61,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                (SELECT COUNT(c)
-                FROM Comments c
-                WHERE c.posts.id = p.id),
+                COALESCE(COUNT(c.id), 0),
                 p.modifiable,
                 p.createdAt,
                 p.updatedAt,
@@ -69,8 +69,10 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.boards.name
         )
         FROM Posts p
+        LEFT JOIN Comments c ON c.posts.id = p.id
         WHERE (p.boards.id IN :boardIds)
         AND (p.content LIKE %:keyword% OR p.title LIKE %:keyword%)
+        GROUP BY p.id, p.title, p.writer, p.modifiable, p.createdAt, p.updatedAt
         """)
     Page<PostWithBoardSummaryDto> findByKeywordAndRealTimeBoard(
         @Param("keyword") String keyword, @Param("boardIds") Set<Long> boardIds, Pageable pageable);
@@ -80,16 +82,16 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                (SELECT COUNT(c)
-                FROM Comments c
-                WHERE c.posts.id = p.id),
+                COALESCE(COUNT(c.id), 0),
                 p.modifiable,
                 p.createdAt,
                 p.updatedAt
         )
         FROM Posts p
+        LEFT JOIN Comments c ON c.posts.id = p.id
         WHERE p.boards.id = :fixBoardId
         AND (p.content LIKE %:keyword% OR p.title LIKE %:keyword%)
+        GROUP BY p.id, p.title, p.writer, p.modifiable, p.createdAt, p.updatedAt
         """)
     Page<PostSummaryDto> findByFixBoardsAndKeyword(@Param("keyword") String keyword,
         @Param("fixBoardId") Long fixBoardId, Pageable pageable);

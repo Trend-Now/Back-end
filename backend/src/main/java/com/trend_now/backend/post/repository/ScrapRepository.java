@@ -20,7 +20,7 @@ public interface ScrapRepository extends JpaRepository<Scraps, Long> {
             p.id,
             p.title,
             p.writer,
-            (SELECT COUNT(c) FROM Comments c WHERE c.posts.id = p.id),
+            COALESCE(COUNT(c.id), 0),
             p.modifiable,
             p.createdAt,
             p.updatedAt,
@@ -29,7 +29,9 @@ public interface ScrapRepository extends JpaRepository<Scraps, Long> {
             )
             FROM Scraps s
             JOIN s.posts p
+            LEFT JOIN Comments c ON c.posts.id = p.id
             WHERE s.members.id = :memberId
+            GROUP BY p.id, p.title, p.writer, p.modifiable, p.createdAt, p.updatedAt, p.boards.id, p.boards.name
         """)
     Page<PostWithBoardSummaryDto> findScrapPostsByMemberId(@Param("memberId") Long memberId, Pageable pageable);
 
