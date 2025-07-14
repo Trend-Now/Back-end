@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 @Slf4j
@@ -27,9 +29,6 @@ public class NaverService {
 
     @Value("${oauth.naver.client-secret}")
     private String naverClientSecret;
-
-    @Value("${oauth.naver.redirect-uri}")
-    private String naverRedirectUri;
 
     private static final String CODE = "code";
     private static final String CLIENT_ID = "client_id";
@@ -61,8 +60,12 @@ public class NaverService {
      *  - 이 과정에는 인가 코드를 통해 Access Token을 발급 받고, Access Token을 통해 네이버로부터 사용자 정보를 받는다.
      *  - 사용자 정보를 본 서비스에서 검증하여 JWT 토큰을 발급해준다.
      */
-    public OAuth2LoginResponse getToken(AuthCodeToJwtRequest authCodeToJwtRequest) {
-        AccessToken accessToken = getAccessToken(authCodeToJwtRequest.getCode());
+    public OAuth2LoginResponse getToken(AuthCodeToJwtRequest authCodeToJwtRequest, HttpServletRequest request) {
+        String redirectUri = UriComponentsBuilder.fromUriString(request.getRequestURL().toString())
+                .replacePath("/login/oauth2/code/naver")
+                .build()
+                .toUriString();
+        AccessToken accessToken = getAccessToken(authCodeToJwtRequest.getCode(), redirectUri);
         NaverProfile naverProfile = getNaverProfile(accessToken.getAccess_token());
 
         // socialId를 통해 회원 탐색(없으면 null 반환)
@@ -98,14 +101,14 @@ public class NaverService {
 
     // Access Token 획득 메서드
     // RestClient를 사용해서 네이버 서버와 통신
-    private AccessToken getAccessToken(String code) {
+    private AccessToken getAccessToken(String code, String redirectUri) {
         RestClient restClient = RestClient.create();
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add(CODE, code);
         params.add(CLIENT_ID, naverClientId);
         params.add(CLIENT_SECRET, naverClientSecret);
-        params.add(REDIRECT_URI, naverRedirectUri);
+        params.add(REDIRECT_URI, redirectUri);
         params.add(GRANT_TYPE, AUTHORIZATION_CODE);
         params.add(STATE, STATE_VALUE);
 

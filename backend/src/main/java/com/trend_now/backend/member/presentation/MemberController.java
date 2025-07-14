@@ -14,11 +14,11 @@ import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.application.ScrapService;
-import com.trend_now.backend.post.dto.PostListResponseDto;
 import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.MyPostListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -92,8 +92,9 @@ public class MemberController {
 
     @PostMapping("/login/naver")
     public ResponseEntity<OAuth2LoginResponse> naverLogin(
-        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
-        return new ResponseEntity<>(naverService.getToken(authCodeToJwtRequest), HttpStatus.OK);
+        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest,
+        HttpServletRequest request) {
+        return new ResponseEntity<>(naverService.getToken(authCodeToJwtRequest, request), HttpStatus.OK);
     }
 
     /**
