@@ -9,9 +9,10 @@ import lombok.Getter;
 public class CommentListPagingResponseDto {
     private String message;
     private int totalPageCount;
+    private long totalCount;
     private List<CommentInfoDto> commentsInfoListDto;
 
-    public static CommentListPagingResponseDto of(String message, int totalPageCount, List<CommentInfoDto> commentsInfoListDto) {
-        return new CommentListPagingResponseDto(message, totalPageCount, commentsInfoListDto);
+    public static CommentListPagingResponseDto of(String message, int totalPageCount, long totalCount, List<CommentInfoDto> commentsInfoListDto) {
+        return new CommentListPagingResponseDto(message, totalPageCount, totalCount, commentsInfoListDto);
     }
 }

@@ -19,7 +19,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -69,8 +71,9 @@ public class PostsController {
         @PathVariable(value = "boardId") Long boardId,
         @PathVariable(value = "postId") Long postId
     ) {
-
-        PostsInfoDto postInfo = postsService.findPostsById(boardId, postId);
+        // 게시글 스크랩 여부를 확인하기 위해 인증 정보 조회
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        PostsInfoDto postInfo = postsService.findPostsById(boardId, postId, authentication);
         List<ImageInfoDto> imagesByPost = imagesService.findImagesByPost(postId);
 
         return ResponseEntity.status(HttpStatus.OK)
