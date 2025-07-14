@@ -2,6 +2,7 @@ package com.trend_now.backend.config.quartz;
 
 import com.trend_now.backend.board.application.SignalKeywordJobListener;
 import com.trend_now.backend.post.application.PostLikesSyncDbJobListener;
+import com.trend_now.backend.post.application.PostViewSyncDbJobListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Scheduler;
@@ -23,7 +24,9 @@ public class QuartzSchedulerConfig {
     public void scheduleTopKeywordJob() throws SchedulerException {
         SignalKeywordJobListener signalKeywordJobListener = new SignalKeywordJobListener();
         PostLikesSyncDbJobListener postLikesSyncDbJobListener = new PostLikesSyncDbJobListener();
+        PostViewSyncDbJobListener postViewSyncDbJobListener = new PostViewSyncDbJobListener();
         scheduler.getListenerManager().addJobListener(signalKeywordJobListener);
         scheduler.getListenerManager().addJobListener(postLikesSyncDbJobListener);
+        scheduler.getListenerManager().addJobListener(postViewSyncDbJobListener);
     }
 }

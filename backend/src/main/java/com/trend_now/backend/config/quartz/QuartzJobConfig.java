@@ -2,6 +2,7 @@ package com.trend_now.backend.config.quartz;
 
 import com.trend_now.backend.board.application.SignalKeywordJob;
 import com.trend_now.backend.post.application.PostLikesSyncDbJob;
+import com.trend_now.backend.post.application.PostViewSyncDbJob;
 import lombok.RequiredArgsConstructor;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -21,10 +22,16 @@ public class QuartzJobConfig {
     private static final String SIGNAL_KEYWORD_JOB = "SignalKeywordJob";
     private static final String SIGNAL_KEYWORD_TRIGGER = "SignalKeywordTrigger";
     private static final int SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS = 61;
+
     private static final String POST_LIKES_SYNC_DB_JOB = "PostLikesSyncDbJob";
     private static final String POST_LIKES_SYNC_DB_JOB_GROUP = "PostLikesSyncDbJobGroup";
     private static final String POST_LIKES_SYNC_DB_JOB_TRIGGER = "PostLikesSyncDbJobTrigger";
     private static final int POST_LIKES_SYNC_DB_JOB_INTERVAL_SECONDS = 301;
+
+    private static final String POST_VIEW_SYNC_DB_JOB = "PostViewSyncDbJob";
+    private static final String POST_VIEW_SYNC_DB_JOB_GROUP = "PostViewSyncDbJobGroup";
+    private static final String POST_VIEW_SYNC_DB_JOB_TRIGGER = "PostViewSyncDbJobTrigger";
+    private static final int POST_VIEW_SYNC_DB_JOB_INTERVAL_SECONDS = 301;
 
     private final ApplicationContext applicationContext;
 
@@ -84,6 +91,36 @@ public class QuartzJobConfig {
                 SimpleScheduleBuilder
                     .simpleSchedule()
                     .withIntervalInSeconds(POST_LIKES_SYNC_DB_JOB_INTERVAL_SECONDS)
+                    .repeatForever())
+            .build();
+    }
+
+    @Bean
+    public JobDetail postViewSyncDbJobDetail() {
+        JobDataMap postViewCtx = new JobDataMap();
+        postViewCtx.put("applicationContext", applicationContext);
+
+        return JobBuilder
+            .newJob(PostViewSyncDbJob.class)
+            .withIdentity(POST_VIEW_SYNC_DB_JOB, POST_VIEW_SYNC_DB_JOB_GROUP)
+            .withDescription("게시글 조회수 DB 동기화 job")
+            .setJobData(postViewCtx)
+            .storeDurably()
+            .build();
+    }
+
+    @Bean
+    public Trigger postViewSyncDbTrigger(JobDetail postViewSyncDbJobDetail) {
+        return TriggerBuilder
+            .newTrigger()
+            .forJob(postViewSyncDbJobDetail)
+            .withIdentity(POST_VIEW_SYNC_DB_JOB_TRIGGER, POST_VIEW_SYNC_DB_JOB_GROUP)
+            .withDescription("게시글 조회수 DB 동기화 Trigger")
+            .startNow()
+            .withSchedule(
+                SimpleScheduleBuilder
+                    .simpleSchedule()
+                    .withIntervalInSeconds(POST_VIEW_SYNC_DB_JOB_INTERVAL_SECONDS)
                     .repeatForever())
             .build();
     }

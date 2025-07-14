@@ -4,6 +4,8 @@ import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -20,19 +22,15 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                p.viewCount,
-                (SELECT COUNT(pl)
-                FROM PostLikes pl
-                WHERE pl.posts.id = p.id),
-                (SELECT COUNT(c)
-                FROM Comments c
-                WHERE c.posts.id = p.id),
+                COALESCE(COUNT(c.id), 0),
                 p.modifiable,
                 p.createdAt,
                 p.updatedAt
         )
         FROM Posts p
+        LEFT JOIN Comments c ON c.posts.id = p.id
         WHERE p.boards.id = :boardsId
+        GROUP BY p.id, p.title, p.writer, p.modifiable, p.createdAt, p.updatedAt
     """)
     Page<PostSummaryDto> findAllByBoardsId(@Param("boardsId") Long boardsId, Pageable pageable);
 
@@ -43,9 +41,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                p.viewCount,
-                (SELECT COUNT(c) FROM Comments c WHERE c.posts.id = p.id),
-                (SELECT COUNT(pl) FROM PostLikes pl WHERE pl.posts.id = p.id),
+                COALESCE(COUNT(c.id), 0),
                 p.modifiable,
                 p.createdAt,
                 p.updatedAt,
@@ -53,7 +49,9 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.boards.name
         )
         FROM Posts p
+        LEFT JOIN Comments c ON c.posts.id = p.id
         WHERE p.members.id = :membersId
+        GROUP BY p.id, p.title, p.writer, p.modifiable, p.createdAt, p.updatedAt
         """)
     Page<PostWithBoardSummaryDto> findByMemberId(@Param("membersId") Long membersId, Pageable pageable);
 
@@ -63,13 +61,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                p.viewCount,
-                (SELECT COUNT(c)
-                FROM Comments c
-                WHERE c.posts.id = p.id),
-                (SELECT COUNT(pl)
-                FROM PostLikes pl
-                WHERE pl.posts.id = p.id),
+                COALESCE(COUNT(c.id), 0),
                 p.modifiable,
                 p.createdAt,
                 p.updatedAt,
@@ -77,8 +69,10 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.boards.name
         )
         FROM Posts p
+        LEFT JOIN Comments c ON c.posts.id = p.id
         WHERE (p.boards.id IN :boardIds)
         AND (p.content LIKE %:keyword% OR p.title LIKE %:keyword%)
+        GROUP BY p.id, p.title, p.writer, p.modifiable, p.createdAt, p.updatedAt
         """)
     Page<PostWithBoardSummaryDto> findByKeywordAndRealTimeBoard(
         @Param("keyword") String keyword, @Param("boardIds") Set<Long> boardIds, Pageable pageable);
@@ -88,20 +82,16 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.id,
                 p.title,
                 p.writer,
-                p.viewCount,
-                (SELECT COUNT(c)
-                FROM Comments c
-                WHERE c.posts.id = p.id),
-                (SELECT COUNT(pl)
-                FROM PostLikes pl
-                WHERE pl.posts.id = p.id),
+                COALESCE(COUNT(c.id), 0),
                 p.modifiable,
                 p.createdAt,
                 p.updatedAt
         )
         FROM Posts p
+        LEFT JOIN Comments c ON c.posts.id = p.id
         WHERE p.boards.id = :fixBoardId
         AND (p.content LIKE %:keyword% OR p.title LIKE %:keyword%)
+        GROUP BY p.id, p.title, p.writer, p.modifiable, p.createdAt, p.updatedAt
         """)
     Page<PostSummaryDto> findByFixBoardsAndKeyword(@Param("keyword") String keyword,
         @Param("fixBoardId") Long fixBoardId, Pageable pageable);
@@ -115,21 +105,23 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.title,
                 p.writer,
                 p.content,
-                p.viewCount,
-                (SELECT COUNT(pl)
-                FROM PostLikes pl
-                WHERE pl.posts.id = p.id),
                 (SELECT COUNT(c)
                 FROM Comments c
                 WHERE c.posts.id = p.id),
                 p.modifiable,
                 p.createdAt,
-                p.updatedAt
+                p.updatedAt,
+                p.members.id
         )
         FROM Posts p
         WHERE p.id = :postId
     """)
     Optional<PostsInfoDto> findPostInfoById(Long postId);
+
+    @Query("SELECT p.viewCount FROM Posts p WHERE p.id = :postId")
+    int findViewCountById(Long postId);
+
+    List<Posts> findByIdIn(Collection<Long> ids);
 
     @Query("SELECT p FROM Posts p JOIN FETCH p.boards WHERE p.id = :postId")
     Optional<Posts> findByIdWithBoard(@Param("postId") Long postId);
