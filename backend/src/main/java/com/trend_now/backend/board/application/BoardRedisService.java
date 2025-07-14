@@ -73,7 +73,6 @@ public class BoardRedisService {
         if (redisTemplate.hasKey(key)) {
             Long currentExpireTime = redisTemplate.getExpire(key, TimeUnit.SECONDS);
             redisTemplate.opsForValue().increment(key, POSTS_INCREMENT_UNIT);
-            redisTemplate.expire(key, currentExpireTime, TimeUnit.SECONDS);
             log.info("{} 게시판의 증가하기 전 남은 시간은 {}입니다", boardName, currentExpireTime);
             String postCountStr = redisTemplate.opsForValue().get(key);
             if (postCountStr == null) {
