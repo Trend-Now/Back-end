@@ -6,7 +6,7 @@ import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.RealtimeBoardListDto;
 import com.trend_now.backend.board.dto.FixedBoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.board.cache.RealTimeBoardCache;
+import com.trend_now.backend.board.cache.BoardCache;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BoardService {
 
     private final BoardRepository boardRepository;
-    private final RealTimeBoardCache realTimeBoardCache;
+    private final BoardCache boardCache;
 
     @Transactional
     public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto) {
@@ -60,7 +60,7 @@ public class BoardService {
                 .name(fixedBoardSaveDto.getBoardName())
                 .boardCategory(BoardCategory.FIXED)
                 .build());
-        realTimeBoardCache.initFixedBoard();
+        boardCache.initFixedBoard();
     }
 
     public List<RealtimeBoardListDto> getFixedBoardList() {
