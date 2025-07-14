@@ -33,6 +33,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -98,6 +100,7 @@ public class PostsServiceTest {
     }
 
     @Test
+    @WithMockUser(username = "testUser", roles = "USER")
     @DisplayName("회원은 게시글을 작성할 수 있다.")
     public void 게시글_작성() throws Exception {
         //given
@@ -107,7 +110,7 @@ public class PostsServiceTest {
         Long savePosts = postsService.savePosts(postsSaveDto, members, boards.getId());
 
         //then
-        PostsInfoDto postsInfoDto = postsService.findPostsById(boards.getId(), savePosts);
+        PostsInfoDto postsInfoDto = postsService.findPostsById(boards.getId(), savePosts, SecurityContextHolder.getContext().getAuthentication());
         assertThat(savePosts).isNotNull().isGreaterThan(0);
         assertThat(postsInfoDto.getTitle()).isEqualTo(postsSaveDto.getTitle());
         assertThat(postsInfoDto.getContent()).isEqualTo(postsSaveDto.getContent());
@@ -145,6 +148,7 @@ public class PostsServiceTest {
     }
 
     @Test
+    @WithMockUser(username = "testUser", roles = "USER")
     @DisplayName("작성자가 직접 작성한 게시글을 수정할 수 있다")
     public void 게시글_수정() throws Exception {
         //given
@@ -158,12 +162,13 @@ public class PostsServiceTest {
         em.clear();
 
         //then
-        PostsInfoDto postsInfoDto = postsService.findPostsById(boards.getId(), posts.getId());
+        PostsInfoDto postsInfoDto = postsService.findPostsById(boards.getId(), posts.getId(), SecurityContextHolder.getContext().getAuthentication());
         assertThat(postsInfoDto.getTitle()).isEqualTo(postsUpdateRequestDto.getTitle());
         assertThat(postsInfoDto.getContent()).isEqualTo(postsUpdateRequestDto.getContent());
     }
 
     @Test
+    @WithMockUser(username = "testUser", roles = "USER")
     @DisplayName("작성자가 직접 작성한 게시글을 삭제할 수 있다")
     public void 게시글_삭제() throws Exception {
         //given
@@ -175,7 +180,7 @@ public class PostsServiceTest {
         em.clear();
 
         //then
-        assertThatThrownBy(() -> postsService.findPostsById(boards.getId(), posts.getId()))
+        assertThatThrownBy(() -> postsService.findPostsById(boards.getId(), posts.getId(), SecurityContextHolder.getContext().getAuthentication()))
             .isInstanceOf(NotFoundException.class);
     }
 
@@ -203,6 +208,7 @@ public class PostsServiceTest {
     }
 
     @Test
+    @WithMockUser(username = "testUser", roles = "USER")
     @DisplayName("게시판이 재등록 시 기존에 작성된 게시글은 수정, 삭제가 불가능하다")
     public void 게시판_재등록_시_기존에_작성된_게시글은_수정_삭제가_불가능하다() throws Exception {
         //given
@@ -222,7 +228,7 @@ public class PostsServiceTest {
         redisTemplate.opsForValue().set(key, "testBoard", 300L);
 
         //then
-        boolean modifiable = postsService.findPostsById(boards.getId(), postId).isModifiable();
+        boolean modifiable = postsService.findPostsById(boards.getId(), postId, SecurityContextHolder.getContext().getAuthentication()).isModifiable();
         assertThat(modifiable).isFalse();
 
         //then

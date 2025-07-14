@@ -1,13 +1,11 @@
 package com.trend_now.backend.post.application;
 
 import com.trend_now.backend.exception.CustomException.NotFoundException;
-import com.trend_now.backend.member.application.MemberService;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.domain.ScrapAction;
 import com.trend_now.backend.post.domain.Scraps;
-import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.repository.ScrapRepository;
@@ -31,6 +29,8 @@ public class ScrapService {
     private final ScrapRepository scrapRepository;
     private final MemberRepository memberRepository;
     private final PostsRepository postsRepository;
+    private final PostViewService postViewService;
+    private final PostLikesService postLikesService;
 
     private static final String NOT_EXIST_MEMBER = "해당 회원이 존재하지 않습니다.";
     private static final String NOT_EXIST_POST = "해당 게시글이 존재하지 않습니다.";
@@ -64,6 +64,22 @@ public class ScrapService {
 
     public Page<PostWithBoardSummaryDto> getScrappedPostsByMemberId(Long memberId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Direction.DESC, "createdAt"));
-        return scrapRepository.findScrapPostsByMemberId(memberId, pageable);
+        Page<PostWithBoardSummaryDto> scrapPostsByMemberId = scrapRepository.findScrapPostsByMemberId(
+            memberId, pageable);
+
+        // 만약 redis에 저장된 게시글 조회수와 게시글 좋아요 수가 있다면, 해당 조회수를 PostSummaryDto에 설정 (Look Aside)
+        scrapPostsByMemberId.forEach(scrapPost -> {
+            int postViewCount = postViewService.getPostViewCount(scrapPost.getPostId());
+            scrapPost.setViewCount(postViewCount);
+            int postLikesCount = postLikesService.getPostLikesCount(scrapPost.getBoardId(),
+                scrapPost.getPostId());
+            scrapPost.setLikeCount(postLikesCount);
+        });
+
+        return scrapPostsByMemberId;
+    }
+
+    public boolean isScrapedPost(Long id, Long postId) {
+        return scrapRepository.existsScrapsByPosts_IdAndMembers_Id(postId, id);
     }
 }

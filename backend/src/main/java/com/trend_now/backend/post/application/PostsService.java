@@ -11,6 +11,7 @@ import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.repository.CommentsRepository;
+import com.trend_now.backend.config.auth.CustomUserDetails;
 import com.trend_now.backend.exception.CustomException.InvalidRequestException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.image.application.ImagesService;
@@ -32,6 +33,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +55,9 @@ public class PostsService {
     private final PostsRepository postsRepository;
     private final BoardRepository boardRepository;
     private final CommentsRepository commentsRepository;
+    private final PostViewService postViewService;
+    private final PostLikesService postLikesService;
+    private final ScrapService scrapService;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
     public Page<PostSummaryDto> findAllPostsPagingByBoardId(
@@ -61,22 +66,32 @@ public class PostsService {
         // 게시판이 가변 타이머가 작동 중인지 확인
         Boards boards = boardRepository.findById(postsPagingRequestDto.getBoardId()).
             orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
-
         if (boardRedisService.isNotRealTimeBoard(boards.getName(), boards.getId(), boards.getBoardCategory())) {
             throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         }
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
-            postsPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt"));
+            postsPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt")); // 최신순으로 조회
 
         // boardsId에 속하는 게시글 조회
-        return postsRepository.findAllByBoardsId(
+        Page<PostSummaryDto> postSummmaryPage = postsRepository.findAllByBoardsId(
             postsPagingRequestDto.getBoardId(), pageable);
+
+        // 만약 redis에 저장된 게시글 조회수와 게시글 좋아요 수가 있다면, 해당 조회수를 PostSummaryDto에 설정 (Look Aside)
+        postSummmaryPage.forEach(postSummaryDto -> {
+            int postViewCount = postViewService.getPostViewCount(postSummaryDto.getPostId());
+            postSummaryDto.setViewCount(postViewCount);
+            int postLikesCount = postLikesService.getPostLikesCount(boards.getId(), postSummaryDto.getPostId());
+            postSummaryDto.setLikeCount(postLikesCount);
+        });
+
+        return postSummmaryPage;
     }
 
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
-    public PostsInfoDto findPostsById(Long boardId, Long postId) {
+    public PostsInfoDto findPostsById(Long boardId, Long postId, Authentication authentication) {
         // 게시판이 가변 타이머가 작동 중인지 확인
+
         Boards boards = boardRepository.findById(boardId).
             orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
 
@@ -84,8 +99,34 @@ public class PostsService {
             throw new InvalidRequestException(NOT_REAL_TIME_BOARD);
         }
 
+
         // 게시글 정보 조회
-        return postsRepository.findPostInfoById(postId).orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
+        PostsInfoDto postsInfoDto = postsRepository.findPostInfoById(postId)
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof CustomUserDetails userDetails) {
+            // 인증 객체에 CustomUserDetails가 들어 있다면 로그인 한 회원
+            Long requestMemberId = userDetails.getMembers().getId();
+            // 현재 게시글에 요청한 Member가 스크랩을 했었는지 조회
+            boolean isScraped = scrapService.isScrapedPost(requestMemberId, postId);
+            postsInfoDto.setScraped(isScraped);
+        } else {
+            // 로그인하지 않은 사용자는 Scraped를 false로 설정
+            postsInfoDto.setScraped(false);
+        }
+
+        // 만약 redis에 저장된 게시글 조회수와 게시글 좋아요 수가 있다면, 해당 조회수를 postsInfoDto에 설정 (Look Aside)
+        int postViewCount = postViewService.getPostViewCount(postId);
+        postsInfoDto.setViewCount(postViewCount + 1);
+        int postLikesCount = postLikesService.getPostLikesCount(boards.getId(), postId);
+        // 현재 조회된 조회수는 조회수 증가 전이므로, 조회수에 1을 더한 값을 응답 값으로 세팅
+        postsInfoDto.setLikeCount(postLikesCount);
+
+        // 조회 시 조회수 증가
+        postViewService.incrementPostView(postId);
+
+        return postsInfoDto;
     }
 
     //게시글 작성 - 가변 타이머 작동 중에만 가능

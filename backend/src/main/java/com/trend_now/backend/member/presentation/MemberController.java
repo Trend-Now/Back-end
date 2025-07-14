@@ -186,7 +186,7 @@ public class MemberController {
             member.getId(), page - 1, size);
         return new ResponseEntity<>(
             CommentListPagingResponseDto.of(FIND_MEMBER_COMMENTS_SUCCESS_MESSAGE,
-                commentsByMemberId.getTotalPages(), commentsByMemberId.getContent()),
+                commentsByMemberId.getTotalPages(), commentsByMemberId.getTotalElements(), commentsByMemberId.getContent()),
             HttpStatus.OK);
     }
 }

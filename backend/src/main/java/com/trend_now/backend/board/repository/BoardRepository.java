@@ -22,12 +22,15 @@ public interface BoardRepository extends JpaRepository<Boards, Long> {
         SELECT new com.trend_now.backend.board.dto.RealtimeBoardListDto(
                 b.id,
                 b.name,
-                (SELECT COUNT(p) FROM Posts p WHERE p.boards.id = b.id),
+                COALESCE(COUNT(p.id), 0),
+                COALESCE(SUM(p.viewCount), 0),
                 b.createdAt,
                 b.updatedAt
-        )
+            )
         FROM Boards b
+        LEFT JOIN Posts p ON p.boards.id = b.id
         WHERE b.id IN :ids
+        GROUP BY b.id, b.name, b.createdAt, b.updatedAt
         """)
     List<RealtimeBoardListDto> findRealtimeBoardsByIds(List<Long> ids);
 }
