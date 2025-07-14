@@ -80,14 +80,16 @@ public class MemberController {
      */
     @PostMapping("/login/google")
     public ResponseEntity<OAuth2LoginResponse> googleLogin(
-        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
-        return new ResponseEntity<>(googleService.getToken(authCodeToJwtRequest), HttpStatus.OK);
+        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest,
+        HttpServletRequest request) {
+        return new ResponseEntity<>(googleService.getToken(authCodeToJwtRequest, request), HttpStatus.OK);
     }
 
     @PostMapping("/login/kakao")
     public ResponseEntity<OAuth2LoginResponse> kakaoLogin(
-        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
-        return new ResponseEntity<>(kakaoService.getToken(authCodeToJwtRequest), HttpStatus.OK);
+        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest,
+        HttpServletRequest request) {
+        return new ResponseEntity<>(kakaoService.getToken(authCodeToJwtRequest, request), HttpStatus.OK);
     }
 
     @PostMapping("/login/naver")

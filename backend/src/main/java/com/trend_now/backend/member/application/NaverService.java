@@ -61,8 +61,9 @@ public class NaverService {
      *  - 사용자 정보를 본 서비스에서 검증하여 JWT 토큰을 발급해준다.
      */
     public OAuth2LoginResponse getToken(AuthCodeToJwtRequest authCodeToJwtRequest, HttpServletRequest request) {
+        log.info("{}로 네이버 로그인 요청", request.getRequestURL());
         String redirectUri = UriComponentsBuilder.fromUriString(request.getRequestURL().toString())
-                .replacePath("/login/oauth2/code/naver")
+                .replacePath("/oauth/naver/redirect")
                 .build()
                 .toUriString();
         AccessToken accessToken = getAccessToken(authCodeToJwtRequest.getCode(), redirectUri);
