@@ -66,6 +66,7 @@ public class NaverService {
                 .replacePath("/oauth/naver/redirect")
                 .build()
                 .toUriString();
+        log.info("[NaverService.getToken] : redirectUri = {}", redirectUri);
         AccessToken accessToken = getAccessToken(authCodeToJwtRequest.getCode(), redirectUri);
         NaverProfile naverProfile = getNaverProfile(accessToken.getAccess_token());
 

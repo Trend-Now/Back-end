@@ -60,6 +60,7 @@ public class GoogleService {
      *  - 사용자 정보를 본 서비스에서 검증하여 JWT 토큰을 발급해준다.
      */
     public OAuth2LoginResponse getToken(AuthCodeToJwtRequest authCodeToJwtRequest, HttpServletRequest request) {
+        log.info("{}로 구글 로그인 요청", request.getRequestURL());
         AccessToken accessToken = getAccessToken(authCodeToJwtRequest.getCode(), request);
         GoogleProfile googleProfile = getGoogleProfile(accessToken.getAccess_token());
 
@@ -85,7 +86,7 @@ public class GoogleService {
         String redirectUri = ServletUriComponentsBuilder.fromRequest(request)
                 .replacePath("/oauth/google/redirect")
                 .build().toUriString();
-
+        log.info("[GoogleService.getAccessToken] : 구글 redirectUri = {}", redirectUri);
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add(CODE, code);
         params.add(CLIENT_ID, googleClientId);

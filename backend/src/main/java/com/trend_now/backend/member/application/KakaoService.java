@@ -77,7 +77,7 @@ public class KakaoService {
         String redirectUri = ServletUriComponentsBuilder.fromRequest(request)
                 .replacePath("/oauth/kakao/redirect")
                 .build().toUriString();
-
+        log.info("카카오 redirectUri = {}", redirectUri);
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add(CODE, code);
         params.add(CLIENT_ID, kakaoClientId);
