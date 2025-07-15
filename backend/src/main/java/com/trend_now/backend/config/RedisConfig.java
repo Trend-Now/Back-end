@@ -28,6 +28,8 @@ public class RedisConfig {
     private static final String SIGNAL_KEYWORD_EVENT_TOPIC_NAME = "signal-keyword-events";
     private static final String REALTIME_BOARD_SUBSCRIBER_LISTENER_METHOD_NAME = "sendRealTimeBoardExpiredBySubscriber";
     private static final String REALTIME_BOARD_EVENT_TOPIC_NAME = "realtime-board-events";
+    private static final String REALTIME_BOARD_TIMEUP_EVENT_TOPIC_NAME = "realtime-board-timeup-events";
+    private static final String REALTIME_BOARD_TIMEUP_SUBSCRIBER_LISTENER_METHOD_NAME = "sendRealTimeBoardTimeUpBySubscriber";
 
     @Value("${spring.data.redis.host}")
     private String redisHost;
@@ -56,6 +58,14 @@ public class RedisConfig {
         return new ChannelTopic(REALTIME_BOARD_EVENT_TOPIC_NAME);
     }
 
+    /**
+     * redis pub/sub에 사용되는 채널로 실시간 게시판 시간 증가 이벤트가 발행되는 채널
+     */
+    @Bean
+    public ChannelTopic realTimeBoardTimeUpEventTopic() {
+        return new ChannelTopic(REALTIME_BOARD_TIMEUP_EVENT_TOPIC_NAME);
+    }
+
     @Bean
     public RedisTemplate<?, ?> redisTemplate() {
         Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<Object>(
@@ -78,12 +88,15 @@ public class RedisConfig {
     @Bean
     public RedisMessageListenerContainer redisMessageListener(
             MessageListenerAdapter signalKeywordEventListenerAdapter,
-            MessageListenerAdapter realTimeBoardEventListenerAdapter
+            MessageListenerAdapter realTimeBoardEventListenerAdapter,
+            MessageListenerAdapter realTimeBoardTimeUpEventListenerAdapter
     ) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(redisConnectionFactory());
         container.addMessageListener(signalKeywordEventListenerAdapter, signalKeywordEventTopic());
         container.addMessageListener(realTimeBoardEventListenerAdapter, realTimeBoardEventTopic());
+        container.addMessageListener(realTimeBoardTimeUpEventListenerAdapter,
+                realTimeBoardTimeUpEventTopic());
         return container;
     }
 
@@ -103,5 +116,15 @@ public class RedisConfig {
     public MessageListenerAdapter realTimeBoardEventListenerAdapter(RedisSubscriber subscriber) {
         return new MessageListenerAdapter(subscriber,
                 REALTIME_BOARD_SUBSCRIBER_LISTENER_METHOD_NAME);
+    }
+
+    /**
+     * Redis에 발행되는 실제 이벤트(실시간 게시판 시간 증가)를 처리하는 subscriber 설정 추가
+     */
+    @Bean
+    public MessageListenerAdapter realTimeBoardTimeUpEventListenerAdapter(
+            RedisSubscriber subscriber) {
+        return new MessageListenerAdapter(subscriber,
+                REALTIME_BOARD_TIMEUP_SUBSCRIBER_LISTENER_METHOD_NAME);
     }
 }

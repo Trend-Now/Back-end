@@ -8,6 +8,7 @@ package com.trend_now.backend.board.application;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trend_now.backend.board.dto.RealTimeBoardKeyExpiredEvent;
+import com.trend_now.backend.board.dto.RealTimeBoardTimeUpEvent;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ public class RedisPublisher {
     private final ObjectMapper objectMapper;
     private final ChannelTopic signalKeywordEventTopic;
     private final ChannelTopic realTimeBoardEventTopic;
+    private final ChannelTopic realTimeBoardTimeUpEventTopic;
 
     /** publish를 호출하면, topic을 구독하는 모든 구독자에게 message가 발행 (pub) */
 
@@ -50,6 +52,20 @@ public class RedisPublisher {
             log.info("RedisPublisher(실시간 게시판 만료)가 채널: {}에 이벤트: {}를 발행했습니다.",
                     realTimeBoardEventTopic.getTopic(), event);
             redisTemplate.convertAndSend(realTimeBoardEventTopic.getTopic(), message);
+        } catch (JsonProcessingException e) {
+            log.info("RedisPublisher(실시간 게시판 만료)에서 이벤트 변환 중 오류 발생: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 실시간 게시판 시간 증가 publish
+     */
+    public void publishRealTimeBoardTimeUpEvent(RealTimeBoardTimeUpEvent event) {
+        try {
+            String message = objectMapper.writeValueAsString(event);
+            log.info("RedisPublisher(실시간 게시판 시간 증가)가 채널: {}에 이벤트: {}를 발행했습니다.",
+                    realTimeBoardTimeUpEventTopic.getTopic(), event);
+            redisTemplate.convertAndSend(realTimeBoardTimeUpEventTopic.getTopic(), message);
         } catch (JsonProcessingException e) {
             log.info("RedisPublisher(실시간 게시판 만료)에서 이벤트 변환 중 오류 발생: {}", e.getMessage(), e);
         }
