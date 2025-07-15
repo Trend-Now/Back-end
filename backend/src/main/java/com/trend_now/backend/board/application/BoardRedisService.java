@@ -46,7 +46,7 @@ public class BoardRedisService {
     private static final long BOARD_TIME_UP_50 = 300L;
     private static final long BOARD_TIME_UP_100 = 600L;
     private static final int KEY_EXPIRE = 0;
-    private static final int BOARD_TIME_UP_50_THRESHOLD = 50;
+    private static final int BOARD_TIME_UP_50_THRESHOLD = 1;
     private static final int BOARD_TIME_UP_100_THRESHOLD = 100;
     private static final int POSTS_INCREMENT_UNIT = 1;
 
