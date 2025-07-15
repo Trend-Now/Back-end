@@ -9,7 +9,6 @@ import com.trend_now.backend.board.dto.Top10WithChange;
 import com.trend_now.backend.board.dto.Top10WithDiff;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,6 +70,7 @@ public class SignalKeywordService {
         List<Top10> currentKeywordList = signalKeywordDto.getTop10();
         List<Top10WithDiff> keywordDiffList = new ArrayList<>();
 
+        // 이전의 검색어 순위를 가져와 저장
         List<String> previousKeywordList = redisTemplate.opsForList()
                 .range(SIGNAL_KEYWORD_LIST, 0, -1);
 
@@ -86,15 +86,19 @@ public class SignalKeywordService {
             int currentRank = currentKeyword.getRank();
 
             if (previousRankMap.containsKey(keyword)) {
+                /* 이전의 검색어 순위에 현재의 검색어가 존재할 경우 비교를 진행 */
                 Integer previousRank = previousRankMap.get(keyword);
                 RankChangeType changeType;
 
                 if (previousRank != null) {
                     if (currentRank < previousRank) {
+                        // 이전 순위보다 상승한 경우
                         changeType = RankChangeType.UP;
                     } else if (currentRank > previousRank) {
+                        // 이전 순위보다 하락한 경우
                         changeType = RankChangeType.DOWN;
                     } else {
+                        // 이전 순위와 동일한 경우
                         changeType = RankChangeType.SAME;
                     }
                 } else {
@@ -103,6 +107,9 @@ public class SignalKeywordService {
 
                 keywordDiffList.add(
                         new Top10WithDiff(currentRank, keyword, changeType, previousRank));
+            } else {
+                /* 이전의 검색어 순위가 존재하지 않기 때문에 모두 NEW로 처리 */
+                keywordDiffList.add(new Top10WithDiff(currentRank, keyword, RankChangeType.NEW, 0));
             }
         }
 
