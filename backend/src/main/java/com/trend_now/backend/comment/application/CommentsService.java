@@ -185,27 +185,15 @@ public class CommentsService {
 
     /**
      * 댓글을 조회할 때, 페이지네이션에 따른 기본 댓글 정보와 총 댓글 개수와 페이지 개수를 같이 제공
-     * 로그인 유저인 경우, 자신이 작성한 댓글인지 여부도 같이 제공
-     * 비로그인 유저인 경우, 자신이 작성한 댓글인지 여부는 항상 false로 제공
      */
-    public FindCommentsResponse findAllCommentsByPostId(Long postId, Pageable pageable, String jwt) {
+    public FindCommentsResponse findAllCommentsByPostId(Long postId, Pageable pageable) {
         // Page객체를 이용하여 댓글 데이터 조회
         Page<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId, pageable);
 
-        // Page 객체에서 필요한 데이터만 사용하기 위해 List 객체로 변환해줌
-        List<FindAllCommentsDto> commentsList = comments.getContent().stream()
-                .map(comment -> FindAllCommentsDto.builder()
-                        .createdAt(comment.getCreatedAt())
-                        .updatedAt(comment.getUpdatedAt())
-                        .id(comment.getId())
-                        .content(comment.getContent())
-                        .modifiable(comment.isModifiable())
-                        .writer(comment.getWriter())
-                        .writerId(comment.getWriterId())
-                        .isMyComments(jwtTokenFilter.checkMemberIdFromToken(comment.getWriterId(), jwt))
-                        .build())
-                .toList();
-
-        return new FindCommentsResponse((int) comments.getTotalElements(), comments.getTotalPages(), commentsList);
+        return new FindCommentsResponse(
+                (int) comments.getTotalElements()
+                , comments.getTotalPages()
+                , comments.getContent()
+        );
     }
 }
