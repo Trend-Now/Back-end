@@ -113,5 +113,49 @@ public class SignalKeywordServiceTest {
         });
     }
 
+    @Test
+    @DisplayName("신규 키워드와 기존 키워드가 혼재된 경우 순위 변동과 NEW 처리를 정상적으로 수행한다")
+    public void 기존_신규_혼재_정상처리() throws Exception {
+        //given
+        when(listOperations.range(SIGNAL_KEYWORD_LIST, 0, -1)).thenReturn(
+                Arrays.asList("아이폰", "갤럭시", "에어팟")
+        );
+
+        // 현재 키워드 리스트: "에어팟" (기존 3위 → 현재 1위 → UP), "갤럭시" (기존 2위 → 현재 2위 → SAME), "맥북" (새로운 키워드)
+        List<Top10> currentTop10 = Arrays.asList(
+                new Top10(1, "에어팟"),
+                new Top10(2, "갤럭시"),
+                new Top10(3, "맥북")
+        );
+
+        SignalKeywordDto dto = new SignalKeywordDto();
+        dto.setNow(System.currentTimeMillis());
+        dto.setTop10(currentTop10);
+
+        //when
+        Top10WithChange result = signalKeywordService.calculateRankChange(dto);
+
+        //then
+        assertThat(result.getTop10WithDiff()).hasSize(3);
+
+        assertThat(result.getTop10WithDiff()).anySatisfy(diff -> {
+            assertThat(diff.getKeyword()).isEqualTo("에어팟");
+            assertThat(diff.getRankChangeType()).isEqualTo(RankChangeType.UP);
+            assertThat(diff.getPreviousRank()).isEqualTo(3);
+        });
+
+        assertThat(result.getTop10WithDiff()).anySatisfy(diff -> {
+            assertThat(diff.getKeyword()).isEqualTo("갤럭시");
+            assertThat(diff.getRankChangeType()).isEqualTo(RankChangeType.SAME);
+            assertThat(diff.getPreviousRank()).isEqualTo(2);
+        });
+
+        assertThat(result.getTop10WithDiff()).anySatisfy(diff -> {
+            assertThat(diff.getKeyword()).isEqualTo("맥북");
+            assertThat(diff.getRankChangeType()).isEqualTo(RankChangeType.NEW);
+            assertThat(diff.getPreviousRank()).isEqualTo(0);
+        });
+    }
+
 
 }
