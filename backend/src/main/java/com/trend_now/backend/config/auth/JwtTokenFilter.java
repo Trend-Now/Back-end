@@ -123,35 +123,4 @@ public class JwtTokenFilter extends GenericFilter {
             return null;
         }
     }
-
-    /**
-     * JWT을 디코딩한 memberId와 입력한 memberId가 동일한지 확인 메서드
-     */
-    public boolean checkMemberIdFromToken(Long memberId, String token) {
-        // 비로그인 사용자인 경우, false 반환
-        if (token == null || token.trim().isEmpty()) {
-            return false;
-        }
-
-        try {
-            // Bearer 접두사가 있는 경우 제거
-            String jwtToken = token;
-            if (token.startsWith(JWT_PREFIX)) {
-                jwtToken = token.substring(7);
-                log.debug("[JwtTokenFilter.checkMemberIdFromToken] Bearer 접두사 제거: {}", jwtToken);
-            }
-
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
-                    .build()
-                    .parseClaimsJws(jwtToken)
-                    .getBody();
-
-            String subject = claims.getSubject();
-            return Long.valueOf(subject).equals(memberId);
-        } catch (Exception e) {
-            log.error("[JwtTokenProvider.getMemberIdFromToken] JWT 토큰 파싱 실패: {}", e.getMessage());
-            return false;
-        }
-    }
 }
