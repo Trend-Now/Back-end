@@ -1,11 +1,15 @@
 package com.trend_now.backend.config;
 
 import com.trend_now.backend.config.auth.JwtTokenFilter;
+import com.trend_now.backend.config.auth.oauth.OAuth2LoginFailureHandler;
+import com.trend_now.backend.config.auth.oauth.OAuth2LoginSuccessHandler;
+import com.trend_now.backend.config.auth.oauth.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -20,9 +24,13 @@ import java.util.Arrays;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtTokenFilter jwtTokenFilter;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
     @Bean
     public PasswordEncoder makePassword() {
@@ -41,7 +49,6 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
             // 특정 url 패턴에 대해서는 security filter에서 제외(Authentication 객체를 안만들겠다는 의미)
-            // todo. 비회원도 사용 가능한 API의 uri 패턴 추가
             .authorizeHttpRequests(a -> a
                 .requestMatchers(HttpMethod.GET,
                     // 게시판과 게시글 조회 허용
@@ -52,8 +59,17 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/v1/member/login/**", "/swagger-ui/**", "/v3/api-docs/**",
                     "/api/v1/news/realtime", "/api/v1/timeSync", "/api/v1/subscribe",
-                    "/api/v1/unsubscribe", "/sse-test", "/api/v1/member/test-jwt").permitAll()
+                    "/api/v1/unsubscribe", "/sse-test", "/api/v1/member/test-jwt",
+                    "/oauth2/authorization/**", "/login/oauth2/code/**" // OAuth2 로그인 관련 URL 허용
+                ).permitAll()
                 .anyRequest().authenticated())
+            .oauth2Login(oauth2 -> oauth2
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
+                .successHandler(oAuth2LoginSuccessHandler) // 로그인 성공 핸들러 등록
+                .failureHandler(oAuth2LoginFailureHandler) // 로그인 실패 핸들러 등록
+            )
 
             /**
              *  UsernamePasswordAuthenticationFilter는 Spring Security에서 제공하는 로그인 폼을 의미한다.
