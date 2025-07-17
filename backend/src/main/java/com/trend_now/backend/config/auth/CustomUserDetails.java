@@ -2,6 +2,7 @@ package com.trend_now.backend.config.auth;
 
 import com.trend_now.backend.member.domain.Members;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
@@ -9,6 +10,9 @@ import lombok.ToString;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
@@ -19,22 +23,26 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 
 @Getter
 @ToString
-public class CustomUserDetails implements UserDetails, OAuth2User {
+public class CustomUserDetails implements UserDetails, OAuth2User, OidcUser {
 
     private final Members members;
 
-    // OAuth 유저를 위한 필드
+    // OAuth/OIDC 유저를 위한 필드
     private Map<String, Object> oauth2Attributes; // OAuth2User의 getAttributes() 반환을 위함
     private String oauth2NameAttributeKey;
+    private OidcIdToken idToken;
+    private OidcUserInfo userInfo;
 
     public CustomUserDetails(Members members) {
         this.members = members;
     }
 
-    // OAuth 로그인 유저 생성자
-    public CustomUserDetails(Members members, Map<String, Object> oauth2Attributes, String oauth2NameAttributeKey) {
+    // OAuth || OIDC 로그인 유저 생성자
+    public CustomUserDetails(Members members, Map<String, Object> oauth2Attributes, OidcIdToken idToken, OidcUserInfo oidcUserInfo, String oauth2NameAttributeKey) {
         this.members = members;
         this.oauth2Attributes = oauth2Attributes;
+        this.idToken = idToken;
+        this.userInfo = oidcUserInfo;
         this.oauth2NameAttributeKey = oauth2NameAttributeKey;
     }
 
@@ -45,10 +53,16 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
     }
 
     @Override
+    public String getName() {
+        return idToken != null ? idToken.getSubject() : members.getSnsId();
+    }
+
+    @Override
     public String getUsername() {
         return String.valueOf(members.getId());
     }
 
+    /* OAuth2User 구현 메서드 */
     @Override
     public String getPassword() {
         // OAuth2를 이용한 로그인이므로 password는 미존재
@@ -60,9 +74,20 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
         return this.oauth2Attributes;
     }
 
+    /* OidcUser 구현 메서드 */
     @Override
-    public String getName() {
-        return members.getSnsId();
+    public Map<String, Object> getClaims() {
+        return idToken != null ? idToken.getClaims() : Collections.emptyMap();
+    }
+
+    @Override
+    public OidcUserInfo getUserInfo() {
+        return this.userInfo;
+    }
+
+    @Override
+    public OidcIdToken getIdToken() {
+        return this.idToken;
     }
 
     /**

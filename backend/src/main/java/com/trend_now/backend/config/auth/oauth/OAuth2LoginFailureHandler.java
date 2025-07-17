@@ -16,12 +16,12 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
-        log.error("OAuth2 Login 실패: {}", exception.getMessage());
+        log.error("소셜 로그인 실패: {}", exception.getMessage());
         // 로그인 실패 시 프론트엔드로 에러 메시지 전달
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401 Unauthorized
 
-        response.getWriter().write("{\"error\": \"OAuth2 Login 실패\", \"message\": \"" + exception.getMessage() + "\"}");
+        response.getWriter().write("{\"error\": \"소셜 로그인 실패\", \"message\": \"" + exception.getMessage() + "\"}");
     }
 }

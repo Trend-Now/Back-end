@@ -29,13 +29,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         // OAuth2User에서 사용자 식별 ID를 가져온다 (예: Google의 경우 'sub', Kakao의 경우 'id')
         String userNameAttributeName = userRequest.getClientRegistration().getProviderDetails().getUserInfoEndpoint().getUserNameAttributeName();
 
-        log.info("소셜 로그인 종류: {}, 사용자 식별 ID: {}", registrationId, userNameAttributeName);
+        log.info("OAuth 로그인 종류: {}, 사용자 식별 ID: {}", registrationId, userNameAttributeName);
 
         // provider에 맞는 OAuthAttributes 객체 생성
         OAuthAttributes attributes = OAuthAttributes.of(registrationId, oAuth2User.getAttributes());
         // 회원가입이 되어 있지 않은 유저라면 새로 저장하고, 이미 존재하는 유저라면 정보를 업데이트 해서 저장한다.
         Members members = memberService.saveOrUpdate(attributes);
 
-        return new CustomUserDetails(members, oAuth2User.getAttributes(), userNameAttributeName);
+        return new CustomUserDetails(members, oAuth2User.getAttributes(), null, null, userNameAttributeName);
     }
 }

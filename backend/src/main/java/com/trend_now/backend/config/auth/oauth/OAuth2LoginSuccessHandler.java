@@ -29,7 +29,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        log.info("OAuth2 Login 성공, JWT 생성 시작");
+        log.info("소셜 로그인 성공, JWT 생성 시작");
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
         // CustomOAuth2UserService에서 저장한 Member 객체 가져오기
