@@ -12,67 +12,56 @@ jobs:
       contents: read
 
     steps:
-    - name: code checkout
-      uses: actions/checkout@v4
-      
-    - name: Setup Gradle
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: 'gradle'
+      - name: code checkout
+        uses: actions/checkout@v4
 
-#    - name: Setup Gradle
-#      uses: gradle/actions/setup-gradle@v3
+      - name: Setup Gradle
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
 
-    - name: make application.yml file
-      working-directory: ./backend
-      run: |
-        mkdir -p src/main/resources
-        cat <<'EOF' > src/main/resources/application.yml
-        ${{ secrets.APPLICATION_YML }}
-        EOF
-        cat <<'EOF' > src/main/resources/application-prod.yml
-        ${{ secrets.APPLICATION_PROD_YML }}
-        EOF
-        
-        mkdir -p src/test/resources
-        cat <<'EOF' > src/test/resources/application-test.yml
-        ${{ secrets.APPLICATION_TEST_YML }}
-        EOF
-#        cd backend
-#        cd ./src/main/resources
-#        touch ./application.yml
-#        touch ./application-prod.yml
-#        echo "${{ secrets.APPLICATION_YML }}" > ./application.yml
-#        echo "${{ secrets.APPLICATION_PROD_YML }}" > ./application-prod.yml
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-#    - name: make application-test.yml file
-#        cd backend
-      #        cd ./src/test/resources
-#        touch ./application-test.yml
-#        echo "${{ secrets.APPLICATION_TEST_YML }}" > ./application-test.yml
+      - name: make application.yml file
+        run: |
+          cd backend
+          mkdir -p ./src/main/resources
+          cd ./src/main/resources
+          touch ./application.yml
+          touch ./application-prod.yml
+          echo "${{ secrets.APPLICATION_YML }}" > ./application.yml
+          echo "${{ secrets.APPLICATION_PROD_YML }}" > ./application-prod.yml
 
-      # 테스트 코드를 실행하지 않도록 설정
-    - name: Build with Gradle Wrapper
-      run: |
-        cd backend
-        ./gradlew clean build -x test
+      - name: make application-test.yml file
+        run: |
+          cd backend
+          mkdir -p ./src/test/resources
+          cd ./src/test/resources
+          touch ./application-test.yml
+          echo "${{ secrets.APPLICATION_TEST_YML }}" > ./application-test.yml
 
-    # Docker build & Push 
-    - name: Docker build
-      run: |
-        cd backend
-        docker build --platform=linux/amd64 -t ${{ secrets.DOCKER_USERNAME }}/trendnow:v1 .
+        # 테스트 코드를 실행하지 않도록 설정
+      - name: Build with Gradle Wrapper
+        run: |
+          cd backend
+          ./gradlew clean build -x test
 
-    - name: DockerHub login
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      # Docker build & Push
+      - name: Docker build
+        run: |
+          cd backend
+          docker build --platform=linux/amd64 -t ${{ secrets.DOCKER_USERNAME }}/trendnow:v1 .
 
-    - name: Docker push
-      run: docker push ${{ secrets.DOCKER_USERNAME }}/trendnow:v1
+      - name: DockerHub login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Docker push
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/trendnow:v1
 
   deploy:
     needs: build
