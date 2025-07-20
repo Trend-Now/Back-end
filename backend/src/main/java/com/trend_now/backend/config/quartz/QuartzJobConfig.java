@@ -13,9 +13,11 @@ import org.quartz.TriggerBuilder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
 @RequiredArgsConstructor
+@Profile("!test")
 public class QuartzJobConfig {
 
     private static final String SIGNAL_KEYWORD_GROUP = "SignalGroup";

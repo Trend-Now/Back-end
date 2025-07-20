@@ -9,6 +9,7 @@
 package com.trend_now.backend.board.application;
 
 import com.trend_now.backend.board.dto.RealTimeBoardKeyExpiredEvent;
+import com.trend_now.backend.board.dto.RealTimeBoardTimeUpEvent;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10WithChange;
 import com.trend_now.backend.board.repository.SseEmitterRepository;
@@ -28,6 +29,7 @@ public class SseEmitterService {
 
     private static final String SIGNAL_KEYWORD_LIST_EMITTER_NAME = "signalKeywordList";
     private static final String REALTIME_BOARD_EXPIRED_EMITTER_NAME = "realtimeBoardExpired";
+    private static final String REALTIME_BOARD_TIMEUP_EMITTER_NAME = "realtimeBoardTimeUp";
 
     @Value("${sse.timeout}")
     private Long timeout;
@@ -64,6 +66,20 @@ public class SseEmitterService {
         for (String clientId : allClientId) {
             sseEmitterRepository.findById(clientId)
                     .ifPresent(sseEmitter -> send(event, REALTIME_BOARD_EXPIRED_EMITTER_NAME,
+                            clientId, sseEmitter));
+        }
+    }
+
+    public void sendRealTimeBoardTimeUp(RealTimeBoardTimeUpEvent event) {
+        Set<String> allClientId = sseEmitterRepository.findAllClientId();
+        if (allClientId.isEmpty()) {
+            log.info("연결된 SSE가 없으므로 실시간 게시판 시간 증가를 보낼 곳이 없습니다.");
+            return;
+        }
+
+        for (String clientId : allClientId) {
+            sseEmitterRepository.findById(clientId)
+                    .ifPresent(sseEmitter -> send(event, REALTIME_BOARD_TIMEUP_EMITTER_NAME,
                             clientId, sseEmitter));
         }
     }

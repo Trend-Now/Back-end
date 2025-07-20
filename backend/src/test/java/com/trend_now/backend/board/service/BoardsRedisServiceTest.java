@@ -37,6 +37,7 @@ public class BoardsRedisServiceTest {
 
     private static final String BOARD_RANK_KEY = "board_rank";
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
+    private static final String BOARD_THRESHOLD_KEY = "board_threshold";
     private static final String BOARD_KEY_DELIMITER = ":";
     private static final int BOARD_COUNT = 10;
     private static final long KEY_LIVE_TIME = 301L;
@@ -248,7 +249,7 @@ public class BoardsRedisServiceTest {
 
         //when
         BoardPagingResponseDto allRealTimeBoardPaging = boardRedisService.findAllRealTimeBoardPaging(
-                new BoardPagingRequestDto(page, size));
+                new BoardPagingRequestDto(page - 1, size));
 
         //then
         assertThat(allRealTimeBoardPaging).isNotNull();
@@ -295,7 +296,8 @@ public class BoardsRedisServiceTest {
 
                     Long currentExpire = redisTemplate.getExpire(dynamicKey, TimeUnit.SECONDS);
                     if (currentExpire > 0) {
-                        currentExpire += (long) (pagination_boards.indexOf(board) * 10);  // i 값을 board의 인덱스 값으로 계산
+                        currentExpire += (long) (pagination_boards.indexOf(board)
+                                * 10);  // i 값을 board의 인덱스 값으로 계산
                     }
                     redisTemplate.expire(dynamicKey, currentExpire, TimeUnit.SECONDS);
                 });
@@ -351,13 +353,186 @@ public class BoardsRedisServiceTest {
 
         //when
         BoardPagingResponseDto allRealTimeBoardPaging = boardRedisService.findAllRealTimeBoardPaging(
-                new BoardPagingRequestDto(page, size));
+                new BoardPagingRequestDto(page - 1, size));
 
         //then
         assertThat(allRealTimeBoardPaging).isNotNull();
         assertThat(allRealTimeBoardPaging.getBoardInfoDtos().size()).isEqualTo(size);
         assertThat(allRealTimeBoardPaging.getBoardInfoDtos().getFirst().getBoardName()).isEqualTo(
                 expectedBoardName);
+    }
+
+    @Test
+    @DisplayName("게시판이 처음 만들어질 때 게시글의 수는 0개이다")
+    public void 게시판_초기생성_게시글_0개() throws Exception {
+        //given
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+
+        //when
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        //then
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("0");
+    }
+
+
+    @Test
+    @DisplayName("게시판의 게시글 수가 50개 이상이 되면 게시판의 시간이 5분 추가된다")
+    public void 게시글50개_게시판5분추가() throws Exception {
+        //given
+        //게시판의 게시글 수가 49개인 게시판이 주어졌을 때
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        String postCount = "49";
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        redisTemplate.opsForValue().set(key, postCount);
+        redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
+
+        //when
+        //게시판에 게시글이 1개 등록된다면
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
+
+        //then
+        //원래 게시판의 시간에 5분이 증가한다
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("50");
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isGreaterThan(301L);
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isLessThan(602L);
+    }
+
+    @Test
+    @DisplayName("게시판의 게시글 수가 100개 이상이 되면 게시판의 시간이 10분 추가된다")
+    public void 게시글100개_게시판10분추가() throws Exception {
+        //given
+        //게시판의 게시글 수가 99개인 게시판이 주어졌을 때
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        String postCount = "99";
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        redisTemplate.opsForValue().set(key, postCount);
+        redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
+
+        //when
+        //게시판에 게시글이 1개 등록된다면
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
+
+        //then
+        //원래 게시판의 시간에 10분이 증가한다
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("100");
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isGreaterThan(301L);
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isLessThan(901L);
+    }
+
+    @Test
+    @DisplayName("게시판의 게시글 수가 100개 이상이 되고, 그 다음 100개부터는 100개마다 시간이 10분 추가된다")
+    public void 게시글100개마다_게시판10분추가() throws Exception {
+        //given
+        //게시판의 게시글 수가 199개인 게시판이 주어졌을 때
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        String postCount = "199";
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        redisTemplate.opsForValue().set(key, postCount);
+        redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
+
+        //when
+        //게시판에 게시글이 1개 등록된다면
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
+
+        //then
+        //원래 게시판의 시간에 10분이 증가한다
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("200");
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isGreaterThan(301L);
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isLessThan(901L);
+    }
+
+    @Test
+    @DisplayName("게시판에서 게시글이 삭제되어 임계점을 넘지 못해도 추가된 시간은 유지된다")
+    public void 게시글삭제_추가된시간유지() throws Exception {
+        //ex) 게시판의 게시글이 50개가 되어 시간이 5분 추가되었고,
+        //    같은 게시판의 게시글이 삭제되어 49개가 되어도 추가된 시간은 유지된다
+
+        //given
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        String postCount = "50";
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        redisTemplate.opsForValue().set(key, postCount);
+        redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
+
+        //when
+        boardRedisService.decrementPostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
+
+        //then
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("49");
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isLessThan(301L);
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isGreaterThan(0L);
+    }
+
+    @Test
+    @DisplayName("같은 임계점을 두 번 달성해도 시간은 한 번만 추가된다")
+    public void 동일임계점_시간추가한번() throws Exception {
+        //ex) 50개가 되어 5분이 추가되었는데, 게시글이 삭제되어 49개가 되었다가
+        //    다시 50개가 되었을 때는 시간이 추가되지 않는다
+
+        //given
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        String postCount = "49";
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        redisTemplate.opsForValue().set(key, postCount);
+        redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
+
+        //when
+        boardRedisService.decrementPostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
+
+        //then
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("50");
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isGreaterThan(301L);
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isLessThan(602L);
+    }
+
+    @Test
+    @DisplayName("실시간 게시판에서 게시판이 삭제되면 Set에 저장된 임계점도 사라진다")
+    public void 임계점_삭제() throws Exception {
+        //given
+        BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
+        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+        boardSaveDto.setBoardId(boardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, 0);
+
+        String postCount = "49";
+        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+        redisTemplate.opsForValue().set(key, postCount);
+        redisTemplate.expire(key, KEY_LIVE_TIME, TimeUnit.SECONDS);
+        boardRedisService.updatePostCountAndExpireTime(boardId, boardSaveDto.getBoardName());
+
+        //when
+        redisTemplate.delete(key);
+        boardRedisService.cleanUpExpiredKeys();
+
+        //then
+        assertThat(redisTemplate.opsForValue().get(key)).isNull();
+        assertThat(redisTemplate.opsForSet().size(BOARD_THRESHOLD_KEY)).isEqualTo(0);
     }
 
 }
