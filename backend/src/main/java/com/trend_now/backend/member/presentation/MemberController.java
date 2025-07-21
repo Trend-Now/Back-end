@@ -3,22 +3,15 @@ package com.trend_now.backend.member.presentation;
 import com.trend_now.backend.comment.application.CommentsService;
 import com.trend_now.backend.comment.data.dto.CommentInfoDto;
 import com.trend_now.backend.comment.data.dto.CommentListPagingResponseDto;
-//import com.trend_now.backend.member.application.GoogleService;
-//import com.trend_now.backend.member.application.KakaoService;
 import com.trend_now.backend.member.application.MemberService;
-//import com.trend_now.backend.member.application.NaverService;
 import com.trend_now.backend.member.data.dto.MyPageResponseDto;
 import com.trend_now.backend.member.data.dto.UpdateNicknameRequestDto;
-import com.trend_now.backend.member.data.vo.AuthCodeToJwtRequest;
-import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.application.ScrapService;
-import com.trend_now.backend.post.dto.PostListResponseDto;
 import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.MyPostListResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,14 +31,10 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
-//    private final GoogleService googleService;
-//    private final KakaoService kakaoService;
-//    private final NaverService naverService;
     private final ScrapService scrapService;
     private final PostsService postsService;
     private final CommentsService commentsService;
 
-    private static final String SUCCESS_GET_JWT = "테스트용 JWT 발급에 성공하였습니다.";
     private static final String NICKNAME_UPDATE_SUCCESS_MESSAGE = "닉네임 변경 완료";
     private static final String WITHDRAWAL_SUCCESS_MESSAGE = "회원 탈퇴가 완료";
     private static final String FIND_SCRAP_POSTS_SUCCESS_MESSAGE = "사용자가 스크랩한 게시글 조회 완료";

@@ -5,9 +5,6 @@ import com.trend_now.backend.config.auth.oauth.OAuthAttributes;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.data.dto.MyPageResponseDto;
-import com.trend_now.backend.member.data.vo.GoogleProfile;
-import com.trend_now.backend.member.data.vo.KakaoProfile;
-import com.trend_now.backend.member.data.vo.NaverProfile;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
@@ -90,7 +87,7 @@ public class MemberService {
     // OAuth로 가져온 정보를 통해 회원 정보를 저장
     @Transactional
     public Members saveOrUpdate(OAuthAttributes attributes) {
-        return memberRepository.findBySnsId(attributes.getSnsId())
+        return memberRepository.findBySnsIdAndProvider(attributes.getSnsId(), attributes.getProvider())
             .orElseGet(() -> memberRepository.save(attributes.toEntity()));
     }
 
