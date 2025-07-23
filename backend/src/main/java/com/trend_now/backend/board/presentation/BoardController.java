@@ -62,4 +62,12 @@ public class BoardController {
         BoardInfoDto boardInfo = boardRedisService.getBoardInfo(boardId);
         return ResponseEntity.status(HttpStatus.OK).body(boardInfo);
     }
+
+    @Operation(summary = "게시판 이름 조회", description = "게시판 ID로 게시판 이름을 조회합니다.")
+    @GetMapping("/name")
+    public ResponseEntity<String> getBoardNameById(
+            @RequestParam Long boardId) {
+        String boardName = boardService.getBoardNameById(boardId);
+        return ResponseEntity.status(HttpStatus.OK).body(boardName);
+    }
 }

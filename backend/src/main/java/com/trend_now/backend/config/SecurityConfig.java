@@ -1,6 +1,7 @@
 package com.trend_now.backend.config;
 
 import com.trend_now.backend.config.auth.JwtTokenFilter;
+import com.trend_now.backend.config.auth.oauth.CustomAuthorizationRequestRepository;
 import com.trend_now.backend.config.auth.oauth.OAuth2LoginFailureHandler;
 import com.trend_now.backend.config.auth.oauth.OAuth2LoginSuccessHandler;
 import com.trend_now.backend.config.auth.oauth.CustomOAuth2UserService;
@@ -14,6 +15,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -69,6 +72,10 @@ public class SecurityConfig {
                 )
                 .successHandler(oAuth2LoginSuccessHandler) // 로그인 성공 핸들러 등록
                 .failureHandler(oAuth2LoginFailureHandler) // 로그인 실패 핸들러 등록
+                // HttpSessionOAuth2AuthorizationRequestRepository 대신 CustomAuthorizationRequestRepository을 사용하도록 등록
+                .authorizationEndpoint(authorization -> authorization
+                    .authorizationRequestRepository(authorizationRequestRepository())
+                )
             )
 
             /**
@@ -78,6 +85,11 @@ public class SecurityConfig {
              */
             .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
+    }
+
+    @Bean
+    public AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository() {
+        return new CustomAuthorizationRequestRepository();
     }
 
     /**
