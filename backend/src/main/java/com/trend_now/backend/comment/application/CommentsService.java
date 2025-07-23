@@ -190,7 +190,7 @@ public class CommentsService {
      */
     public FindCommentsResponse findAllCommentsByPostId(Long postId, Pageable pageable, String jwt) {
         // Page객체를 이용하여 댓글 데이터 조회
-        Page<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId, pageable);
+        Page<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtAsc(postId, pageable);
 
         // Page 객체에서 필요한 데이터만 사용하기 위해 List 객체로 변환해줌
         List<FindAllCommentsDto> commentsList = comments.getContent().stream()
