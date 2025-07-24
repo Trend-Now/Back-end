@@ -3,18 +3,12 @@ package com.trend_now.backend.member.presentation;
 import com.trend_now.backend.comment.application.CommentsService;
 import com.trend_now.backend.comment.data.dto.CommentInfoDto;
 import com.trend_now.backend.comment.data.dto.CommentListPagingResponseDto;
-import com.trend_now.backend.member.application.GoogleService;
-import com.trend_now.backend.member.application.KakaoService;
 import com.trend_now.backend.member.application.MemberService;
-import com.trend_now.backend.member.application.NaverService;
 import com.trend_now.backend.member.data.dto.MyPageResponseDto;
 import com.trend_now.backend.member.data.dto.UpdateNicknameRequestDto;
-import com.trend_now.backend.member.data.vo.AuthCodeToJwtRequest;
-import com.trend_now.backend.member.data.vo.OAuth2LoginResponse;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.application.ScrapService;
-import com.trend_now.backend.post.dto.PostListResponseDto;
 import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.MyPostListResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,14 +31,10 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
-    private final GoogleService googleService;
-    private final KakaoService kakaoService;
-    private final NaverService naverService;
     private final ScrapService scrapService;
     private final PostsService postsService;
     private final CommentsService commentsService;
 
-    private static final String SUCCESS_GET_JWT = "테스트용 JWT 발급에 성공하였습니다.";
     private static final String NICKNAME_UPDATE_SUCCESS_MESSAGE = "닉네임 변경 완료";
     private static final String WITHDRAWAL_SUCCESS_MESSAGE = "회원 탈퇴가 완료";
     private static final String FIND_SCRAP_POSTS_SUCCESS_MESSAGE = "사용자가 스크랩한 게시글 조회 완료";
@@ -60,49 +50,10 @@ public class MemberController {
     }
 
     // 테스트용 JWT 발급 API
-    @GetMapping("test-jwt")
+    @GetMapping("/test-jwt")
     @Operation(summary = "JWT 발급", description = "테스트용 JWT 발급 API")
     public ResponseEntity<String> getJwt() {
         return new ResponseEntity<>(memberService.getTestJwt(), HttpStatus.OK);
-    }
-
-    /**
-     * <pre>
-     *  구글 인가코드를 받는 Controller
-     *
-     *  - 프론트엔드에서 구글 인가코드를 가지고 유저 정보를 반환받는 Controller
-     *
-     *  - 해당 Controller에서 HTTP Body를 통해 인가 코드를 받음
-     *  - 해당 인가 코드를 가지고 구글 서버에 사용자 정보 요청
-     *  - 사용자 정보를 통해 서비스 유저인지 확인
-     *  - 유저인 경우, JWT 토큰 발급
-     *  </pre>
-     */
-    @PostMapping("/login/google")
-    public ResponseEntity<OAuth2LoginResponse> googleLogin(
-        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
-        return new ResponseEntity<>(googleService.getToken(authCodeToJwtRequest), HttpStatus.OK);
-    }
-
-    @PostMapping("/login/kakao")
-    public ResponseEntity<OAuth2LoginResponse> kakaoLogin(
-        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
-        return new ResponseEntity<>(kakaoService.getToken(authCodeToJwtRequest), HttpStatus.OK);
-    }
-
-    @PostMapping("/login/naver")
-    public ResponseEntity<OAuth2LoginResponse> naverLogin(
-        @RequestBody AuthCodeToJwtRequest authCodeToJwtRequest) {
-        return new ResponseEntity<>(naverService.getToken(authCodeToJwtRequest), HttpStatus.OK);
-    }
-
-    /**
-     * Postman 테스트용 API
-     */
-    @PostMapping("/login/test/naver")
-    public ResponseEntity<OAuth2LoginResponse> testNaverLogin(
-        @RequestBody AuthCodeToJwtRequest accessToken) {
-        return new ResponseEntity<>(naverService.testGetToken(accessToken), HttpStatus.OK);
     }
 
     /**

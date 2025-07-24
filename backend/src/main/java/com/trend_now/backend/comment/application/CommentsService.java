@@ -1,15 +1,13 @@
 package com.trend_now.backend.comment.application;
 
-import com.trend_now.backend.board.application.BoardKeyProvider;
 import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
-import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.data.dto.*;
 import com.trend_now.backend.comment.data.vo.FindCommentsResponse;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
-import com.trend_now.backend.config.auth.JwtTokenFilter;
+import com.trend_now.backend.config.auth.CustomUserDetails;
 import com.trend_now.backend.exception.CustomException.BoardExpiredException;
 import com.trend_now.backend.exception.CustomException.InvalidRequestException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
@@ -22,13 +20,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -39,17 +35,13 @@ public class CommentsService {
     private static final String NOT_EXIST_POSTS = "선택하신 게시글이 존재하지 않습니다.";
     private static final String NOT_EXIST_COMMENTS = "댓글이 없습니다.";
     private static final String BOARD_EXPIRATION = "게시판 활성 시간이 만료되었습니다.";
-    private static final String BOARD_KEY_DELIMITER  = ":";
     private static final String NOT_COMMENT_WRITER = "댓글 작성자가 아닙니다.";
     private static final String NOT_MODIFIABLE_COMMENTS = "댓글이 수정/삭제 불가능한 상태입니다.";
     private static final String NOT_EXIST_BOARD = "선택하신 게시판이 존재하지 않습니다.";
 
     private final CommentsRepository commentsRepository;
     private final PostsRepository postsRepository;
-    private final RedisTemplate<String, String> redisTemplate;
     private final BoardRedisService boardRedisService;
-    private final BoardRepository boardRepository;
-    private final JwtTokenFilter jwtTokenFilter;
 
     /**
      * 댓글 작성
@@ -188,24 +180,37 @@ public class CommentsService {
      * 로그인 유저인 경우, 자신이 작성한 댓글인지 여부도 같이 제공
      * 비로그인 유저인 경우, 자신이 작성한 댓글인지 여부는 항상 false로 제공
      */
-    public FindCommentsResponse findAllCommentsByPostId(Long postId, Pageable pageable, String jwt) {
+    public FindCommentsResponse findAllCommentsByPostId(Long postId, Pageable pageable,
+        Authentication authentication) {
         // Page객체를 이용하여 댓글 데이터 조회
-        Page<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtDesc(postId, pageable);
+        Page<FindAllCommentsDto> comments = commentsRepository.findByPostsIdOrderByCreatedAtAsc(postId, pageable);
 
-        // Page 객체에서 필요한 데이터만 사용하기 위해 List 객체로 변환해줌
+        Long requestMemberId = null;
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof CustomUserDetails userDetails) {
+            requestMemberId = userDetails.getMembers().getId();
+        }
+        // stream()에서 사용하기 위해 final 변수 생성
+        final Long finalRequestMemberId = requestMemberId;
+
+        // 응답 DTO 생성
         List<FindAllCommentsDto> commentsList = comments.getContent().stream()
-                .map(comment -> FindAllCommentsDto.builder()
-                        .createdAt(comment.getCreatedAt())
-                        .updatedAt(comment.getUpdatedAt())
-                        .id(comment.getId())
-                        .content(comment.getContent())
-                        .modifiable(comment.isModifiable())
-                        .writer(comment.getWriter())
-                        .writerId(comment.getWriterId())
-                        .isMyComments(jwtTokenFilter.checkMemberIdFromToken(comment.getWriterId(), jwt))
-                        .build())
-                .toList();
+            .map(comment -> {
+                boolean isMyComment = finalRequestMemberId != null && finalRequestMemberId.equals(comment.getWriterId());
 
-        return new FindCommentsResponse((int) comments.getTotalElements(), comments.getTotalPages(), commentsList);
+                return FindAllCommentsDto.builder()
+                    .createdAt(comment.getCreatedAt())
+                    .updatedAt(comment.getUpdatedAt())
+                    .commentId(comment.getCommentId())
+                    .content(comment.getContent())
+                    .modifiable(comment.isModifiable())
+                    .writer(comment.getWriter())
+                    .writerId(comment.getWriterId())
+                    .isMyComments(isMyComment)
+                    .build();
+            }).toList();
+
+        return new FindCommentsResponse(comments.getTotalElements(), comments.getTotalPages(), commentsList);
     }
 }

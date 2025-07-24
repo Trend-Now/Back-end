@@ -32,9 +32,9 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
             )
         FROM Comments c
         WHERE c.posts.id = :postId
-        ORDER BY c.createdAt DESC
+        ORDER BY c.createdAt ASC
         """)
-    Page<FindAllCommentsDto> findByPostsIdOrderByCreatedAtDesc(
+    Page<FindAllCommentsDto> findByPostsIdOrderByCreatedAtAsc(
             @Param("postId") Long postId, Pageable pageable);
 
 

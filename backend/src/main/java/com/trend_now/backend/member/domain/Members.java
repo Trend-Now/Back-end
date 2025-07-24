@@ -1,12 +1,8 @@
 package com.trend_now.backend.member.domain;
 
 
-import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.config.domain.BaseEntity;
-import com.trend_now.backend.post.domain.Posts;
-import com.trend_now.backend.post.domain.Scraps;
 import jakarta.persistence.*;
-import java.util.List;
 import lombok.*;
 
 @Entity
