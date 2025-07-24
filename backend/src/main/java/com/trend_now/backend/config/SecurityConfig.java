@@ -56,6 +56,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET,
                     // 게시판과 게시글 조회 허용
                     "/api/v1/boards/**",
+                    "/api/v1/search/**",
                     // ALB 헬스 체크를 위한 엔드포인트 허용
                     "/health"
                 ).permitAll()
