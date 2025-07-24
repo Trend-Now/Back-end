@@ -31,8 +31,9 @@ jobs:
           cd ./src/main/resources
           touch ./application.yml
           touch ./application-prod.yml
-          echo "${{ secrets.APPLICATION_YML }}" > ./application.yml
-          echo "${{ secrets.APPLICATION_PROD_YML }}" > ./application-prod.yml
+          echo "${{ secrets.APPLICATION_YML }}" | base64 -d > ./application.yml
+          echo "${{ secrets.APPLICATION_PROD_YML }}" | base64 -d > ./application-prod.yml
+
 
       - name: make application-test.yml file
         run: |
@@ -40,7 +41,7 @@ jobs:
           mkdir -p ./src/test/resources
           cd ./src/test/resources
           touch ./application-test.yml
-          echo "${{ secrets.APPLICATION_TEST_YML }}" > ./application-test.yml
+          echo "${{ secrets.APPLICATION_TEST_YML }}" | base64 -d > ./application-test.yml
 
         # 테스트 코드를 실행하지 않도록 설정
       - name: Build with Gradle Wrapper
