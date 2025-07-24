@@ -1,5 +1,6 @@
 package com.trend_now.backend.config;
 
+import com.trend_now.backend.config.auth.CustomAuthenticationEntryPoint;
 import com.trend_now.backend.config.auth.JwtTokenFilter;
 import com.trend_now.backend.config.auth.oauth.CustomAuthorizationRequestRepository;
 import com.trend_now.backend.config.auth.oauth.OAuth2LoginFailureHandler;
@@ -34,6 +35,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public PasswordEncoder makePassword() {
@@ -67,6 +69,7 @@ public class SecurityConfig {
                     "/oauth2/authorization/**", "/login/oauth2/code/**" // OAuth2 로그인 관련 URL 허용
                 ).permitAll()
                 .anyRequest().authenticated())
+            .exceptionHandling(e -> e.authenticationEntryPoint(customAuthenticationEntryPoint))
             .oauth2Login(oauth2 -> oauth2
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
