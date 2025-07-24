@@ -69,6 +69,7 @@ public class SecurityConfig {
                     "/oauth2/authorization/**", "/login/oauth2/code/**" // OAuth2 로그인 관련 URL 허용
                 ).permitAll()
                 .anyRequest().authenticated())
+            // 인증되지 않은 사용자가 접근할 경우, CustomAuthenticationEntryPoint를 통해 예외 처리
             .exceptionHandling(e -> e.authenticationEntryPoint(customAuthenticationEntryPoint))
             .oauth2Login(oauth2 -> oauth2
                 .userInfoEndpoint(userInfo -> userInfo
