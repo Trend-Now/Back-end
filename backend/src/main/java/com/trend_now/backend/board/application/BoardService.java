@@ -21,6 +21,8 @@ public class BoardService {
     private final BoardRepository boardRepository;
     private final BoardCache boardCache;
 
+    private final static String BOARD_NOT_FOUND_MESSAGE = "해당 게시판이 존재하지 않습니다: ";
+
     @Transactional
     public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto) {
         Boards board = boardRepository.findByName(boardSaveDto.getBoardName())
@@ -39,9 +41,7 @@ public class BoardService {
     public void updateBoardIsDeleted(BoardSaveDto boardSaveDto, boolean isInRedis) {
         // 요구사항을 기반으로 Redis에 있는 게시판 데이터는 DB에도 존재해야 한다.
         Boards findBoards = boardRepository.findByName(boardSaveDto.getBoardName())
-            .orElseThrow(
-                () -> new IllegalStateException("해당 게시판이 존재하지 않습니다: " + boardSaveDto.getBoardName())
-            );
+            .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardSaveDto.getBoardName()));
 
         if (isInRedis) {
             if (findBoards.isDeleted()) {
@@ -77,8 +77,8 @@ public class BoardService {
     }
 
     public String getBoardNameById(Long boardId) {
-        Boards board = boardRepository.findById(boardId)
-            .orElseThrow(() -> new NotFoundException("게시판을 찾을 수 없습니다. ID: " + boardId));
-        return board.getName();
+        Boards findBoards = boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardId));
+        return findBoards.getName();
     }
 }

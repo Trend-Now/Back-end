@@ -11,16 +11,17 @@ import lombok.Data;
 @AllArgsConstructor
 public class PostsInfoDto {
     private final String title;
-    private final String writer;
     private final String content;
+    private final Long writerId;
+    private final String writer;
     private int viewCount;
     private int likeCount;
+    private boolean isMyPost;
+    private boolean isScraped;
     private final Long commentCount;
     private final boolean modifiable;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
-    private final Long writerId;
-    private boolean isScraped;
 
 
     public PostsInfoDto(String title, String writer, String content, Long commentCount,

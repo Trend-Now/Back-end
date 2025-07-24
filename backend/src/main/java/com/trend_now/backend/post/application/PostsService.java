@@ -109,10 +109,13 @@ public class PostsService {
             // 인증 객체에 CustomUserDetails가 들어 있다면 로그인 한 회원
             Long requestMemberId = userDetails.getMembers().getId();
             // 현재 게시글에 요청한 Member가 스크랩을 했었는지 조회
+            boolean isMyPost = postsInfoDto.getWriterId().equals(requestMemberId);
             boolean isScraped = scrapService.isScrapedPost(requestMemberId, postId);
+            postsInfoDto.setMyPost(isMyPost);
             postsInfoDto.setScraped(isScraped);
         } else {
-            // 로그인하지 않은 사용자는 Scraped를 false로 설정
+            // 로그인하지 않은 사용자는 isScraped와 isMyPost를 false로 설정
+            postsInfoDto.setMyPost(false);
             postsInfoDto.setScraped(false);
         }
 

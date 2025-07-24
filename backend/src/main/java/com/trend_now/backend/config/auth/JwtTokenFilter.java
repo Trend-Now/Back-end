@@ -32,13 +32,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtTokenFilter extends GenericFilter {
 
-    private final MemberRepository memberRepository;
     private final CustomUserDetailsService customUserDetailsService;
 
     private static final String AUTHORIZATION = "Authorization";
     private static final String JWT_PREFIX = "Bearer ";
 
-    private static final String NOT_EXIST_MEMBER = "존재하지 않는 회원입니다.";
     private static final String INVALID_TOKEN = "유효하지 않은 토큰입니다.";
 
     @Value("${jwt.secret}")
@@ -121,37 +119,6 @@ public class JwtTokenFilter extends GenericFilter {
         } catch (Exception e) {
             log.error("[JwtTokenFilter.validateToken] : 유효하지 않은 JWT입니다. {}", e.getMessage());
             return null;
-        }
-    }
-
-    /**
-     * JWT을 디코딩한 memberId와 입력한 memberId가 동일한지 확인 메서드
-     */
-    public boolean checkMemberIdFromToken(Long memberId, String token) {
-        // 비로그인 사용자인 경우, false 반환
-        if (token == null || token.trim().isEmpty()) {
-            return false;
-        }
-
-        try {
-            // Bearer 접두사가 있는 경우 제거
-            String jwtToken = token;
-            if (token.startsWith(JWT_PREFIX)) {
-                jwtToken = token.substring(7);
-                log.debug("[JwtTokenFilter.checkMemberIdFromToken] Bearer 접두사 제거: {}", jwtToken);
-            }
-
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
-                    .build()
-                    .parseClaimsJws(jwtToken)
-                    .getBody();
-
-            String subject = claims.getSubject();
-            return Long.valueOf(subject).equals(memberId);
-        } catch (Exception e) {
-            log.error("[JwtTokenProvider.getMemberIdFromToken] JWT 토큰 파싱 실패: {}", e.getMessage());
-            return false;
         }
     }
 }

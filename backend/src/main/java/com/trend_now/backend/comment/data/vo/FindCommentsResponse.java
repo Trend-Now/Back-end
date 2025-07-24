@@ -11,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor(access = AccessLevel.PUBLIC)
 public class FindCommentsResponse {
 
-    private final int totalCommentsCount;
+    private final long totalCommentsCount;
     private final int totalPageCount;
     private final List<FindAllCommentsDto> findAllCommentsDtos;
 }
