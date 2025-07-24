@@ -116,7 +116,7 @@ public class PostsService {
             postsInfoDto.setScraped(false);
         }
 
-        // 만약 redis에 저장된 게시글 조회수와 게시글 좋아요 수가 있다면, 해당 조회수를 postsInfoDto에 설정 (Look Aside)
+        // 게시글 조회수와 게시글 좋아요 개수 값을 postsInfoDto에 설정 (Look Aside)
         int postViewCount = postViewService.getPostViewCount(postId);
         postsInfoDto.setViewCount(postViewCount + 1);
         int postLikesCount = postLikesService.getPostLikesCount(boards.getId(), postId);

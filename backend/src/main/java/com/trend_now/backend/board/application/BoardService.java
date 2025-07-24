@@ -7,6 +7,7 @@ import com.trend_now.backend.board.dto.RealtimeBoardListDto;
 import com.trend_now.backend.board.dto.FixedBoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.board.cache.BoardCache;
+import com.trend_now.backend.exception.CustomException.NotFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -73,5 +74,11 @@ public class BoardService {
                 .createdAt(board.getCreatedAt())
                 .build())
             .toList();
+    }
+
+    public String getBoardNameById(Long boardId) {
+        Boards board = boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException("게시판을 찾을 수 없습니다. ID: " + boardId));
+        return board.getName();
     }
 }
