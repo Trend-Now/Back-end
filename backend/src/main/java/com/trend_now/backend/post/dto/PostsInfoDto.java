@@ -20,17 +20,19 @@ public class PostsInfoDto {
     private boolean isScraped;
     private final Long commentCount;
     private final boolean modifiable;
+    private final String boardName;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
 
 
     public PostsInfoDto(String title, String writer, String content, Long commentCount,
-        boolean modifiable, LocalDateTime createdAt, LocalDateTime updatedAt, Long writerId) {
+        boolean modifiable, String boardName, LocalDateTime createdAt, LocalDateTime updatedAt, Long writerId) {
         this.title = title;
         this.writer = writer;
         this.content = content;
         this.commentCount = commentCount;
         this.modifiable = modifiable;
+        this.boardName = boardName;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.writerId = writerId;

@@ -24,6 +24,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.writer,
                 COALESCE(COUNT(c.id), 0),
                 p.modifiable,
+                p.boards.name,
                 p.createdAt,
                 p.updatedAt
         )
@@ -84,6 +85,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.writer,
                 COALESCE(COUNT(c.id), 0),
                 p.modifiable,
+                p.boards.name,
                 p.createdAt,
                 p.updatedAt
         )
@@ -109,6 +111,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 FROM Comments c
                 WHERE c.posts.id = p.id),
                 p.modifiable,
+                p.boards.name,
                 p.createdAt,
                 p.updatedAt,
                 p.members.id
