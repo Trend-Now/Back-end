@@ -24,7 +24,6 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.writer,
                 COALESCE(COUNT(c.id), 0),
                 p.modifiable,
-                p.boards.name,
                 p.createdAt,
                 p.updatedAt
         )
@@ -85,7 +84,6 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                 p.writer,
                 COALESCE(COUNT(c.id), 0),
                 p.modifiable,
-                p.boards.name,
                 p.createdAt,
                 p.updatedAt
         )

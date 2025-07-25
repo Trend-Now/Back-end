@@ -1,5 +1,6 @@
 package com.trend_now.backend.post.presentation;
 
+import com.trend_now.backend.board.application.BoardService;
 import com.trend_now.backend.image.application.ImagesService;
 import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.member.domain.Members;
@@ -46,6 +47,7 @@ public class PostsController {
 
     private final PostsService postsService;
     private final ImagesService imagesService;
+    private final BoardService boardService;
 
     @Operation(summary = "게시글 목록 조회", description = "게시판의 모든 게시글을 페이징하여 조회합니다.")
     @GetMapping("/posts")
@@ -56,13 +58,13 @@ public class PostsController {
 
         PostsPagingRequestDto postsPagingRequestDto = PostsPagingRequestDto.of(boardId, page - 1,
             size);
-
+        String boardName = boardService.getBoardNameById(boardId);
         Page<PostSummaryDto> postSummaryDtoPage = postsService.findAllPostsPagingByBoardId(
             postsPagingRequestDto);
 
         return ResponseEntity.status(HttpStatus.OK)
             .body(PostListResponseDto.of(SUCCESS_PAGING_POSTS_MESSAGE,
-                postSummaryDtoPage.getTotalPages(), postSummaryDtoPage.getTotalElements(), postSummaryDtoPage.getContent()));
+                postSummaryDtoPage.getTotalPages(), postSummaryDtoPage.getTotalElements(), boardName, postSummaryDtoPage.getContent()));
     }
 
     @Operation(summary = "게시글 상세 조회", description = "게시판의 게시글을 상세 조회합니다.")

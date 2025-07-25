@@ -15,9 +15,10 @@ public class PostListResponseDto {
     private final String message;
     private final int totalPageCount;
     private final long totalCount;
+    private final String boardName;
     private final List<PostSummaryDto> postsListDto;
 
-    public static PostListResponseDto of(String message, int totalPageCount, long totalCount, List<PostSummaryDto> postsInfoListDto) {
-        return new PostListResponseDto(message, totalPageCount, totalCount, postsInfoListDto);
+    public static PostListResponseDto of(String message, int totalPageCount, long totalCount, String boardName, List<PostSummaryDto> postsInfoListDto) {
+        return new PostListResponseDto(message, totalPageCount, totalCount, boardName, postsInfoListDto);
     }
 }

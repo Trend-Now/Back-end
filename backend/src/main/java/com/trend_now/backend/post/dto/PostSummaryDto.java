@@ -17,19 +17,17 @@ public class PostSummaryDto {
     private int likeCount;
     private Long commentCount;
     private boolean modifiable;
-    private String boardName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     // PostsRepository - findAllByBoardsId의 DTO Projection 생성자
     public PostSummaryDto(Long postId, String title, String writer, Long commentCount,
-        boolean modifiable, String boardName, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        boolean modifiable, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.postId = postId;
         this.title = title;
         this.writer = writer;
         this.commentCount = commentCount;
         this.modifiable = modifiable;
-        this.boardName = boardName;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
