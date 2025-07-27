@@ -1,6 +1,6 @@
 package com.trend_now.backend.config;
 
-import com.trend_now.backend.config.auth.CustomAuthenticationEntryPoint;
+import com.trend_now.backend.config.auth.oauth.CustomAuthenticationEntryPoint;
 import com.trend_now.backend.config.auth.JwtTokenFilter;
 import com.trend_now.backend.config.auth.oauth.CustomAuthorizationRequestRepository;
 import com.trend_now.backend.config.auth.oauth.OAuth2LoginFailureHandler;

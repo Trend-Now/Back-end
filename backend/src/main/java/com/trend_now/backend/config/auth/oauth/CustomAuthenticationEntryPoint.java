@@ -1,4 +1,4 @@
-package com.trend_now.backend.config.auth;
+package com.trend_now.backend.config.auth.oauth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;

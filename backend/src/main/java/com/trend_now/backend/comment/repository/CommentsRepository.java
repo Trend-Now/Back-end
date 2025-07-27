@@ -45,7 +45,7 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
     @Query(
         value = """
             SELECT new com.trend_now.backend.comment.data.dto.CommentInfoDto(
-                  p.id, p.title, c.id, c.content, m.name, c.createdAt
+                  p.boards.id, p.id, p.title, c.id, c.content, m.name, c.createdAt
                 )
             FROM Comments c
             JOIN c.posts p

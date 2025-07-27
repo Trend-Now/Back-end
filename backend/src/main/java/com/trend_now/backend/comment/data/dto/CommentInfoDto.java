@@ -9,6 +9,7 @@ import lombok.Getter;
 @AllArgsConstructor
 @Builder
 public class CommentInfoDto {
+    private Long boardId;
     private Long postId;
     private String postTitle;
     private Long commentId;
