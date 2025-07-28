@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yml")
+@Transactional
 public class BoardsControllerTest {
 
     private static final String BOARD_RANK_KEY = "board_rank";

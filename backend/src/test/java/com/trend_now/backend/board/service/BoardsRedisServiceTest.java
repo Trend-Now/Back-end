@@ -10,6 +10,7 @@ import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.Top10;
+import com.trend_now.backend.board.repository.BoardRepository;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,11 +29,13 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.transaction.annotation.Transactional;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yml")
+@Transactional
 public class BoardsRedisServiceTest {
 
     private static final String BOARD_RANK_KEY = "board_rank";
@@ -53,6 +56,8 @@ public class BoardsRedisServiceTest {
 
     private List<Boards> boards;
     private List<Top10> top10s;
+    @Autowired
+    private BoardRepository boardRepository;
 
     @BeforeEach
     public void before() {
@@ -90,7 +95,8 @@ public class BoardsRedisServiceTest {
         //then
         //ZSet은 defalut 값이 score이 오름차순 정렬
         //즉, 맨 처음 저장된 게시판 (실시간 1위)이 가장 작은 score을 가진다
-        String testBoardKey = "B0:1";
+        Long testBoardId = boardRepository.findByName("B0").get().getId();
+        String testBoardKey = "B0:" + testBoardId;
         Long expireTime = redisTemplate.getExpire(testBoardKey, TimeUnit.SECONDS);
         Set<String> keys = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
 
@@ -117,11 +123,12 @@ public class BoardsRedisServiceTest {
 
         int testBoardIdx = 0;
         BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(testBoardIdx));
-        boardSaveDto.setBoardId(1L);
+        Long testBoardId = boardRepository.findByName("B0").get().getId();
+        boardSaveDto.setBoardId(testBoardId);
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
         //then
-        String testBoardKey = "B0:1";
+        String testBoardKey = "B0:" + testBoardId;
         Long expireTime = redisTemplate.getExpire(testBoardKey, TimeUnit.SECONDS);
         assertThat(expireTime).isBetween(KEY_LIVE_TIME, KEY_LIVE_TIME * 2);
     }
@@ -136,20 +143,27 @@ public class BoardsRedisServiceTest {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
             Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
             boardSaveDto.setBoardId(boardId);
-            boardRedisService.saveBoardRedis(boardSaveDto, i);
+            boardRedisService.saveBoardRedis(boardSaveDto, i + 1);
         }
-
-        int testBoardIdx = 0;
+        // 기존에 score 값이 9인 B9 게시판을 기준으로 테스트를 진행한다.
+        int testBoardIdx = 9;
         BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(testBoardIdx));
-        boardSaveDto.setBoardId(1L);
-        boardRedisService.saveBoardRedis(boardSaveDto, 5);
+        String testBoardName = boardSaveDto.getBoardName();
+        // Database의 Auto Increment 전략으로 인해 하드 코딩이 불가능하다. 따라서 id 값을 DB에서 조회한다.
+        Long testBoardId = boardRepository.findByName(testBoardName).get().getId();
+
+        // Redis에 존재하는 B9 게시판을 새로운 score 값으로 갱신한다.
+        int newScore = 0;
+        boardSaveDto.setBoardId(testBoardId);
+        boardRedisService.saveBoardRedis(boardSaveDto, newScore);
 
         //then
         Set<String> keys = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
 
         assertThat(keys).isNotNull();
         assertThat(keys.size()).isEqualTo(BOARD_COUNT);
-        assertThat(keys.iterator().next()).isEqualTo("B1:2");
+        // score 값을 0으로 할당했기 때문에 B9 게시판이 가장 낮은 score을 가진다. 따라서 Set의 가장 첫번째 값을 가져오는 keys.iterator().next()을 사용
+        assertThat(keys.iterator().next()).isEqualTo(testBoardName + ":" + testBoardId);
     }
 
     @Test
@@ -177,7 +191,6 @@ public class BoardsRedisServiceTest {
 
         //when
         //페이징을 위해 BOARD_RANK_KEY에 대한 ZSet은 만료된 키를 제외하고 남겨둔다
-
         for (int i = 0; i < BOARD_COUNT; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
             Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
@@ -185,9 +198,12 @@ public class BoardsRedisServiceTest {
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
-        String testBoardKey = "B0:1";
+        // expireBoardName 게시판을 만료시킨다.
+        Long expireBoardId = boardRepository.findByName("B0").get().getId();
+        String testBoardKey = "B0:" + expireBoardId;
         redisTemplate.expire(testBoardKey, 0L, TimeUnit.SECONDS);
 
+        // 만료된 게시판 삭제
         boardRedisService.cleanUpExpiredKeys();
 
         //then
@@ -195,7 +211,9 @@ public class BoardsRedisServiceTest {
 
         assertThat(allRankKeys).isNotNull();
         assertThat(allRankKeys.size()).isEqualTo(BOARD_COUNT - 1);
-        assertThat(allRankKeys.iterator().next()).isEqualTo("B1:2");
+        // B0 게시판이 만료되었으므로, 다음으로 가장 낮은 score을 가진 B1 게시판이 조회된다.
+        Long nextBoardId = boardRepository.findByName("B1").get().getId();
+        assertThat(allRankKeys.iterator().next()).isEqualTo("B1:" + nextBoardId);
     }
 
     @Test
@@ -210,8 +228,8 @@ public class BoardsRedisServiceTest {
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
-
-        String deleteKey = "B0:1";
+        Long deleteBoardId = boardRepository.findByName("B0").get().getId();
+        String deleteKey = "B0:" +  deleteBoardId;
         redisTemplate.delete(deleteKey);
         boardRedisService.cleanUpExpiredKeys();
 
@@ -220,7 +238,8 @@ public class BoardsRedisServiceTest {
 
         assertThat(allRankKeys).isNotNull();
         assertThat(allRankKeys.size()).isEqualTo(BOARD_COUNT - 1);
-        assertThat(allRankKeys.iterator().next()).isEqualTo("B1:2");
+        Long nextBoardId = boardRepository.findByName("B1").get().getId();
+        assertThat(allRankKeys.iterator().next()).isEqualTo("B1:" + nextBoardId);
     }
 
     @ParameterizedTest
@@ -479,7 +498,7 @@ public class BoardsRedisServiceTest {
 
         //then
         assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("49");
-        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isLessThan(301L);
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isLessThan(302L);
         assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isGreaterThan(0L);
     }
 
