@@ -23,6 +23,7 @@ import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -87,7 +88,7 @@ public class PostsServiceTest {
             .build());
 
         key = boards.getName() + ":" + boards.getId();
-        redisTemplate.opsForValue().set(key, "testBoard", 300L);
+        redisTemplate.opsForValue().set(key, "0", 300L, TimeUnit.SECONDS);
 
         posts = Posts.builder()
             .title("testTitle")
