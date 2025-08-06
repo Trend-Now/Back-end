@@ -26,6 +26,7 @@ import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,6 +34,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +50,11 @@ public class PostsService {
     private static final String NOT_SAME_WRITER = "작성자가 일치하지 않습니다.";
     private static final String NOT_REAL_TIME_BOARD = "타이머가 종료된 게시판입니다. 타이머가 남아있는 게시판에서만 요청할 수 있습니다.";
     private static final String NOT_MODIFIABLE_POSTS = "게시글이 수정/삭제 불가능한 상태입니다.";
+    private static final String POST_COOLDOWN_MESSAGE = "게시글 작성은 %s초 후에 가능합니다.";
+    private static final String LAST_POST_TIME_KEY = "last_post_time";
+
+    private static final String BOARD_USER_KEY_PREFIX = "board:%s:user:%s";
+    private static final long POST_LIMIT_SECONDS = 300;
 
     private final BoardRedisService boardRedisService;
     private final ImagesService imagesService;
@@ -58,6 +65,7 @@ public class PostsService {
     private final PostViewService postViewService;
     private final PostLikesService postLikesService;
     private final ScrapService scrapService;
+    private final RedisTemplate<Object, Object> redisTemplate;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
     public Page<PostSummaryDto> findAllPostsPagingByBoardId(
@@ -146,6 +154,9 @@ public class PostsService {
             }
         }
 
+        // 같은 사용자가 같은 게시판에서 5분 이내 게시글을 또 작성할 수 없도록 제한
+        validCooldownAndRecord(members.getId(), boardId);
+
         Posts posts = Posts.builder()
                 .title(postsSaveDto.getTitle())
                 .writer(members.getName())
@@ -157,6 +168,7 @@ public class PostsService {
         boardRedisService.updatePostCountAndExpireTime(boards.getId(), boards.getName());
         Posts savePost = postsRepository.save(posts);
 
+
         // 저장돼 있던 이미지와 등록된 게시글 연관관계 설정
         if (postsSaveDto.getImageIds() != null) {
             postsSaveDto.getImageIds().forEach(
@@ -167,6 +179,25 @@ public class PostsService {
             );
         }
         return posts.getId();
+    }
+
+    /**
+     * 게시글 작성 시, 같은 사용자가 같은 게시판에서 5분 이내에 게시글을 작성할 수 없도록 제한하는 메서드
+     */
+    private void validCooldownAndRecord(Long memberId, Long boardId) {
+        String boardUserKey = String.format(BOARD_USER_KEY_PREFIX, boardId, memberId);
+        Long lastPostTime = (Long) redisTemplate.opsForHash().get(boardUserKey, LAST_POST_TIME_KEY);
+        if (lastPostTime != null) {
+            // 마지막으로 작성된 시간으로부터 경과된 시간
+            long elapsedTime = (System.currentTimeMillis() - lastPostTime) / 1000;
+            // 300초가 지나지 않았으면 게시글 작성이 불가능
+            if (elapsedTime < POST_LIMIT_SECONDS) {
+                throw new IllegalStateException(String.format(POST_COOLDOWN_MESSAGE, POST_LIMIT_SECONDS - elapsedTime));
+            }
+        }
+        // 게시글 작성 시, 마지막 게시글 작성 시간을 현재 시간으로 갱신
+        redisTemplate.opsForHash().put(boardUserKey, LAST_POST_TIME_KEY, System.currentTimeMillis());
+        redisTemplate.expire(boardUserKey, POST_LIMIT_SECONDS, TimeUnit.SECONDS);
     }
 
     //게시글 수정 - 가변 타이머 작동 중에만 가능
