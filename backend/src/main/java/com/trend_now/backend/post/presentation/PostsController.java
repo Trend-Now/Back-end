@@ -5,6 +5,7 @@ import com.trend_now.backend.image.application.ImagesService;
 import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
+import com.trend_now.backend.post.dto.CheckPostCooldownResponse;
 import com.trend_now.backend.post.dto.PostInfoResponseDto;
 import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
@@ -64,7 +65,8 @@ public class PostsController {
 
         return ResponseEntity.status(HttpStatus.OK)
             .body(PostListResponseDto.of(SUCCESS_PAGING_POSTS_MESSAGE,
-                postSummaryDtoPage.getTotalPages(), postSummaryDtoPage.getTotalElements(), boardName, postSummaryDtoPage.getContent()));
+                postSummaryDtoPage.getTotalPages(), postSummaryDtoPage.getTotalElements(),
+                boardName, postSummaryDtoPage.getContent()));
     }
 
     @Operation(summary = "게시글 상세 조회", description = "게시판의 게시글을 상세 조회합니다.")
@@ -117,5 +119,15 @@ public class PostsController {
         postsService.deletePostsById(boardId, postId, members.getId());
 
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_POSTS_MESSAGE);
+    }
+
+    @Operation(summary = "게시판 글쓰기 가능 여부 확인", description = "요청한 사용자가 현재 게시판에 게시글을 작성한 후 5분 이내에는 추가 작성이 불가능하도록 쿨다운 상태를 확인합니다.")
+    @GetMapping("/posts/cooldown")
+    public ResponseEntity<CheckPostCooldownResponse> checkPostCooldown(
+        @PathVariable(value = "boardId") Long boardId,
+        @AuthenticationPrincipal(expression = "members") Members members) {
+
+        return ResponseEntity.status(HttpStatus.OK)
+            .body(postsService.checkPostCooldown(boardId, members.getId()));
     }
 }
