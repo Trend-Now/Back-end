@@ -6,6 +6,8 @@ import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10;
 import com.trend_now.backend.board.dto.Top10WithChange;
 import com.trend_now.backend.board.cache.BoardCache;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -39,6 +41,7 @@ public class SignalKeywordJob implements Job {
             boardRedisService.cleanUpExpiredKeys();
             Top10WithChange top10WithChange = signalKeywordService.calculateRankChange(
                     signalKeywordDto);
+            List<Long> top10BoardIds = new ArrayList<>();
             for (int i = 0; i < signalKeywordDto.getTop10().size(); i++) {
 
                 /**
@@ -55,6 +58,7 @@ public class SignalKeywordJob implements Job {
                 Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
                 boardSaveDto.setBoardId(boardId);
                 boardRedisService.saveBoardRedis(boardSaveDto, i + 1);
+                top10BoardIds.add(boardId);
 
                 boolean isRealTimeBoard = boardRedisService.isRealTimeBoard(boardSaveDto);
                 boardService.updateBoardIsDeleted(boardSaveDto, isRealTimeBoard);
@@ -62,6 +66,7 @@ public class SignalKeywordJob implements Job {
             boardRedisService.setRankValidListTime();
 
             boardCache.setBoardInfo(boardRedisService.getBoardRank());
+            top10WithChange.setTop10BoardIds(top10BoardIds);
 
             Set<String> allClientId = signalKeywordService.findAllClientId();
             for (String clientId : allClientId) {

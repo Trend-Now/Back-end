@@ -118,7 +118,7 @@ public class SignalKeywordService {
                 redisTemplate.opsForList().rightPush(SIGNAL_KEYWORD_LIST, keyword.getKeyword())
         );
 
-        return new Top10WithChange(now, keywordDiffList);
+        return new Top10WithChange(now, keywordDiffList, null);
     }
 
 
