@@ -35,10 +35,12 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yml")
+@Transactional
 public class PostLikesServiceUnitTest {
 
     private static final String REDIS_LIKE_USER_KEY_PREFIX = "post_like_member:";

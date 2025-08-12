@@ -10,6 +10,7 @@ import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.Top10;
+import com.trend_now.backend.board.repository.BoardRepository;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yml")
+@Transactional
 public class BoardsControllerTest {
 
     private static final String BOARD_RANK_KEY = "board_rank";
@@ -55,6 +57,8 @@ public class BoardsControllerTest {
 
     private List<Boards> boards;
     private List<Top10> top10s;
+    @Autowired
+    private BoardRepository boardRepository;
 
     @BeforeEach
     public void before() {
@@ -99,7 +103,8 @@ public class BoardsControllerTest {
     @DisplayName("실시간 게시판을 들어갔을 때 실시간 게시판의 정보를 받을 수 있다")
     public void 실시간_게시판_정보() throws Exception {
         //given
-        Long boardId = 5L;
+        List<Boards> boardList = boardRepository.findAll();
+        Long boardId = boardList.getFirst().getId();
 
         //when
 
