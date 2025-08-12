@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.trend_now.backend.config.auth.JwtTokenFilter;
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
+import com.trend_now.backend.member.application.MemberService;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
@@ -36,7 +37,6 @@ class MemberServiceTest {
     @Autowired private MemberService memberService;
     @Autowired private MemberRepository memberRepository;
     @Autowired private JwtTokenFilter jwtTokenFilter;
-    @Autowired private JwtTokenProvider jwtTokenProvider;
 
     private Members members;
 

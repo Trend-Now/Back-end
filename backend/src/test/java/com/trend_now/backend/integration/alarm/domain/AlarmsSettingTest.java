@@ -2,6 +2,8 @@ package com.trend_now.backend.integration.alarm.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.trend_now.backend.alarm.domain.AlarmSettingType;
+import com.trend_now.backend.alarm.domain.AlarmSettings;
 import java.time.LocalTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
