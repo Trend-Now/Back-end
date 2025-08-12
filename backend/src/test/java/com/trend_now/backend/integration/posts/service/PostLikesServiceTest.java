@@ -14,6 +14,7 @@ import com.trend_now.backend.post.dto.PostLikesIncrementDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -62,9 +63,9 @@ public class PostLikesServiceTest {
         members = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Members member = Members.builder()
-                    .name("testUser" + i)
-                    .email("testEmail" + i)
-                    .snsId("testSnsId" + i)
+                    .name("testUser" + i + "_" + UUID.randomUUID().toString())
+                    .email("testEmail" + i + "_" + UUID.randomUUID().toString())
+                    .snsId("testSnsId" + i + "_" + UUID.randomUUID().toString())
                     .provider(Provider.TEST)
                     .build();
             memberRepository.save(member);

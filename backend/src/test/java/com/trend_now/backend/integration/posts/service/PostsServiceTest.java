@@ -128,7 +128,15 @@ public class PostsServiceTest {
         //given
         for (int i = 1; i <= 10; i++) {
             PostsSaveDto postsSaveDto = PostsSaveDto.of("title" + i, "content" + i, null);
-            postsService.savePosts(postsSaveDto, members, boards.getId());
+            // 게시글 작성 300초 제한을 피하기 위해
+            Members member = memberRepository.save(
+                Members.builder()
+                .name("testUser" + i)
+                .email("testEmail" + page + "_" + size + "_" + i)
+                .snsId("testSnsId" + page + "_" + size + "_" + i)
+                .provider(Provider.TEST)
+                .build());
+            postsService.savePosts(postsSaveDto, member, boards.getId());
         }
         PostsPagingRequestDto requestDto = PostsPagingRequestDto.of(boards.getId(), page - 1, size);
 
