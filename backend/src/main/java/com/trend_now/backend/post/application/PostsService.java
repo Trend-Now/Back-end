@@ -174,9 +174,7 @@ public class PostsService {
         if (postCoolDown > 0) {
             throw new IllegalStateException(String.format(POST_COOLDOWN_MESSAGE, postCoolDown));
         }
-        // 게시글 작성 시, 마지막 게시글 작성 시간을 현재 시간으로 갱신
-        redisTemplate.opsForHash().put(boardUserKey, LAST_POST_TIME_KEY, System.currentTimeMillis());
-        redisTemplate.expire(boardUserKey, POST_LIMIT_SECONDS, TimeUnit.SECONDS);
+        refreshPostLimit(boardUserKey);
 
         Posts posts = Posts.builder()
                 .title(postsSaveDto.getTitle())
@@ -199,6 +197,12 @@ public class PostsService {
             );
         }
         return posts.getId();
+    }
+
+    private void refreshPostLimit(String boardUserKey) {
+        // 게시글 작성 시, 마지막 게시글 작성 시간을 현재 시간으로 갱신
+        redisTemplate.opsForHash().put(boardUserKey, LAST_POST_TIME_KEY, System.currentTimeMillis());
+        redisTemplate.expire(boardUserKey, POST_LIMIT_SECONDS, TimeUnit.SECONDS);
     }
 
     /**
