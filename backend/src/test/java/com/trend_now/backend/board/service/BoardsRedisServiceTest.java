@@ -13,7 +13,9 @@ import com.trend_now.backend.board.dto.Top10;
 import com.trend_now.backend.board.repository.BoardRepository;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -262,7 +264,8 @@ public class BoardsRedisServiceTest {
 
         for (int i = 0; i < pagination_board_count; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(pagination_top10s.get(i));
-            boardSaveDto.setBoardId((long) (i + 1));
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+            boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
@@ -299,24 +302,27 @@ public class BoardsRedisServiceTest {
             pagination_top10s.add(top10);
         }
 
+        Map<String, Long> incrementIdMap = new HashMap<>();
+
         for (int i = 0; i < pagination_board_count; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(pagination_top10s.get(i));
-            boardSaveDto.setBoardId((long) (i + 1));
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+            // 마지막 게시글 10개 시간 증가를 위해 id를 따로 저장해준다.
+            if (i >= 10) {
+                incrementIdMap.put(boardSaveDto.getBoardName(), boardId);
+            }
+            boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
 
         // 마지막 게시글 10개의 시간을 임의로 증가
-        AtomicInteger keyIndex = new AtomicInteger(11);
         pagination_boards.stream()
                 .skip(10)
                 .forEach(board -> {
-                    int i = keyIndex.getAndIncrement(); // 11, 12, 13, ...
-                    String dynamicKey = board.getName() + BOARD_KEY_DELIMITER + i;
-
-                    Long currentExpire = redisTemplate.getExpire(dynamicKey, TimeUnit.SECONDS);
+                    String dynamicKey = board.getName() + BOARD_KEY_DELIMITER + incrementIdMap.get(board.getName());
+                    long currentExpire = redisTemplate.getExpire(dynamicKey, TimeUnit.SECONDS);
                     if (currentExpire > 0) {
-                        currentExpire += (long) (pagination_boards.indexOf(board)
-                                * 10);  // i 값을 board의 인덱스 값으로 계산
+                        currentExpire += pagination_boards.indexOf(board) * 10L;  // i 값을 board의 인덱스 값으로 계산
                     }
                     redisTemplate.expire(dynamicKey, currentExpire, TimeUnit.SECONDS);
                 });
@@ -356,16 +362,19 @@ public class BoardsRedisServiceTest {
             pagination_top10s.add(top10);
         }
 
+        Map<String, Long> boardIdMap = new HashMap<>();
         for (int i = 0; i < pagination_board_count; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(pagination_top10s.get(i));
-            boardSaveDto.setBoardId((long) (i + 1));
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+            boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
+            boardIdMap.put(boardSaveDto.getBoardName(), boardId);
         }
 
         // 마지막 게시글의 score을 1 ~ 10까지로 변경
         for (int i = 0; i < pagination_board_count - 10; i++) {
             String dynamicKey =
-                    pagination_boards.get(i + 10).getName() + BOARD_KEY_DELIMITER + (i + 11);
+                    pagination_boards.get(i + 10).getName() + BOARD_KEY_DELIMITER + boardIdMap.get(pagination_boards.get(i + 10).getName());
             redisTemplate.opsForZSet()
                     .add(BOARD_RANK_KEY, dynamicKey, i + 1);
         }

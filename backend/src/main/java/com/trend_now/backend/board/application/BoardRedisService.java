@@ -218,8 +218,6 @@ public class BoardRedisService {
             .sorted(Comparator.comparingLong(RealtimeBoardListDto::getBoardLiveTime).reversed()
                 .thenComparingDouble(RealtimeBoardListDto::getScore))
             .toList();
-//        List<BoardInfoDto> boardInfoDtos = allBoardName.stream()
-
 
         PageRequest pageRequest = PageRequest.of(boardPagingRequestDto.getPage(),
                 boardPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt"));
