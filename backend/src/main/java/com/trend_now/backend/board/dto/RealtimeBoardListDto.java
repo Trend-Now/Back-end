@@ -16,6 +16,8 @@ public class RealtimeBoardListDto {
     private Long viewCount;
     @Setter
     private Long boardLiveTime;
+    @Setter
+    private Double score;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

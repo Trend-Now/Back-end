@@ -7,8 +7,11 @@ import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.RealTimeBoardTimeUpEvent;
+import com.trend_now.backend.board.dto.RealtimeBoardListDto;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.post.application.PostLikesService;
+import com.trend_now.backend.post.application.PostViewService;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,6 +58,8 @@ public class BoardRedisService {
     private final RedisTemplate<String, String> redisTemplate;
     private final RedisPublisher redisPublisher;
     private final BoardRepository boardRepository;
+    private final PostViewService postViewService;
+    private final PostLikesService postLikesService;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, int score) {
         String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
@@ -176,6 +181,7 @@ public class BoardRedisService {
         return !redisTemplate.hasKey(key);
     }
 
+    @Transactional // 조회수, 좋아요 개수 데이터 동기화를 하나의 트랜잭션으로 묶는다.
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
             BoardPagingRequestDto boardPagingRequestDto) {
         Set<String> allBoardName = getBoardRank();
@@ -184,36 +190,43 @@ public class BoardRedisService {
             return BoardPagingResponseDto.from(Collections.emptyList());
         }
 
-        List<BoardInfoDto> boardInfoDtos = allBoardName.stream()
-                .map(boardKey -> {
-                    // boardId 추출
-                    String[] parts = boardKey.split(BOARD_KEY_DELIMITER);
-                    log.info("[BoardRedisService.findAllRealTimeBoardPaging] : parts = {}",
-                            Arrays.toString(parts));
+        postViewService.syncViewCountToDatabase();
+        postLikesService.syncLikesToDatabase();
+        List<RealtimeBoardListDto> realtimeBoardList = allBoardName.stream()
+            .map(boardKey -> {
+                // boardId 추출
+                String[] parts = boardKey.split(BOARD_KEY_DELIMITER);
+                log.info("[BoardRedisService.findAllRealTimeBoardPaging] : parts = {}",
+                    Arrays.toString(parts));
 
-                    // 데이터 타입 이상 시, 다음으로 넘김
-                    if (parts.length < BOARD_KEY_PARTS_LENGTH) {
-                        return null;
-                    }
+                // 데이터 타입 이상 시, 다음으로 넘김
+                if (parts.length < BOARD_KEY_PARTS_LENGTH) {
+                    return null;
+                }
+                Long boardId = Long.parseLong(parts[BOARD_ID_INDEX]);
 
-                    String boardName = parts[BOARD_NAME_INDEX];
-                    Long boardId = Long.parseLong(parts[BOARD_ID_INDEX]);
+                Long boardLiveTime = redisTemplate.getExpire(boardKey, TimeUnit.SECONDS);
+                Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
 
-                    Long boardLiveTime = redisTemplate.getExpire(boardKey, TimeUnit.SECONDS);
-                    Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
-                    return new BoardInfoDto(boardId, boardName, boardLiveTime, score);
-                })
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparingLong(BoardInfoDto::getBoardLiveTime).reversed()
-                        .thenComparingDouble(BoardInfoDto::getScore))
-                .collect(Collectors.toList());
+                RealtimeBoardListDto realtimeBoard = boardRepository.findRealtimeBoardById(boardId);
+                realtimeBoard.setBoardLiveTime(boardLiveTime);
+                realtimeBoard.setScore(score);
+
+                return realtimeBoard;
+            })
+            .filter(Objects::nonNull)
+            .sorted(Comparator.comparingLong(RealtimeBoardListDto::getBoardLiveTime).reversed()
+                .thenComparingDouble(RealtimeBoardListDto::getScore))
+            .toList();
+//        List<BoardInfoDto> boardInfoDtos = allBoardName.stream()
+
 
         PageRequest pageRequest = PageRequest.of(boardPagingRequestDto.getPage(),
                 boardPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt"));
         int start = (int) pageRequest.getOffset();
-        int end = Math.min(start + pageRequest.getPageSize(), boardInfoDtos.size());
+        int end = Math.min(start + pageRequest.getPageSize(), realtimeBoardList.size());
 
-        return BoardPagingResponseDto.from(boardInfoDtos.subList(start, end));
+        return BoardPagingResponseDto.from(realtimeBoardList.subList(start, end));
     }
 
     public Set<String> getBoardRank() {
