@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Builder
 @AllArgsConstructor
-public class RealtimeBoardListDto {
+public class RealtimeBoardDto {
     private Long boardId;
     private String boardName;
     private Long postCount;
@@ -22,7 +22,7 @@ public class RealtimeBoardListDto {
     private LocalDateTime updatedAt;
 
     // JPQL Projection Constructor
-    public RealtimeBoardListDto(Long boardId, String boardName, Long postCount, Long viewCount, LocalDateTime createdAt,
+    public RealtimeBoardDto(Long boardId, String boardName, Long postCount, Long viewCount, LocalDateTime createdAt,
         LocalDateTime updatedAt) {
         this.boardId = boardId;
         this.boardName = boardName;

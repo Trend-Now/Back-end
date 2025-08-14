@@ -7,7 +7,7 @@ import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.RealTimeBoardTimeUpEvent;
-import com.trend_now.backend.board.dto.RealtimeBoardListDto;
+import com.trend_now.backend.board.dto.RealtimeBoardDto;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.post.application.PostLikesService;
@@ -21,7 +21,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -192,7 +191,7 @@ public class BoardRedisService {
 
         postViewService.syncViewCountToDatabase();
         postLikesService.syncLikesToDatabase();
-        List<RealtimeBoardListDto> realtimeBoardList = allBoardName.stream()
+        List<RealtimeBoardDto> realtimeBoardList = allBoardName.stream()
             .map(boardKey -> {
                 // boardId 추출
                 String[] parts = boardKey.split(BOARD_KEY_DELIMITER);
@@ -208,15 +207,15 @@ public class BoardRedisService {
                 Long boardLiveTime = redisTemplate.getExpire(boardKey, TimeUnit.SECONDS);
                 Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
 
-                RealtimeBoardListDto realtimeBoard = boardRepository.findRealtimeBoardById(boardId);
+                RealtimeBoardDto realtimeBoard = boardRepository.findRealtimeBoardById(boardId);
                 realtimeBoard.setBoardLiveTime(boardLiveTime);
                 realtimeBoard.setScore(score);
 
                 return realtimeBoard;
             })
             .filter(Objects::nonNull)
-            .sorted(Comparator.comparingLong(RealtimeBoardListDto::getBoardLiveTime).reversed()
-                .thenComparingDouble(RealtimeBoardListDto::getScore))
+            .sorted(Comparator.comparingLong(RealtimeBoardDto::getBoardLiveTime).reversed()
+                .thenComparingDouble(RealtimeBoardDto::getScore))
             .toList();
 
         PageRequest pageRequest = PageRequest.of(boardPagingRequestDto.getPage(),

@@ -8,9 +8,9 @@ import lombok.Data;
 @AllArgsConstructor
 public class BoardPagingResponseDto {
 
-    private List<RealtimeBoardListDto> boardInfoDtos;
+    private List<RealtimeBoardDto> boardInfoDtos;
 
-    public static BoardPagingResponseDto from(List<RealtimeBoardListDto> boardInfoDtoList) {
+    public static BoardPagingResponseDto from(List<RealtimeBoardDto> boardInfoDtoList) {
         return new BoardPagingResponseDto(boardInfoDtoList);
     }
 }
