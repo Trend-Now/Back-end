@@ -1,13 +1,11 @@
 package com.trend_now.backend.board.application;
 
+import com.trend_now.backend.board.cache.BoardCache;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10;
 import com.trend_now.backend.board.dto.Top10WithChange;
-import com.trend_now.backend.board.cache.BoardCache;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -41,7 +39,6 @@ public class SignalKeywordJob implements Job {
             boardRedisService.cleanUpExpiredKeys();
             Top10WithChange top10WithChange = signalKeywordService.calculateRankChange(
                     signalKeywordDto);
-            List<Long> top10BoardIds = new ArrayList<>();
             for (int i = 0; i < signalKeywordDto.getTop10().size(); i++) {
 
                 /**
@@ -58,7 +55,9 @@ public class SignalKeywordJob implements Job {
                 Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
                 boardSaveDto.setBoardId(boardId);
                 boardRedisService.saveBoardRedis(boardSaveDto, i + 1);
-                top10BoardIds.add(boardId);
+
+                /* 동일 객체 참조로 내부 원본의 각 검색어의 게시판 ID를 포함하여 반환 */
+                top10WithChange.getTop10WithDiff().get(i).setBoardId(boardId);
 
                 boolean isRealTimeBoard = boardRedisService.isRealTimeBoard(boardSaveDto);
                 boardService.updateBoardIsDeleted(boardSaveDto, isRealTimeBoard);
@@ -66,7 +65,6 @@ public class SignalKeywordJob implements Job {
             boardRedisService.setRankValidListTime();
 
             boardCache.setBoardInfo(boardRedisService.getBoardRank());
-            top10WithChange.setTop10BoardIds(top10BoardIds);
 
             Set<String> allClientId = signalKeywordService.findAllClientId();
             for (String clientId : allClientId) {
