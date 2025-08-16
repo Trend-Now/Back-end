@@ -1,6 +1,7 @@
 package com.trend_now.backend.board.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
 import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.application.BoardService;
@@ -561,6 +562,32 @@ public class BoardsRedisServiceTest {
         //then
         assertThat(redisTemplate.opsForValue().get(key)).isNull();
         assertThat(redisTemplate.opsForSet().size(BOARD_THRESHOLD_KEY)).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("redisTemplate.opsForZSet().range() 메서드가 순서를 유지해준다.")
+    public void boardKeys_순서_유지() throws Exception {
+        // given
+        // redis에 데이터를 순서대로 넣는다.
+        redisTemplate.opsForZSet().add(BOARD_RANK_KEY, "board1", 30);
+        redisTemplate.opsForZSet().add(BOARD_RANK_KEY, "board2", 10);
+        redisTemplate.opsForZSet().add(BOARD_RANK_KEY, "board3", 20);
+
+        // when
+        // redis에서 오름차순으로 ZSet를 가져온다.
+        Set<String> boardKeys = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
+
+        // then
+        // 여러 번 boardKeys 호출해도 같은 순서를 유지해야 한다.
+        System.out.println("boardKeys 구현체 클래스 > " + boardKeys.getClass().getName());
+        System.out.println("boardKeys > " + boardKeys.toString());
+
+        List<String> expectedOrder = List.of("board2", "board3", "board1"); // score 기준 오름차순
+
+        for (int i = 0; i < 3; i++) {
+            List<String> actualOrder = new ArrayList<>(boardKeys);
+            assertIterableEquals(expectedOrder, actualOrder, "순서가 변하지 않아야 한다.");
+        }
     }
 
 }
