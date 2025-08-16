@@ -201,7 +201,10 @@ public class BoardRedisService {
 
                     Long boardLiveTime = redisTemplate.getExpire(boardKey, TimeUnit.SECONDS);
                     Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
-                    return new BoardInfoDto(boardId, boardName, boardLiveTime, score);
+
+                    // 게시판 만료 시각을 ms 단위로 계산
+                    Long expiredBoardTime = System.currentTimeMillis() + (boardLiveTime * 1000);
+                    return new BoardInfoDto(boardId, boardName, boardLiveTime, expiredBoardTime, score);
                 })
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparingLong(BoardInfoDto::getBoardLiveTime).reversed()
@@ -231,10 +234,14 @@ public class BoardRedisService {
         String key = findBoard.getName() + BOARD_KEY_DELIMITER + findBoard.getId();
         Long boardLiveTime = redisTemplate.getExpire(key, TimeUnit.SECONDS);
 
+        // 게시판 만료 시각을 ms 단위로 계산
+        Long expiredBoardTime = System.currentTimeMillis() + (boardLiveTime * 1000);
+
         return BoardInfoDto.builder()
                 .boardId(findBoard.getId())
                 .boardName(findBoard.getName())
                 .boardLiveTime(boardLiveTime)
+                .boardExpiredTime(expiredBoardTime)
                 .build();
     }
 }
