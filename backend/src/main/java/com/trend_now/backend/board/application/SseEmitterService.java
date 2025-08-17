@@ -18,6 +18,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -30,11 +31,13 @@ public class SseEmitterService {
     private static final String SIGNAL_KEYWORD_LIST_EMITTER_NAME = "signalKeywordList";
     private static final String REALTIME_BOARD_EXPIRED_EMITTER_NAME = "realtimeBoardExpired";
     private static final String REALTIME_BOARD_TIMEUP_EMITTER_NAME = "realtimeBoardTimeUp";
+    private static final String CLIENT_ID_KEY = "clientId";
 
     @Value("${sse.timeout}")
     private Long timeout;
 
     private final SseEmitterRepository sseEmitterRepository;
+    private final RedisTemplate<String, String> redisTemplate;
 
     public SseEmitter createEmitter(String clientId) {
         return sseEmitterRepository.save(clientId, new SseEmitter(timeout));
@@ -93,7 +96,13 @@ public class SseEmitterService {
                     .data(data, MediaType.APPLICATION_JSON));
         } catch (IOException | IllegalStateException e) {
             log.error("SSE 전송 중 오류가 발생했습니다.", e);
+            /*
+             * SSE 전송 중 오류가 발생한 경우, 연결을 끊고
+             * Redis와 Repository에서 clientId를 삭제한다
+             */
+            sseEmitter.completeWithError(e);
             sseEmitterRepository.deleteById(clientId);
+            redisTemplate.opsForSet().remove(CLIENT_ID_KEY, clientId);
         }
     }
 }

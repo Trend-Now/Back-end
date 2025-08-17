@@ -6,7 +6,7 @@ import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
 import com.trend_now.backend.board.dto.FixedBoardSaveDto;
-import com.trend_now.backend.board.dto.RealtimeBoardListDto;
+import com.trend_now.backend.board.dto.RealtimeBoardDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -43,8 +43,8 @@ public class BoardController {
 
     @Operation(summary = "고정 게시판 리스트 조회", description = "고정 게시판 리스트를 가져옵니다.")
     @GetMapping("/fixedList")
-    public ResponseEntity<List<RealtimeBoardListDto>> findAllFixedBoards() {
-        List<RealtimeBoardListDto> fixedBoardList = boardService.getFixedBoardList();
+    public ResponseEntity<List<RealtimeBoardDto>> findAllFixedBoards() {
+        List<RealtimeBoardDto> fixedBoardList = boardService.getFixedBoardList();
 
         return ResponseEntity.status(HttpStatus.OK).body(fixedBoardList);
     }

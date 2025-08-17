@@ -1,11 +1,11 @@
 package com.trend_now.backend.board.application;
 
+import com.trend_now.backend.board.cache.BoardCache;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10;
 import com.trend_now.backend.board.dto.Top10WithChange;
-import com.trend_now.backend.board.cache.BoardCache;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -56,12 +56,15 @@ public class SignalKeywordJob implements Job {
                 boardSaveDto.setBoardId(boardId);
                 boardRedisService.saveBoardRedis(boardSaveDto, i + 1);
 
+                /* 동일 객체 참조로 내부 원본의 각 검색어의 게시판 ID를 포함하여 반환 */
+                top10WithChange.getTop10WithDiff().get(i).setBoardId(boardId);
+
                 boolean isRealTimeBoard = boardRedisService.isRealTimeBoard(boardSaveDto);
                 boardService.updateBoardIsDeleted(boardSaveDto, isRealTimeBoard);
             }
             boardRedisService.setRankValidListTime();
 
-            boardCache.setBoardInfo(boardRedisService.getBoardRank());
+            boardCache.setBoardInfo(boardRedisService.getBoardRank(0, -1));
 
             Set<String> allClientId = signalKeywordService.findAllClientId();
             for (String clientId : allClientId) {

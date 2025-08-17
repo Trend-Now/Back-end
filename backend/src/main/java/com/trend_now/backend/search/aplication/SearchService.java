@@ -4,12 +4,11 @@ import static com.trend_now.backend.board.application.BoardRedisService.BOARD_KE
 
 import com.trend_now.backend.board.cache.BoardCacheEntry;
 import com.trend_now.backend.board.cache.BoardCache;
-import com.trend_now.backend.board.dto.RealtimeBoardListDto;
+import com.trend_now.backend.board.dto.RealtimeBoardDto;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.post.application.PostLikesService;
 import com.trend_now.backend.post.application.PostViewService;
-import com.trend_now.backend.post.dto.PostListResponseDto;
 import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.search.dto.FixedPostSearchDto;
@@ -17,7 +16,6 @@ import com.trend_now.backend.search.dto.RealtimePostSearchDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import com.trend_now.backend.search.dto.AutoCompleteDto;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -47,7 +45,7 @@ public class SearchService {
     /**
      * 검색어에 따른 실시간 인기 게시판 조회
      */
-    public List<RealtimeBoardListDto> findRealtimeBoardsByKeyword(String keyword) {
+    public List<RealtimeBoardDto> findRealtimeBoardsByKeyword(String keyword) {
         Map<Long, BoardCacheEntry> boardCacheEntryMap = boardCache.getBoardCacheEntryMap()
             .asMap();
         // 검색어가 포함된 게시판 목록 필터링
@@ -58,7 +56,7 @@ public class SearchService {
 
         // 검색될 경우 게시판에 대한 총 조회수를 보여줘야 하기 때문에 강제로 Redis와 DB를 동기화
         postViewService.syncViewCountToDatabase();
-        List<RealtimeBoardListDto> realtimeBoardList = boardRepository.findRealtimeBoardsByIds(
+        List<RealtimeBoardDto> realtimeBoardList = boardRepository.findRealtimeBoardsByIds(
             filteredBoardIds);
 
         // 실시간 게시판 만료 시간 데이터 DTO에 추가

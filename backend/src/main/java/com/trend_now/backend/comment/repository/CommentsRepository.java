@@ -64,10 +64,12 @@ public interface CommentsRepository extends JpaRepository<Comments, Long> {
     void deleteByPosts_Id(Long postsId);
 
     @Modifying(clearAutomatically = true)
-    @Query(value = "UPDATE comments c " +
-        "JOIN posts p ON c.post_id = p.post_id " +
-        "SET c.modifiable = false " +
-        "WHERE p.board_id = :boardId AND c.modifiable = true", nativeQuery = true)
+    @Query(value = "UPDATE comments " +
+            "SET modifiable = false " +
+            "WHERE post_id IN (" +
+            "    SELECT p.post_id FROM posts p WHERE p.board_id = :boardId" +
+            ") " +
+            "AND modifiable = true", nativeQuery = true)
     void updateFlagByBoardId(@Param("boardId") Long boardId);
 
     // 특정 게시글의 전체 댓글 수 조회
