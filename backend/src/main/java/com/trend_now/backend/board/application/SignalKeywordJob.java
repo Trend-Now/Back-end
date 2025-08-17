@@ -64,7 +64,7 @@ public class SignalKeywordJob implements Job {
             }
             boardRedisService.setRankValidListTime();
 
-            boardCache.setBoardInfo(boardRedisService.getBoardRank());
+            boardCache.setBoardInfo(boardRedisService.getBoardRank(0, -1));
 
             Set<String> allClientId = signalKeywordService.findAllClientId();
             for (String clientId : allClientId) {
