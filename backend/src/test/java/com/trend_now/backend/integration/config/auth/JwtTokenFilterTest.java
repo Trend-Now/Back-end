@@ -14,6 +14,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -65,6 +68,7 @@ class JwtTokenFilterTest {
     private int expiration;
 
     private static final String NOT_EXIST_MEMBER = "MEMBER_ID 일치하는 회원이 없습니다.";
+    private static final String AUTHORIZATION = "Authorization";
 
     @BeforeEach
     public void setUp() {
@@ -134,5 +138,43 @@ class JwtTokenFilterTest {
         // when & then
         // validateToken() 메서드에 의해서 검증 안된 JWT는 null이 반환
         assertThat(jwtTokenFilter.validateToken(expiredToken)).isNull();
+    }
+
+    @Test
+    @DisplayName("API 요청 시, Access Token을 Cookie에서 추출한다.")
+    public void cookie_에서_JWT_추출() {
+        // given
+        // 쿠키에 Access Token을 포함한 HTTP 요청 생성
+        String expectedJwtToken = "test access token";
+
+        // Mock HttpServletRequest 생성
+        MockHttpServletRequest request = new MockHttpServletRequest();
+
+        // 쿠키에 Access Token을 포함한 HTTP 요청 생성
+        Cookie jwtCookie = new Cookie(AUTHORIZATION, expectedJwtToken);
+        request.setCookies(jwtCookie);
+
+        // when
+        // 요청 진행
+        String extractedJwtToken = getJwtFromCookie(request);
+
+        // then
+        // 쿠키에서 추출한 Access Token 값이 미리 지정한 값과 일치해야 한다.
+        assertThat(extractedJwtToken).isNotNull();
+        assertThat(extractedJwtToken).isEqualTo(expectedJwtToken);
+    }
+
+    private String getJwtFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (AUTHORIZATION.equals(cookie.getName())) {
+                    log.info("Cookie에서 JWT 토큰 추출: {}", cookie.getValue());
+                    return cookie.getValue();
+                }
+            }
+        }
+        log.debug("Cookie에서 JWT 토큰을 찾을 수 없습니다.");
+        return null;
     }
 }
