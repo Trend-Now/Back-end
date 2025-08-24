@@ -51,17 +51,10 @@ public class JwtTokenFilter extends GenericFilter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 
         // HttpServletRequest 객체 Header에서 토큰 값 추출
-        String token = getJwtFromCookie(httpServletRequest);
+        String jwtToken = getJwtFromCookie(httpServletRequest);
 
         try {
-            if (token != null) {
-                if (!token.substring(0, 7).equals(JWT_PREFIX)) {
-                    log.error("[JwtTokenFilter.doFilter] : Bearer 형식이 아닙니다.");
-                    throw new AuthenticationException("Bearer 형식이 아닙니다.");
-                }
-
-                String jwtToken = token.substring(7);
-
+            if (jwtToken != null) {
                 // jwt 검증 및 Claims 객체 추출
                 Claims claims = validateToken(jwtToken);
                 if (claims == null) {
