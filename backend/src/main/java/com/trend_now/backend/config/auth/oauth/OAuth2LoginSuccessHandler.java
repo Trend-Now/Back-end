@@ -32,9 +32,13 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final JwtTokenProvider jwtTokenProvider;
 
     private static final String AUTHORIZATION = "Authorization";
+    private static final String REFRESH_TOKEN = "refresh_token";
 
     @Value("${jwt.expiration}")
     private int jwtExpiration; // todo. 추후에 jwt라는 용어를 Access Token, Refresh Token으로 구분할 필요가 있음
+
+    @Value("${jwt.refresh-token.expiration}")
+    private int refreshTokenExpiration;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -44,8 +48,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         // CustomOAuth2UserService에서 저장한 Member 객체 가져오기
         Members member = customUserDetails.getMembers();
 
-        // JWT 토큰 생성
+        // JWT 토큰 & Refresh Token 생성
         String jwtToken = jwtTokenProvider.createToken(member.getId());
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
 
         // 쿠키에서 가져온 redirect URL을 가져온다
         String redirectUrl = CookieUtil.getCookie(request, CustomAuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME)
@@ -53,8 +58,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             .orElse("/");
 
         // HttpOnly Cookie 방식으로 Access Token 저장하여 response에 지정
-        // todo. 추후에는 Refresh Token도 추가해야 한다.
         CookieUtil.addCookie(response, AUTHORIZATION, jwtToken, jwtExpiration);
+        CookieUtil.addCookie(response, REFRESH_TOKEN, refreshToken, refreshTokenExpiration);
 
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)
             .build()
