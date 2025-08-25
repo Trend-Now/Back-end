@@ -29,6 +29,7 @@ public class MemberService {
     private static final String NOT_EXIST_MEMBER = "존재하지 않는 회원입니다.";
     private static final String DUPLICATE_NICKNAME = "이미 존재하는 닉네임입니다.";
     private static final String AUTHORIZATION = "Authorization";
+    private static final String REFRESH_TOKEN = "refresh-token";
 
     private final MemberRepository memberRepository;
     private final PostsRepository postsRepository;
@@ -37,6 +38,9 @@ public class MemberService {
 
     @Value("${jwt.expiration}")
     private int jwtExpiration; // todo. 추후에 jwt라는 용어를 Access Token, Refresh Token으로 구분할 필요가 있음
+
+    @Value("${jwt.refresh-token.expiration}")
+    private int refreshTokenExpiration;
 
     /**
      * 마이페이지 조회
@@ -118,8 +122,10 @@ public class MemberService {
                 );
 
         String testJwt = jwtTokenProvider.createToken(testMember.getId());
-        log.info("[MemberService.getTestJwt] : 테스트용 JWT = {}", testJwt);
+        String testRefreshToken = jwtTokenProvider.createRefreshToken(testMember.getId());
+        log.info("[MemberService.getTestJwt] : 테스트용 JWT = {}, Refresh Token {}", testJwt, testRefreshToken);
         CookieUtil.addCookie(response, AUTHORIZATION, testJwt, jwtExpiration);
+        CookieUtil.addCookie(response, REFRESH_TOKEN, testRefreshToken, refreshTokenExpiration);
         return testJwt;
     }
 }
