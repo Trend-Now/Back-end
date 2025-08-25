@@ -67,10 +67,10 @@ public class BoardRedisService {
         String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         long keyLiveTime = KEY_LIVE_TIME;
 
-//        Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
-//        if (currentExpire != null && currentExpire > KEY_EXPIRE) {
-//            keyLiveTime += currentExpire;
-//        }
+        Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+        if (currentExpire != null && currentExpire > KEY_EXPIRE) {
+            keyLiveTime = currentExpire;
+        }
 
         redisTemplate.opsForValue().set(key, BOARD_INITIAL_COUNT);
         redisTemplate.expire(key, keyLiveTime, TimeUnit.SECONDS);
