@@ -13,6 +13,7 @@ import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.MyPostListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,8 +53,8 @@ public class MemberController {
     // 테스트용 JWT 발급 API
     @GetMapping("/test-jwt")
     @Operation(summary = "JWT 발급", description = "테스트용 JWT 발급 API")
-    public ResponseEntity<String> getJwt() {
-        return new ResponseEntity<>(memberService.getTestJwt(), HttpStatus.OK);
+    public ResponseEntity<String> getJwt(HttpServletResponse response) {
+        return new ResponseEntity<>(memberService.getTestJwt(response), HttpStatus.OK);
     }
 
     /**
