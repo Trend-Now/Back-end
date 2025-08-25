@@ -47,7 +47,7 @@ public class BoardRedisService {
     public static final int BOARD_KEY_PARTS_LENGTH = 2;
     public static final int BOARD_NAME_INDEX = 0;
     public static final int BOARD_ID_INDEX = 1;
-    private static final long KEY_LIVE_TIME = 301L;
+    private static final long KEY_LIVE_TIME = 7201L;
     private static final long BOARD_TIME_UP_50 = 300L;
     private static final long BOARD_TIME_UP_100 = 600L;
     private static final int KEY_EXPIRE = 0;
