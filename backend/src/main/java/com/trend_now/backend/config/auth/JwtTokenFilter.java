@@ -1,5 +1,6 @@
 package com.trend_now.backend.config.auth;
 
+import com.trend_now.backend.common.CookieUtil;
 import com.trend_now.backend.exception.CustomException.InvalidTokenException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;
@@ -51,7 +52,10 @@ public class JwtTokenFilter extends GenericFilter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 
         // HttpServletRequest 객체 Header에서 토큰 값 추출
-        String jwtToken = getJwtFromCookie(httpServletRequest);
+        String jwtToken = CookieUtil.getCookie(httpServletRequest, AUTHORIZATION)
+                .map(Cookie::getValue)
+                .orElse(null);
+        log.info("[JwtTokenFilter.doFilter] Cookie에서 JWT 토큰 추출: {}", jwtToken);
 
         try {
             if (jwtToken != null) {
@@ -94,23 +98,6 @@ public class JwtTokenFilter extends GenericFilter {
             httpServletResponse.getWriter().write("invalid token");
         }
 
-    }
-
-    /**
-     * Http Cookie에서 JWT를 추출하는 메서드
-     */
-    private String getJwtFromCookie(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (AUTHORIZATION.equals(cookie.getName())) {
-                    log.info("[JwtTokenFilter.getJwtFromCookie] Cookie에서 JWT 토큰 추출: {}", cookie.getValue());
-                    return cookie.getValue();
-                }
-            }
-        }
-        log.debug("[JwtTokenFilter.getJwtFromCookie] Cookie에서 JWT 토큰을 찾을 수 없습니다.");
-        return null;
     }
 
     /**
