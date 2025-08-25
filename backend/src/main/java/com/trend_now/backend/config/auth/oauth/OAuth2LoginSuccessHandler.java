@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -29,6 +30,11 @@ import java.nio.charset.StandardCharsets;
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
+
+    private static final String AUTHORIZATION = "Authorization";
+
+    @Value("${jwt.expiration}")
+    private int jwtExpiration; // todo. 추후에 jwt라는 용어를 Access Token, Refresh Token으로 구분할 필요가 있음
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -46,9 +52,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             .map(Cookie::getValue)
             .orElse("/");
 
-        // 리다이렉트 할 URL에 JWT 토큰을 쿼리 파라미터로 추가
+        // HttpOnly Cookie 방식으로 Access Token 저장하여 response에 지정
+        // todo. 추후에는 Refresh Token도 추가해야 한다.
+        CookieUtil.addCookie(response, AUTHORIZATION, jwtToken, jwtExpiration);
+
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)
-            .queryParam("jwt", jwtToken)
             .build()
             .toUriString();
 
