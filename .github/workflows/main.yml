@@ -82,4 +82,5 @@ jobs:
             sudo docker stop trendnow || true
             sudo docker rm trendnow || true
             sudo docker image prune -a -f
-            sudo docker run -d -p 8080:8080 --name trendnow ${{ secrets.DOCKER_USERNAME }}/trendnow:v1
+            sudo docker run -d -p 8080:8080 -v /home/ec2-user/app/logs:/app/logs --name trendnow ${{ secrets.DOCKER_USERNAME }}/trendnow:v1
+
