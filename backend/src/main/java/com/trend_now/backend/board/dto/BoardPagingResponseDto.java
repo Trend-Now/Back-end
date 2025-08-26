@@ -8,9 +8,11 @@ import lombok.Data;
 @AllArgsConstructor
 public class BoardPagingResponseDto {
 
+    private final long totalPageCount;
+    private final long totalBoardCount;
     private List<RealtimeBoardDto> boardInfoDtos;
 
-    public static BoardPagingResponseDto from(List<RealtimeBoardDto> boardInfoDtoList) {
-        return new BoardPagingResponseDto(boardInfoDtoList);
+    public static BoardPagingResponseDto from(long totalPageCount, long totalBoardCount, List<RealtimeBoardDto> boardInfoDtoList) {
+        return new BoardPagingResponseDto(totalPageCount, totalBoardCount, boardInfoDtoList);
     }
 }
