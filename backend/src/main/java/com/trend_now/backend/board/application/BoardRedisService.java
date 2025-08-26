@@ -1,5 +1,6 @@
 package com.trend_now.backend.board.application;
 
+import com.trend_now.backend.board.cache.BoardCache;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardInfoDto;
@@ -13,7 +14,6 @@ import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.post.application.PostLikesService;
 import com.trend_now.backend.post.application.PostViewService;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -25,9 +25,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -45,7 +42,6 @@ public class BoardRedisService {
     private static final String BOARD_INITIAL_COUNT = "0";
     public static final String BOARD_KEY_DELIMITER = ":";
     public static final int BOARD_KEY_PARTS_LENGTH = 2;
-    public static final int BOARD_NAME_INDEX = 0;
     public static final int BOARD_ID_INDEX = 1;
     private static final long KEY_LIVE_TIME = 7201L;
     private static final long BOARD_TIME_UP_50 = 300L;
@@ -62,6 +58,7 @@ public class BoardRedisService {
     private final BoardRepository boardRepository;
     private final PostViewService postViewService;
     private final PostLikesService postLikesService;
+    private final BoardCache boardCache;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, int score) {
         String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
@@ -186,10 +183,13 @@ public class BoardRedisService {
     @Transactional // 조회수, 좋아요 개수 데이터 동기화를 하나의 트랜잭션으로 묶는다.
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
         BoardPagingRequestDto boardPagingRequestDto) {
-        Set<String> boardKeys = getBoardRank(boardPagingRequestDto.getPage(), boardPagingRequestDto.getSize());
+        // Redis에서의 조회는 0부터 시작하므로, size로 받은 숫자에서 1을 뺀 값을 사용한다.
+        int start = boardPagingRequestDto.getPage() * boardPagingRequestDto.getSize();
+        int end = start + boardPagingRequestDto.getSize() - 1;
+        Set<String> boardKeys = getBoardRank(start, end);
 
         if (boardKeys == null || boardKeys.isEmpty()) {
-            return BoardPagingResponseDto.from(Collections.emptyList());
+            return BoardPagingResponseDto.from(0, 0, Collections.emptyList());
         }
 
         // Redis에서 조회한 실시간 게시판 목록 데이터에서 boardId 값만 추출하여 List를 생성한다.
@@ -220,7 +220,9 @@ public class BoardRedisService {
                 .thenComparingDouble(RealtimeBoardDto::getScore))
             .collect(Collectors.toList());
 
-        return BoardPagingResponseDto.from(sortedRealTimeBoardList);
+        long realtimeBoardCount = boardCache.getBoardCacheEntryMap().estimatedSize(); // 캐시에서 실시간 게시판 목록의 사이즈 조회
+        long totalPages = (long) Math.ceil((double) realtimeBoardCount / boardPagingRequestDto.getSize());
+        return BoardPagingResponseDto.from(totalPages, realtimeBoardCount, sortedRealTimeBoardList);
     }
 
     private List<Object> getTtlAndScorePipeline(List<RealtimeBoardDto> realtimeBoardDtoList) {
