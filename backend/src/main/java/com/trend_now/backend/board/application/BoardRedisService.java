@@ -186,8 +186,8 @@ public class BoardRedisService {
     @Transactional // 조회수, 좋아요 개수 데이터 동기화를 하나의 트랜잭션으로 묶는다.
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
         BoardPagingRequestDto boardPagingRequestDto) {
-        // Redis에서의 조회는 0부터 시작하므로, 클라이언트에서 받은 페이지 번호에서 1을 뺀 값을 사용한다.
-        Set<String> boardKeys = getBoardRank(boardPagingRequestDto.getPage() - 1, boardPagingRequestDto.getSize());
+        // Redis에서의 조회는 0부터 시작하므로, size로 받은 숫자에서 1을 뺀 값을 사용한다.
+        Set<String> boardKeys = getBoardRank(boardPagingRequestDto.getPage(), boardPagingRequestDto.getSize() - 1);
 
         if (boardKeys == null || boardKeys.isEmpty()) {
             return BoardPagingResponseDto.from(Collections.emptyList());
