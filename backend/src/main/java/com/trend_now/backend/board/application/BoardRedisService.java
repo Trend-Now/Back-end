@@ -203,7 +203,7 @@ public class BoardRedisService {
         List<RealtimeBoardDto> realtimeBoardList = boardRepository.findRealtimeBoardsByIds(boardIdList);
 
         // Redis Pipeline을 이용해서 각 Board 별 TTL과 zScore 조회
-        List<Object> results = getTtlAndScorePipeline(boardKeys);
+        List<Object> results = getTtlAndScorePipeline(realtimeBoardList);
 
         // realtimeBoardList에 ttl과 zScore를 매핑
         IntStream.range(0, realtimeBoardList.size())
@@ -223,10 +223,11 @@ public class BoardRedisService {
         return BoardPagingResponseDto.from(sortedRealTimeBoardList);
     }
 
-    private List<Object> getTtlAndScorePipeline(Set<String> boardKeys) {
+    private List<Object> getTtlAndScorePipeline(List<RealtimeBoardDto> realtimeBoardDtoList) {
         List<Object> results = redisTemplate.executePipelined(
             (RedisCallback<Object>) connection -> {
-                for (String boardKey : boardKeys) {
+                for (RealtimeBoardDto dto : realtimeBoardDtoList) {
+                    String boardKey = dto.getBoardName() + BOARD_KEY_DELIMITER + dto.getBoardId();
                     connection.keyCommands().ttl(boardKey.getBytes());
                     connection.zSetCommands()
                         .zScore(BOARD_RANK_KEY.getBytes(), boardKey.getBytes());
