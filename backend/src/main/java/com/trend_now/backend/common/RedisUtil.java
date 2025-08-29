@@ -6,6 +6,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Optional;
 
 /**
  * RedisUtil 클래스
@@ -33,5 +34,15 @@ public class RedisUtil {
 
         log.info("[RedisUtil.saveRefreshToken] Refresh Token 저장 완료, token={}, memberId={}, 만료={}분",
                 refreshToken, memberId, refreshTokenExpiration);
+    }
+
+    /**
+     * Redis에 Refresh Token을 이용해 Member Id 조회
+     */
+    public String findMemberIdByRefreshToken(String refreshToken) {
+        String memberId = redisTemplate.opsForValue().get(refreshToken);
+
+        log.info("[RedisUtil.findMemberIdByRefreshToken] memberId={}", memberId);
+        return memberId;
     }
 }
