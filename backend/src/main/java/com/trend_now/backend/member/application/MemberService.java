@@ -1,11 +1,13 @@
 package com.trend_now.backend.member.application;
 
 import com.trend_now.backend.common.CookieUtil;
+import com.trend_now.backend.common.RedisUtil;
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.config.auth.oauth.OAuthAttributes;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.data.dto.MyPageResponseDto;
+import com.trend_now.backend.member.data.dto.RefreshTokenRequestDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
@@ -30,11 +32,14 @@ public class MemberService {
     private static final String DUPLICATE_NICKNAME = "이미 존재하는 닉네임입니다.";
     private static final String AUTHORIZATION = "Authorization";
     private static final String REFRESH_TOKEN = "refresh-token";
+    private static final String REISSUANCE_ACCESS_TOKEN_SUCCESS = "Access Token 재발급에 성공하였습니다.";
+    private static final String REISSUANCE_ACCESS_TOKEN_FAIL = "Access Token 재발급에 실패하였습니다.";
 
     private final MemberRepository memberRepository;
     private final PostsRepository postsRepository;
     private final ScrapRepository scrapRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RedisUtil redisUtil;
 
     @Value("${jwt.expiration}")
     private int jwtExpiration; // todo. 추후에 jwt라는 용어를 Access Token, Refresh Token으로 구분할 필요가 있음
@@ -127,5 +132,21 @@ public class MemberService {
         CookieUtil.addCookie(response, AUTHORIZATION, testJwt, jwtExpiration);
         CookieUtil.addCookie(response, REFRESH_TOKEN, testRefreshToken, refreshTokenExpiration);
         return testJwt;
+    }
+
+    /**
+     * Access Token 재발급
+     * - Redis에 key(Refresh Token)가 존재하면 value(Member Id)를 통해 Access Token 생성하여 Cookie 저장
+     */
+    public String reissuanceAccessToken(RefreshTokenRequestDto refreshTokenRequestDto, HttpServletResponse response) {
+        String memberId = redisUtil.findMemberIdByRefreshToken(refreshTokenRequestDto.getRefreshToken());
+
+        if(memberId != null) {
+            String accessToken = jwtTokenProvider.createRefreshToken(Long.valueOf(memberId));
+            CookieUtil.addCookie(response, AUTHORIZATION, accessToken, jwtExpiration);
+            return REISSUANCE_ACCESS_TOKEN_SUCCESS;
+        } else {
+            return REISSUANCE_ACCESS_TOKEN_FAIL;
+        }
     }
 }

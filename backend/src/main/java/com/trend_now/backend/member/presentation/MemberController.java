@@ -5,6 +5,7 @@ import com.trend_now.backend.comment.data.dto.CommentInfoDto;
 import com.trend_now.backend.comment.data.dto.CommentListPagingResponseDto;
 import com.trend_now.backend.member.application.MemberService;
 import com.trend_now.backend.member.data.dto.MyPageResponseDto;
+import com.trend_now.backend.member.data.dto.RefreshTokenRequestDto;
 import com.trend_now.backend.member.data.dto.UpdateNicknameRequestDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
@@ -140,5 +141,13 @@ public class MemberController {
             CommentListPagingResponseDto.of(FIND_MEMBER_COMMENTS_SUCCESS_MESSAGE,
                 commentsByMemberId.getTotalPages(), commentsByMemberId.getTotalElements(), commentsByMemberId.getContent()),
             HttpStatus.OK);
+    }
+
+    @PostMapping("/access-token")
+    @Operation(summary = "Access Token 재발급 API", description = "Access Token을 재발급합니다.")
+    public ResponseEntity<String> reissuanceAccessToken(
+            @RequestBody RefreshTokenRequestDto refreshTokenRequestDto,
+            HttpServletResponse response) {
+        return new ResponseEntity<>(memberService.reissuanceAccessToken(refreshTokenRequestDto, response), HttpStatus.OK);
     }
 }
