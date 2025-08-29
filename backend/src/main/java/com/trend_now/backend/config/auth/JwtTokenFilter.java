@@ -23,36 +23,53 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.security.sasl.AuthenticationException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class JwtTokenFilter extends GenericFilter {
+public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final CustomUserDetailsService customUserDetailsService;
 
     private static final String AUTHORIZATION = "Authorization";
     private static final String JWT_PREFIX = "Bearer ";
-
     private static final String INVALID_TOKEN = "유효하지 않은 토큰입니다.";
 
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+    /**
+     * 특정 path 요청은 filter 제외하도록 명시
+     * todo. 필요 부분은 아래에 추가
+     */
+    private final List<String> excludedPaths = Arrays.asList(
+            "/api/v1/member/login",
+            "/api/v1/member/access-token",
+            "/api/v1/member/test-jwt"
+    );
 
-        // HTTP 내부 데이터를 조금 더 편하게 쓸려고 다운캐스팅 진행
-        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-        HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String requestURI = request.getRequestURI();
+
+        // 제외할 경로인지 확인
+        return excludedPaths.stream()
+                .anyMatch(requestURI::startsWith);
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
         // HttpServletRequest 객체 Header에서 토큰 값 추출
-        String jwtToken = CookieUtil.getCookie(httpServletRequest, AUTHORIZATION)
+        String jwtToken = CookieUtil.getCookie(request, AUTHORIZATION)
                 .map(Cookie::getValue)
                 .orElse(null);
         log.info("[JwtTokenFilter.doFilter] Cookie에서 JWT 토큰 추출: {}", jwtToken);
@@ -76,28 +93,27 @@ public class JwtTokenFilter extends GenericFilter {
                  */
                 // Authentication 객체 생성
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(claims.getSubject());
-                log.info("[JwtTokenFilter.doFilter] 생성된 UserDetails 객체 데이터 : {} ", userDetails.toString());
+                log.info("[JwtTokenFilter.doFilterInternal] 생성된 UserDetails 객체 데이터 : {} ", userDetails.toString());
 
                 Authentication authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, jwtToken, userDetails.getAuthorities());
 
-                log.info("[JwtTokenFilter.doFilter] 생성된 Authentication 객체 데이터 : {} ", authentication);
+                log.info("[JwtTokenFilter.doFilterInternal] 생성된 Authentication 객체 데이터 : {} ", authentication);
                 // SecurityContextHolder 객체에 사용자 정보 객체 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
 
-            chain.doFilter(request, response);
+            filterChain.doFilter(request, response);
         }
 
         // JWT 검증에서 예외가 발생하면 doFilter() 메서드를 통해 필터 체인에 접근하지 않고 사용자에게 에러를 반환
         catch (Exception e) {
             log.error("[JwtTokenFilter.doFilter] : JWT이 올바르지 않습니다.");
             e.printStackTrace();
-            httpServletResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
-            httpServletResponse.setContentType("application/json");
-            httpServletResponse.getWriter().write("invalid token");
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setContentType("application/json");
+            response.getWriter().write("invalid token");
         }
-
     }
 
     /**
