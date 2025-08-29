@@ -1,17 +1,22 @@
 package com.trend_now.backend.member.application;
 
+import com.trend_now.backend.common.CookieUtil;
+import com.trend_now.backend.common.RedisUtil;
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.config.auth.oauth.OAuthAttributes;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.data.dto.MyPageResponseDto;
+import com.trend_now.backend.member.data.dto.RefreshTokenRequestDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.repository.PostsRepository;
 import com.trend_now.backend.post.repository.ScrapRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,11 +30,22 @@ public class MemberService {
 
     private static final String NOT_EXIST_MEMBER = "존재하지 않는 회원입니다.";
     private static final String DUPLICATE_NICKNAME = "이미 존재하는 닉네임입니다.";
+    private static final String AUTHORIZATION = "Authorization";
+    private static final String REFRESH_TOKEN = "refresh-token";
+    private static final String REISSUANCE_ACCESS_TOKEN_SUCCESS = "Access Token 재발급에 성공하였습니다.";
+    private static final String REISSUANCE_ACCESS_TOKEN_FAIL = "Access Token 재발급에 실패하였습니다.";
 
     private final MemberRepository memberRepository;
     private final PostsRepository postsRepository;
     private final ScrapRepository scrapRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RedisUtil redisUtil;
+
+    @Value("${jwt.expiration}")
+    private int jwtExpiration; // todo. 추후에 jwt라는 용어를 Access Token, Refresh Token으로 구분할 필요가 있음
+
+    @Value("${jwt.refresh-token.expiration}")
+    private int refreshTokenExpiration;
 
     /**
      * 마이페이지 조회
@@ -97,7 +113,7 @@ public class MemberService {
      * - test 계정이 없으면 해당 계정을 저장 후, id 값을 가져와 JWT 값 생성
      */
     @Transactional
-    public String getTestJwt() {
+    public String getTestJwt(HttpServletResponse response) {
         Members testMember = memberRepository.findBySnsId("test_snsId")
                 .orElseGet(
                         () -> memberRepository.save(
@@ -111,7 +127,26 @@ public class MemberService {
                 );
 
         String testJwt = jwtTokenProvider.createToken(testMember.getId());
-        log.info("[MemberService.getTestJwt] : 테스트용 JWT = {}", testJwt);
+        String testRefreshToken = jwtTokenProvider.createRefreshToken(testMember.getId());
+        log.info("[MemberService.getTestJwt] : 테스트용 JWT = {}, Refresh Token {}", testJwt, testRefreshToken);
+        CookieUtil.addCookie(response, AUTHORIZATION, testJwt, jwtExpiration);
+        CookieUtil.addCookie(response, REFRESH_TOKEN, testRefreshToken, refreshTokenExpiration);
         return testJwt;
+    }
+
+    /**
+     * Access Token 재발급
+     * - Redis에 key(Refresh Token)가 존재하면 value(Member Id)를 통해 Access Token 생성하여 Cookie 저장
+     */
+    public String reissuanceAccessToken(RefreshTokenRequestDto refreshTokenRequestDto, HttpServletResponse response) {
+        String memberId = redisUtil.findMemberIdByRefreshToken(refreshTokenRequestDto.getRefreshToken());
+
+        if(memberId != null) {
+            String accessToken = jwtTokenProvider.createRefreshToken(Long.valueOf(memberId));
+            CookieUtil.addCookie(response, AUTHORIZATION, accessToken, jwtExpiration);
+            return REISSUANCE_ACCESS_TOKEN_SUCCESS;
+        } else {
+            return REISSUANCE_ACCESS_TOKEN_FAIL;
+        }
     }
 }
