@@ -21,11 +21,13 @@ public class RedisUtil {
 
     /**
      * Redis에 Refresh Token 저장
+     * - key가 Refresh Token, value가 Member Id가 된다.
+     * - Access Token 재발급 시, key로서 Refresh Token을 받기 위함
      */
     public void saveRefreshToken(String refreshToken, Long memberId, int refreshTokenExpiration) {
         redisTemplate.opsForValue().set(
-                String.valueOf(memberId),
                 refreshToken,
+                String.valueOf(memberId),
                 Duration.ofMinutes(refreshTokenExpiration)
         );
 

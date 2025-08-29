@@ -63,7 +63,7 @@ public class JwtTokenProvider {
     /**
      *  Refresh Token 생성 메서드
      *  - Redis에 아래 형식의 key : value 를 저장한다.
-     *      - [유저 식별자] : [Refresh Token 문자열]
+     *      - [Refresh Token 문자열] : [유저 식별자]
      *      - Redis 데이터 만료 시간은 yml에 지정
      *  - Redis에 동일 key(유저 식별자)가 존재하면 Redis 자료구조에 의해 value(Refresh Token)과 만료 시간이 새 것으로 대체
      */
