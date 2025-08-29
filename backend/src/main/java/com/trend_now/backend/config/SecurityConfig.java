@@ -53,7 +53,7 @@ public class SecurityConfig {
             // 토큰 방식을 이용할 것이니 sessionManagement 비활성화
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-            // 특정 url 패턴에 대해서는 security filter에서 제외(Authentication 객체를 안만들겠다는 의미)
+            // 특정 url 패턴에 대해서는 security filter에서 예외가 발생해도 정상 실행(Authentication 객체를 안만들겠다는 의미)
             .authorizeHttpRequests(a -> a
                 .requestMatchers(HttpMethod.GET,
                     // 게시판과 게시글 조회 허용
@@ -66,7 +66,8 @@ public class SecurityConfig {
                     "/api/v1/member/login/**", "/swagger-ui/**", "/v3/api-docs/**",
                     "/api/v1/news/realtime", "/api/v1/timeSync", "/api/v1/subscribe",
                     "/api/v1/unsubscribe", "/sse-test", "/api/v1/member/test-jwt",
-                    "/oauth2/authorization/**", "/login/oauth2/code/**" // OAuth2 로그인 관련 URL 허용
+                    "/oauth2/authorization/**", "/login/oauth2/code/**", // OAuth2 로그인 관련 URL 허용
+                    "/api/v1/member/access-token"   // Access Token 재발급
                 ).permitAll()
                 .anyRequest().authenticated())
             // 인증되지 않은 사용자가 접근할 경우, CustomAuthenticationEntryPoint를 통해 예외 처리
