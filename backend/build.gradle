@@ -37,7 +37,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
 	// gemini
-	implementation 'com.google.genai:google-genai:1.0.0'
+	implementation 'com.google.genai:google-genai:1.15.0'
 
 	// swagger 의존성 주입
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
