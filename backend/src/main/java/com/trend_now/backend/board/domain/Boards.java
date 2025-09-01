@@ -34,6 +34,9 @@ public class Boards extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private String summary;
+
     @Enumerated(EnumType.STRING)
     private BoardCategory boardCategory;
 
