@@ -69,7 +69,7 @@ public class BoardsControllerTest {
                     .name("B" + i)
                     .boardCategory(BoardCategory.REALTIME)
                     .build();
-            Top10 top10 = new Top10(i, "B" + i);
+            Top10 top10 = new Top10(i, "B" + i, "s");
             this.boards.add(boards);
             this.top10s.add(top10);
         }
@@ -77,7 +77,7 @@ public class BoardsControllerTest {
         redisTemplate.getConnectionFactory().getConnection().flushDb();
         for (int i = 0; i < BOARD_COUNT; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, "테스트 요약");
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
