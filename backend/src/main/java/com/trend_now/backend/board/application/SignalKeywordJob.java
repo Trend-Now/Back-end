@@ -6,6 +6,7 @@ import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10;
 import com.trend_now.backend.board.dto.Top10WithChange;
+import com.trend_now.backend.keyword_summarize.GeminiService;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -33,6 +34,7 @@ public class SignalKeywordJob implements Job {
         BoardRedisService boardRedisService = applicationContext.getBean(BoardRedisService.class);
         RedisPublisher redisPublisher = applicationContext.getBean(RedisPublisher.class);
         BoardCache boardCache = applicationContext.getBean(BoardCache.class);
+        GeminiService geminiService = applicationContext.getBean(GeminiService.class);
 
         try {
             SignalKeywordDto signalKeywordDto = signalKeywordService.fetchRealTimeKeyword().block();
@@ -52,7 +54,13 @@ public class SignalKeywordJob implements Job {
                 Top10 top10 = signalKeywordDto.getTop10().get(i);
                 BoardSaveDto boardSaveDto = BoardSaveDto.from(top10);
 
-                Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+                // 새로 등재된 키워드라면 AI로 이슈 요약
+                String boardSummary = "";
+                if (top10.getState().equals("n")) {
+                    boardSummary = geminiService.summarizeKeyword(boardSaveDto.getBoardName());
+                }
+
+                Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, boardSummary);
                 boardSaveDto.setBoardId(boardId);
                 boardRedisService.saveBoardRedis(boardSaveDto, i + 1);
 

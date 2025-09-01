@@ -24,12 +24,13 @@ public class BoardService {
     private final static String BOARD_NOT_FOUND_MESSAGE = "해당 게시판이 존재하지 않습니다: ";
 
     @Transactional
-    public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto) {
+    public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto, String boardSummary) {
         Boards board = boardRepository.findByName(boardSaveDto.getBoardName())
             .orElseGet(() -> boardRepository.save(
                     Boards.builder()
                         .name(boardSaveDto.getBoardName())
                         .boardCategory(boardSaveDto.getBoardCategory())
+                        .summary(boardSummary)
                         .build()
                 )
             );
