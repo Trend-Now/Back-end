@@ -1,4 +1,4 @@
-package com.trend_now.backend.keyword_summarize.dto;
+package com.trend_now.backend.client.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;

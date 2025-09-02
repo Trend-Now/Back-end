@@ -1,14 +1,14 @@
-package com.trend_now.backend.keyword_summarize;
+package com.trend_now.backend.client;
 
-import com.trend_now.backend.keyword_summarize.dto.NaverNewsResponseDto;
+import com.trend_now.backend.client.dto.NaverNewsResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-@Service
+@Component
 @RequiredArgsConstructor
-public class NaverApiService {
+public class NaverApiClient {
     private final WebClient.Builder webClientBuilder;
 
     private static final String NEWS_API_URL = "https://openapi.naver.com/v1/search/news.json";
