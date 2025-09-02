@@ -53,8 +53,8 @@ public class PostsService {
     private static final String NOT_MODIFIABLE_POSTS = "게시글이 수정/삭제 불가능한 상태입니다.";
     private static final String POST_COOLDOWN_MESSAGE = "게시글 작성은 %s초 후에 가능합니다.";
     private static final String LAST_POST_TIME_KEY = "last_post_time";
-
-    private static final String BOARD_USER_KEY_PREFIX = "board:%s:user:%s";
+    public static final String POST_COOLDOWN_PREFIX = "post-cooldown:";
+    private static final String POST_COOLDOWN_KEY = "board:%s:user:%s";
     private static final long POST_LIMIT_SECONDS = 300;
 
     private final BoardRedisService boardRedisService;
@@ -145,7 +145,7 @@ public class PostsService {
      * 게시글 작성 시, 같은 사용자가 같은 게시판에서 5분 이내에 게시글을 작성할 수 있는지 확인하는 메서드
      */
     public CheckPostCooldownResponse checkPostCooldown(Long boardId, Long memberId) {
-        String boardUserKey = String.format(BOARD_USER_KEY_PREFIX, boardId, memberId);
+        String boardUserKey = String.format(POST_COOLDOWN_PREFIX + POST_COOLDOWN_KEY, boardId, memberId);
         long postCoolDown = getPostCooldown(boardUserKey);
         // 같은 사용자가 같은 게시판에서의 cooldown이 남아있는지 확인
         if (postCoolDown > 0) {
@@ -168,7 +168,7 @@ public class PostsService {
             }
         }
 
-        String boardUserKey = String.format(BOARD_USER_KEY_PREFIX, boardId, members.getId());
+        String boardUserKey = String.format(POST_COOLDOWN_PREFIX + POST_COOLDOWN_KEY, boardId, members.getId());
         long postCoolDown = getPostCooldown(boardUserKey);
         // 같은 사용자가 같은 게시판에서의 cooldown이 남아있는지 확인
         if (postCoolDown > 0) {

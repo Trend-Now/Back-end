@@ -1,5 +1,7 @@
 package com.trend_now.backend.config;
 
+import static com.trend_now.backend.post.application.PostsService.POST_COOLDOWN_PREFIX;
+
 import com.trend_now.backend.board.application.RedisPublisher;
 import com.trend_now.backend.board.dto.RealTimeBoardKeyExpiredEvent;
 import com.trend_now.backend.comment.application.CommentsService;
@@ -44,9 +46,12 @@ public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
     @Override
     public void onMessage(Message message, byte[] pattern) {
         String messageToStr = message.toString();
-
         // 게시판이 만료 되면 게시판에 속한 게시글과 댓글의 modifiable를 false로 변경
         String[] key = messageToStr.split(BOARD_KEY_DELIMITER);
+        // 만약 게시판 쿨다운 TTL이라면 무시
+        if (key[0].equals(POST_COOLDOWN_PREFIX)) {
+            return;
+        }
         postsService.updateModifiable(Long.parseLong(key[1]));
         commentsService.updateModifiable(Long.parseLong(key[1]));
 
