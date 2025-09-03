@@ -77,7 +77,7 @@ public class BoardsControllerTest {
         redisTemplate.getConnectionFactory().getConnection().flushDb();
         for (int i = 0; i < BOARD_COUNT; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, "테스트 요약");
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, "s");
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
