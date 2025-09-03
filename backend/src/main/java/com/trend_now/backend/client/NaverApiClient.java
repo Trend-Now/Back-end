@@ -18,12 +18,12 @@ public class NaverApiClient {
     @Value("${spring.security.oauth2.client.registration.naver.client-secret}")
     private String clientSecret;
 
-    public NaverNewsResponseDto searchNewsByKeyword(String keyword) {
+    public NaverNewsResponseDto searchNewsByKeyword(String keyword, int displayCount) {
         WebClient webClient = webClientBuilder.baseUrl(NEWS_API_URL).build();
         return webClient.get()
             .uri(uriBuilder -> uriBuilder
                 .queryParam("query", keyword)
-                .queryParam("display", 5)
+                .queryParam("display", displayCount)
                 .build())
             .header("X-Naver-Client-Id", clientId)
             .header("X-Naver-Client-Secret", clientSecret)
