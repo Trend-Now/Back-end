@@ -6,6 +6,7 @@ import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10;
 import com.trend_now.backend.board.dto.Top10WithChange;
+import com.trend_now.backend.client.GeminiApiClient;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -52,7 +53,7 @@ public class SignalKeywordJob implements Job {
                 Top10 top10 = signalKeywordDto.getTop10().get(i);
                 BoardSaveDto boardSaveDto = BoardSaveDto.from(top10);
 
-                Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+                Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, top10.getState());
                 boardSaveDto.setBoardId(boardId);
                 boardRedisService.saveBoardRedis(boardSaveDto, i + 1);
 

@@ -10,10 +10,8 @@ public class WebClientConfig {
     private static final String SIGNAL_BZ_BASE_URL = "https://api.signal.bz";
 
     @Bean
-    public WebClient webClient() {
-        return WebClient.builder()
-                .baseUrl(SIGNAL_BZ_BASE_URL)
-                .build();
+    public WebClient.Builder webClient() {
+        return WebClient.builder();
     }
 }
 
