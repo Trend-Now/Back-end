@@ -1,7 +1,7 @@
 package com.trend_now.backend.member.application;
 
 import com.trend_now.backend.common.CookieUtil;
-import com.trend_now.backend.common.RedisUtil;
+import com.trend_now.backend.common.MemberRedisService;
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.config.auth.oauth.OAuthAttributes;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
@@ -39,7 +39,7 @@ public class MemberService {
     private final PostsRepository postsRepository;
     private final ScrapRepository scrapRepository;
     private final JwtTokenProvider jwtTokenProvider;
-    private final RedisUtil redisUtil;
+    private final MemberRedisService memberRedisService;
 
     @Value("${jwt.expiration}")
     private int jwtExpiration; // todo. 추후에 jwt라는 용어를 Access Token, Refresh Token으로 구분할 필요가 있음
@@ -139,7 +139,7 @@ public class MemberService {
      * - Redis에 key(Refresh Token)가 존재하면 value(Member Id)를 통해 Access Token 생성하여 Cookie 저장
      */
     public String reissuanceAccessToken(RefreshTokenRequestDto refreshTokenRequestDto, HttpServletResponse response) {
-        String memberId = redisUtil.findMemberIdByRefreshToken(refreshTokenRequestDto.getRefreshToken());
+        String memberId = memberRedisService.findMemberIdByRefreshToken(refreshTokenRequestDto.getRefreshToken());
 
         if(memberId != null) {
             String accessToken = jwtTokenProvider.createRefreshToken(Long.valueOf(memberId));

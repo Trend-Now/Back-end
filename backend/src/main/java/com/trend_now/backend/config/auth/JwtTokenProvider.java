@@ -1,14 +1,12 @@
 package com.trend_now.backend.config.auth;
 
-import com.trend_now.backend.common.RedisUtil;
+import com.trend_now.backend.common.MemberRedisService;
 import com.trend_now.backend.common.Util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -24,13 +22,13 @@ public class JwtTokenProvider {
     private Key SECRET_KEY;     // 서명에 사용되는 secret key
     private final int refreshTokenExpiration;       // Refresh Token 만료 기간
 
-    private final RedisUtil redisUtil;
+    private final MemberRedisService memberRedisService;
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, @Value("${jwt.expiration}") int expiration,
-                            RedisUtil redisUtil, @Value("${jwt.refresh-token.expiration}") int refreshTokenExpiration) {
+                            MemberRedisService memberRedisService, @Value("${jwt.refresh-token.expiration}") int refreshTokenExpiration) {
         this.secretKey = secretKey;
         this.expiration = expiration;
-        this.redisUtil = redisUtil;
+        this.memberRedisService = memberRedisService;
         this.refreshTokenExpiration = refreshTokenExpiration;
 
         /**
@@ -72,7 +70,7 @@ public class JwtTokenProvider {
         log.info("[JwtTokenProvider.createRefreshToken] 생성된 Refresh Token = {}", refreshToken);
 
         // Redis에 저장
-        redisUtil.saveRefreshToken(refreshToken, memberId, refreshTokenExpiration);
+        memberRedisService.saveRefreshToken(refreshToken, memberId, refreshTokenExpiration);
 
         return refreshToken;
     }

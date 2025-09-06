@@ -6,16 +6,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.Optional;
 
-/**
- * RedisUtil 클래스
- * - RedisTemplate 기능들을 하나의 Util에서 관리하기 위한 목적
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class RedisUtil {
+public class MemberRedisService {
 
     private final RedisTemplate<String, String> redisTemplate;
 
