@@ -24,7 +24,7 @@ public class JwtTokenProvider {
 
     private final MemberRedisService memberRedisService;
 
-    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, @Value("${jwt.expiration}") int expiration,
+    public JwtTokenProvider(@Value("${jwt.access-token.secret}") String secretKey, @Value("${jwt.access-token.expiration}") int expiration,
                             MemberRedisService memberRedisService, @Value("${jwt.refresh-token.expiration}") int refreshTokenExpiration) {
         this.secretKey = secretKey;
         this.expiration = expiration;
@@ -41,10 +41,10 @@ public class JwtTokenProvider {
     }
 
     /**
-     *  JWT 토큰을 생성할 때, 사용자 식별이 가능한 PK 값을 이용
+     *  Access Token 토큰을 생성할 때, 사용자 식별이 가능한 PK 값을 이용
      *  - setSubject() 메서드를 통해 memberId를 JWT의 sub Claim에 저장
      */
-    public String createToken(Long memberId) {
+    public String createAccessToken(Long memberId) {
         Claims claims = Jwts.claims().setSubject(String.valueOf(memberId));
         Date now = new Date();
         String token = Jwts.builder()
@@ -54,7 +54,7 @@ public class JwtTokenProvider {
                 .signWith(SECRET_KEY)
                 .compact();
 
-        log.info("[JwtTokenProvider.createToken] 생성된 JWT = {}", token);
+        log.info("[JwtTokenProvider.createAccessToken] 생성된 JWT = {}", token);
         return token;
     }
 

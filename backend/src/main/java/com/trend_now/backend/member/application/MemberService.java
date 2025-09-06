@@ -30,8 +30,8 @@ public class MemberService {
 
     private static final String NOT_EXIST_MEMBER = "존재하지 않는 회원입니다.";
     private static final String DUPLICATE_NICKNAME = "이미 존재하는 닉네임입니다.";
-    private static final String AUTHORIZATION = "Authorization";
-    private static final String REFRESH_TOKEN = "refresh-token";
+    private static final String ACCESS_TOKEN_KEY = "access_token";
+    private static final String REFRESH_TOKEN_KEY = "refresh_token";
     private static final String REISSUANCE_ACCESS_TOKEN_SUCCESS = "Access Token 재발급에 성공하였습니다.";
     private static final String REISSUANCE_ACCESS_TOKEN_FAIL = "Access Token 재발급에 실패하였습니다.";
 
@@ -41,8 +41,8 @@ public class MemberService {
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberRedisService memberRedisService;
 
-    @Value("${jwt.expiration}")
-    private int jwtExpiration; // todo. 추후에 jwt라는 용어를 Access Token, Refresh Token으로 구분할 필요가 있음
+    @Value("${jwt.access-token.expiration}")
+    private int accessTokenExpiration;
 
     @Value("${jwt.refresh-token.expiration}")
     private int refreshTokenExpiration;
@@ -126,11 +126,11 @@ public class MemberService {
                         )
                 );
 
-        String testJwt = jwtTokenProvider.createToken(testMember.getId());
+        String testJwt = jwtTokenProvider.createAccessToken(testMember.getId());
         String testRefreshToken = jwtTokenProvider.createRefreshToken(testMember.getId());
         log.info("[MemberService.getTestJwt] : 테스트용 JWT = {}, Refresh Token {}", testJwt, testRefreshToken);
-        CookieUtil.addCookie(response, AUTHORIZATION, testJwt, jwtExpiration);
-        CookieUtil.addCookie(response, REFRESH_TOKEN, testRefreshToken, refreshTokenExpiration);
+        CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, testJwt, accessTokenExpiration);
+        CookieUtil.addCookie(response, REFRESH_TOKEN_KEY, testRefreshToken, refreshTokenExpiration);
         return testJwt;
     }
 
@@ -143,7 +143,7 @@ public class MemberService {
 
         if(memberId != null) {
             String accessToken = jwtTokenProvider.createRefreshToken(Long.valueOf(memberId));
-            CookieUtil.addCookie(response, AUTHORIZATION, accessToken, jwtExpiration);
+            CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, accessToken, accessTokenExpiration);
             return REISSUANCE_ACCESS_TOKEN_SUCCESS;
         } else {
             return REISSUANCE_ACCESS_TOKEN_FAIL;

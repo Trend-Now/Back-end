@@ -61,14 +61,14 @@ class JwtTokenFilterTest {
 
     private Members testMember;
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.access-token.secret}")
     private String secretKey;
 
-    @Value("${jwt.expiration}")
+    @Value("${jwt.access-token.expiration}")
     private int expiration;
 
     private static final String NOT_EXIST_MEMBER = "MEMBER_ID 일치하는 회원이 없습니다.";
-    private static final String AUTHORIZATION = "Authorization";
+    private static final String ACCESS_TOKEN_KEY = "access_token";
 
     @BeforeEach
     public void setUp() {
@@ -136,8 +136,8 @@ class JwtTokenFilterTest {
                 .compact();
 
         // when & then
-        // validateToken() 메서드에 의해서 검증 안된 JWT는 null이 반환
-        assertThat(jwtTokenFilter.validateToken(expiredToken)).isNull();
+        // validateAccessToken() 메서드에 의해서 검증 안된 JWT는 null이 반환
+        assertThat(jwtTokenFilter.validateAccessToken(expiredToken)).isNull();
     }
 
     @Test
@@ -151,7 +151,7 @@ class JwtTokenFilterTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
 
         // 쿠키에 Access Token을 포함한 HTTP 요청 생성
-        Cookie jwtCookie = new Cookie(AUTHORIZATION, expectedJwtToken);
+        Cookie jwtCookie = new Cookie(ACCESS_TOKEN_KEY, expectedJwtToken);
         request.setCookies(jwtCookie);
 
         // when
@@ -168,7 +168,7 @@ class JwtTokenFilterTest {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if (AUTHORIZATION.equals(cookie.getName())) {
+                if (ACCESS_TOKEN_KEY.equals(cookie.getName())) {
                     log.info("Cookie에서 JWT 토큰 추출: {}", cookie.getValue());
                     return cookie.getValue();
                 }

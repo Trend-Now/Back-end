@@ -38,11 +38,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final CustomUserDetailsService customUserDetailsService;
 
-    private static final String AUTHORIZATION = "Authorization";
+    private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String JWT_PREFIX = "Bearer ";
     private static final String INVALID_TOKEN = "유효하지 않은 토큰입니다.";
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.access-token.secret}")
     private String secretKey;
 
     /**
@@ -68,16 +68,16 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // HttpServletRequest 객체 Header에서 토큰 값 추출
-        String jwtToken = CookieUtil.getCookie(request, AUTHORIZATION)
+        // HttpServletRequest 객체 Cookie에서 토큰 값 추출
+        String accessToken = CookieUtil.getCookie(request, ACCESS_TOKEN_KEY)
                 .map(Cookie::getValue)
                 .orElse(null);
-        log.info("[JwtTokenFilter.doFilter] Cookie에서 JWT 토큰 추출: {}", jwtToken);
+        log.info("[JwtTokenFilter.doFilter] Cookie에서 JWT 토큰 추출: {}", accessToken);
 
         try {
-            if (jwtToken != null) {
-                // jwt 검증 및 Claims 객체 추출
-                Claims claims = validateToken(jwtToken);
+            if (accessToken != null) {
+                // Access Token 검증 및 Claims 객체 추출
+                Claims claims = validateAccessToken(accessToken);
                 if (claims == null) {
                     throw new InvalidTokenException(INVALID_TOKEN);
                 }
@@ -96,7 +96,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 log.info("[JwtTokenFilter.doFilterInternal] 생성된 UserDetails 객체 데이터 : {} ", userDetails.toString());
 
                 Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, jwtToken, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(userDetails, accessToken, userDetails.getAuthorities());
 
                 log.info("[JwtTokenFilter.doFilterInternal] 생성된 Authentication 객체 데이터 : {} ", authentication);
                 // SecurityContextHolder 객체에 사용자 정보 객체 저장
@@ -108,7 +108,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         // JWT 검증에서 예외가 발생하면 doFilter() 메서드를 통해 필터 체인에 접근하지 않고 사용자에게 에러를 반환
         catch (Exception e) {
-            log.error("[JwtTokenFilter.doFilter] : JWT이 올바르지 않습니다.");
+            log.error("[JwtTokenFilter.doFilter] : Access Token이 올바르지 않습니다.");
             e.printStackTrace();
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setContentType("application/json");
@@ -123,15 +123,15 @@ public class JwtTokenFilter extends OncePerRequestFilter {
      *  - 일치하면 true, 불일치면 false 반환
      *  - getBody()를 통해 페이로드 부분(Claims) 추출
      */
-    public Claims validateToken(String jwt) {
+    public Claims validateAccessToken(String accessToken) {
         try {
             return Jwts.parserBuilder()
                     .setSigningKey(secretKey)
                     .build()
-                    .parseClaimsJws(jwt)
+                    .parseClaimsJws(accessToken)
                     .getBody();
         } catch (Exception e) {
-            log.error("[JwtTokenFilter.validateToken] : 유효하지 않은 JWT입니다. {}", e.getMessage());
+            log.error("[JwtTokenFilter.validateAccessToken] : 유효하지 않은 Access Token 입니다. {}", e.getMessage());
             return null;
         }
     }

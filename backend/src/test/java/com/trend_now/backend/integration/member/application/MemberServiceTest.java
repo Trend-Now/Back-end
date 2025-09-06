@@ -104,8 +104,8 @@ class MemberServiceTest {
         // 생성된 JWT 값은 유효해야 한다.
         for (String jwt : jwts) {
             // JWT 토큰이 유효한지 검증
-            // jwtTokenFilter.validateToken(jwt) 반환이 null이 아니면 유효한 토큰
-            Claims claims = jwtTokenFilter.validateToken(jwt);
+            // jwtTokenFilter.validateAccessToken(jwt) 반환이 null이 아니면 유효한 토큰
+            Claims claims = jwtTokenFilter.validateAccessToken(jwt);
             assertThat(claims).isNotNull();
 
             // Claims에서 사용자 ID 추출 (subject 또는 다른 필드명 사용)
