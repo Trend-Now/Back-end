@@ -6,6 +6,8 @@ import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10;
 import com.trend_now.backend.board.dto.Top10WithChange;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -54,7 +56,16 @@ public class SignalKeywordJob implements Job {
 
                 Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
                 boardSaveDto.setBoardId(boardId);
-                boardRedisService.saveBoardRedis(boardSaveDto, i + 1);
+
+                // score 값을 현재 Instant 시간에서 2시간이 지난 값으로 설정하여 saveBoardRedis에 전달
+                // i는 10번을 순회하면서 첫 번째는 0.01, 두 번째는 0.02, ... , 열 번째는 0.1의 값을 위 시간에서 더한다
+
+                Instant now = Instant.now();
+                Instant twoHoursLater = now.plus(2, ChronoUnit.HOURS);
+                long epochMilli = twoHoursLater.toEpochMilli(); // UTC 기준 2시간이 지난 시간을 밀리초로 변환
+
+                double rank = (i + 1) * 0.01;
+                boardRedisService.saveBoardRedis(boardSaveDto, epochMilli + rank);
 
                 /* 동일 객체 참조로 내부 원본의 각 검색어의 게시판 ID를 포함하여 반환 */
                 top10WithChange.getTop10WithDiff().get(i).setBoardId(boardId);
