@@ -14,6 +14,7 @@ import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.MyPostListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class MemberController {
     private static final String FIND_SCRAP_POSTS_SUCCESS_MESSAGE = "사용자가 스크랩한 게시글 조회 완료";
     private static final String FIND_MEMBER_POSTS_SUCCESS_MESSAGE = "사용자가 작성한 게시글 조회 완료";
     private static final String FIND_MEMBER_COMMENTS_SUCCESS_MESSAGE = "사용자가 작성한 댓글 조회 완료";
+    private static final String REISSUANCE_ACCESS_TOKEN_SUCCESS = "Access Token 재발급에 성공하였습니다.";
 
 
     // 연결 확인
@@ -146,8 +148,8 @@ public class MemberController {
     @PostMapping("/access-token")
     @Operation(summary = "Access Token 재발급 API", description = "Access Token을 재발급합니다.")
     public ResponseEntity<String> reissuanceAccessToken(
-            @RequestBody RefreshTokenRequestDto refreshTokenRequestDto,
+            HttpServletRequest request,
             HttpServletResponse response) {
-        return new ResponseEntity<>(memberService.reissuanceAccessToken(refreshTokenRequestDto, response), HttpStatus.OK);
+        return new ResponseEntity<>(memberService.reissuanceAccessToken(request, response), HttpStatus.OK);
     }
 }

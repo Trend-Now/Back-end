@@ -5,6 +5,7 @@ import com.trend_now.backend.common.MemberRedisService;
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.config.auth.oauth.OAuthAttributes;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
+import com.trend_now.backend.exception.CustomException.InvalidTokenException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.data.dto.MyPageResponseDto;
 import com.trend_now.backend.member.data.dto.RefreshTokenRequestDto;
@@ -13,6 +14,8 @@ import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.repository.PostsRepository;
 import com.trend_now.backend.post.repository.ScrapRepository;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +37,7 @@ public class MemberService {
     private static final String REFRESH_TOKEN_KEY = "refresh_token";
     private static final String REISSUANCE_ACCESS_TOKEN_SUCCESS = "Access Token 재발급에 성공하였습니다.";
     private static final String REISSUANCE_ACCESS_TOKEN_FAIL = "Access Token 재발급에 실패하였습니다.";
+    private static final String NOT_EXIST_REFRESH_TOKEN = "Refresh Token이 존재하지 않습니다.";
 
     private final MemberRepository memberRepository;
     private final PostsRepository postsRepository;
@@ -138,15 +142,22 @@ public class MemberService {
      * Access Token 재발급
      * - Redis에 key(Refresh Token)가 존재하면 value(Member Id)를 통해 Access Token 생성하여 Cookie 저장
      */
-    public String reissuanceAccessToken(RefreshTokenRequestDto refreshTokenRequestDto, HttpServletResponse response) {
-        String memberId = memberRedisService.findMemberIdByRefreshToken(refreshTokenRequestDto.getRefreshToken());
+    public String reissuanceAccessToken(HttpServletRequest request, HttpServletResponse response) {
+        Cookie refreshToken = CookieUtil.getCookie(request, REFRESH_TOKEN_KEY).orElseThrow(
+                () -> new InvalidTokenException(NOT_EXIST_REFRESH_TOKEN)
+        );
 
-        if(memberId != null) {
-            String accessToken = jwtTokenProvider.createAccessToken(Long.valueOf(memberId));
+        String redisMemberId = memberRedisService.findMemberIdByRefreshToken(refreshToken.getValue());
+
+        log.info("[MemberService.reissuanceAccessToken] : 추출된 Refresh Token = {}", refreshToken.getValue());
+        log.info("[MemberService.reissuanceAccessToken] : 추출된 redisMemberId = {}", redisMemberId);
+
+        if(redisMemberId != null) {
+            String accessToken = jwtTokenProvider.createAccessToken(Long.valueOf(redisMemberId));
             CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, accessToken, accessTokenExpiration);
             return REISSUANCE_ACCESS_TOKEN_SUCCESS;
         } else {
-            return REISSUANCE_ACCESS_TOKEN_FAIL;
+            throw new NotFoundException(NOT_EXIST_MEMBER);
         }
     }
 }
