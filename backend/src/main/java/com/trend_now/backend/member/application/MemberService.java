@@ -142,7 +142,7 @@ public class MemberService {
         String memberId = memberRedisService.findMemberIdByRefreshToken(refreshTokenRequestDto.getRefreshToken());
 
         if(memberId != null) {
-            String accessToken = jwtTokenProvider.createRefreshToken(Long.valueOf(memberId));
+            String accessToken = jwtTokenProvider.createAccessToken(Long.valueOf(memberId));
             CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, accessToken, accessTokenExpiration);
             return REISSUANCE_ACCESS_TOKEN_SUCCESS;
         } else {
