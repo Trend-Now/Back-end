@@ -1,6 +1,7 @@
 package com.trend_now.backend.config.auth;
 
 import com.trend_now.backend.common.AesUtil;
+import com.trend_now.backend.common.Util;
 import com.trend_now.backend.member.application.MemberRedisService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -69,7 +70,7 @@ public class JwtTokenProvider {
      *  - Redis에 동일 key(유저 식별자)가 존재하면 Redis 자료구조에 의해 value(Refresh Token)과 만료 시간이 새 것으로 대체
      */
     public String createRefreshToken(Long memberId) {
-        String refreshToken =aesUtil.encrypt(memberId.toString());
+        String refreshToken = Util.createUuid();
 
         log.info("[JwtTokenProvider.createRefreshToken] 생성된 Refresh Token = {}", refreshToken);
 
