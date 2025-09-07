@@ -1,6 +1,5 @@
 package com.trend_now.backend.member.application;
 
-import com.trend_now.backend.common.AesUtil;
 import com.trend_now.backend.common.CookieUtil;
 import com.trend_now.backend.config.auth.JwtTokenFilter;
 import com.trend_now.backend.config.auth.JwtTokenProvider;
@@ -46,7 +45,6 @@ public class MemberService {
     private final ScrapRepository scrapRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberRedisService memberRedisService;
-    private final AesUtil aesUtil;
     private final JwtTokenFilter jwtTokenFilter;
 
     @Value("${jwt.access-token.expiration}")
@@ -162,13 +160,12 @@ public class MemberService {
                 , expiredAccessToken.getValue(), refreshToken.getValue(), memberIdInAccessToken);
 
         // Redis에 key(Member Id)의 value(Refresh Token)이 입력된 Refresh Token과 일치하는지 확인
-        try {
-            memberRedisService.isMatchedRefreshTokenInRedis(memberIdInAccessToken, refreshToken.getValue());
-        } catch (Exception e) {
+        if(memberRedisService.isMatchedRefreshTokenInRedis(memberIdInAccessToken, refreshToken.getValue())) {
+            String reissuancedAccessToken = jwtTokenProvider.createAccessToken(memberIdInAccessToken);
+            CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, reissuancedAccessToken, accessTokenExpiration);
+            return REISSUANCE_ACCESS_TOKEN_SUCCESS;
+        } else {
             throw new NotFoundException(NOT_EXIST_MATCHED_REFRESH_TOKEN_IN_REDIS);
         }
-        String reissuancedAccessToken = jwtTokenProvider.createAccessToken(memberIdInAccessToken);
-        CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, reissuancedAccessToken, accessTokenExpiration);
-        return REISSUANCE_ACCESS_TOKEN_SUCCESS;
     }
 }
