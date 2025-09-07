@@ -26,16 +26,14 @@ public class BoardSummary {
     private Long id;
 
     private String summary;
-    private String details;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")
     @Setter
     private Boards boards;
 
-    public void updateSummary(String summary, String details) {
+    public void updateSummary(String summary) {
         this.summary = summary;
-        this.details = details;
     }
 
 }

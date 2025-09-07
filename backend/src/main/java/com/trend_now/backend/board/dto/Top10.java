@@ -16,5 +16,5 @@ public class Top10 {
 
     @NotEmpty(message = "키워드를 입력해주세요.")
     private String keyword;
-    private String state; // 상승, 하락, 유지, 신규
+    private RankChangeType state; // 상승, 하락, 유지, 신규
 }

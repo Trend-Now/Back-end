@@ -6,6 +6,7 @@ import com.trend_now.backend.board.application.BoardSummaryService;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.BoardSummary;
 import com.trend_now.backend.board.domain.Boards;
+import com.trend_now.backend.board.dto.RankChangeType;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.board.repository.BoardSummaryRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -36,16 +37,14 @@ public class BoardSummaryServiceTest {
     @DisplayName("실제 API를 호출하여 키워드 요약을 성공적으로 받아온다.")
     void 키워드_AI_요약_테스트() {
         // given
-        String keyword = "오타니";
+        String keyword = "신스";
 
         // when
-        String[] summary = boardSummaryService.summarizeKeyword(keyword);
+        String summary = boardSummaryService.summarizeKeyword(keyword);
 
         // then
         assertThat(summary).isNotNull();
-        assertThat(summary).hasSize(2);
-        assertThat(summary[0]).isNotBlank();
-        assertThat(summary[1]).isNotBlank();
+        assertThat(summary).isNotBlank();
     }
 
     @Test
@@ -60,14 +59,13 @@ public class BoardSummaryServiceTest {
         Boards saveBoard = boardRepository.save(board);
 
         // when
-        boardSummaryService.saveOrUpdateBoardSummary(saveBoard);
+        boardSummaryService.saveOrUpdateBoardSummary(saveBoard, RankChangeType.NEW);
         BoardSummary boardSummary = boardSummaryRepository.findByBoards(board).get();
 
         // then
         assertThat(boardSummary).isNotNull();
         assertThat(boardSummary.getBoards().getId()).isEqualTo(saveBoard.getId());
         assertThat(boardSummary.getSummary()).isNotBlank();
-        assertThat(boardSummary.getDetails()).isNotBlank();
     }
 
 

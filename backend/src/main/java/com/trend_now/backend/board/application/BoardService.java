@@ -3,6 +3,7 @@ package com.trend_now.backend.board.application;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSaveDto;
+import com.trend_now.backend.board.dto.RankChangeType;
 import com.trend_now.backend.board.dto.RealtimeBoardDto;
 import com.trend_now.backend.board.dto.FixedBoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
@@ -25,7 +26,7 @@ public class BoardService {
     private final BoardSummaryService boardSummaryService;
 
     @Transactional
-    public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto, String state) {
+    public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto, RankChangeType state) {
         Boards board = boardRepository.findByName(boardSaveDto.getBoardName())
             .orElseGet(() -> boardRepository.save(
                     Boards.builder()
@@ -35,9 +36,7 @@ public class BoardService {
                 )
             );
         // 실시간 검색어 목록에 새로 등재된 경우에만 BoardSummary 생성
-        if (state.equals("n")) {
-            boardSummaryService.saveOrUpdateBoardSummary(board);
-        }
+        boardSummaryService.saveOrUpdateBoardSummary(board, state);
         return board.getId();
     }
 

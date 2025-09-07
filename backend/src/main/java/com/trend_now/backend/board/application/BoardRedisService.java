@@ -281,7 +281,6 @@ public class BoardRedisService {
         BoardSummary boardSummary = boardSummaryRepository.findByBoards(findBoard)
             .orElse(BoardSummary.builder()
                 .summary(NOT_EXIST_BOARD_SUMMARY)
-                .details(NOT_EXIST_BOARD_SUMMARY)
                 .build());
 
         return BoardInfoDto.builder()
@@ -290,7 +289,6 @@ public class BoardRedisService {
             .boardLiveTime(boardLiveTime)
             .boardExpiredTime(expiredBoardTime)
             .summary(boardSummary.getSummary())
-            .detail(boardSummary.getDetails())
             .build();
     }
 }

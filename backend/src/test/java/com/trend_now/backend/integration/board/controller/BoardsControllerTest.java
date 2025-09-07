@@ -9,6 +9,7 @@ import com.trend_now.backend.board.application.BoardService;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSaveDto;
+import com.trend_now.backend.board.dto.RankChangeType;
 import com.trend_now.backend.board.dto.Top10;
 import com.trend_now.backend.board.repository.BoardRepository;
 import java.util.ArrayList;
@@ -69,7 +70,7 @@ public class BoardsControllerTest {
                     .name("B" + i)
                     .boardCategory(BoardCategory.REALTIME)
                     .build();
-            Top10 top10 = new Top10(i, "B" + i, "s");
+            Top10 top10 = new Top10(i, "B" + i, RankChangeType.SAME);
             this.boards.add(boards);
             this.top10s.add(top10);
         }
@@ -77,7 +78,7 @@ public class BoardsControllerTest {
         redisTemplate.getConnectionFactory().getConnection().flushDb();
         for (int i = 0; i < BOARD_COUNT; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, "s");
+            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
