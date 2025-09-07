@@ -1,4 +1,4 @@
-package com.trend_now.backend.common;
+package com.trend_now.backend.member.application;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,14 +1,12 @@
 package com.trend_now.backend.member.application;
 
 import com.trend_now.backend.common.CookieUtil;
-import com.trend_now.backend.common.MemberRedisService;
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.config.auth.oauth.OAuthAttributes;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
 import com.trend_now.backend.exception.CustomException.InvalidTokenException;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.member.data.dto.MyPageResponseDto;
-import com.trend_now.backend.member.data.dto.RefreshTokenRequestDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
