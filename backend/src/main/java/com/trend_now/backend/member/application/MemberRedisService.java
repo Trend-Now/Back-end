@@ -33,9 +33,10 @@ public class MemberRedisService {
     }
 
     /**
-     * Redis에 Member Id를 이용해 Refresh Token 조회
+     * Redis에 key(Member Id)에 value가 Refresh Token가 일치하는 확인 메서드
+     * - 일치하는 것이 없어 NPE 발생하면 호출 메서드에서 "NOT_EXIST_MATCHED_REFRESH_TOKEN_IN_REDIS" 예외 발생
      */
-    public boolean isMemberIdInRedis(String memberId) {
-        return redisTemplate.opsForValue().get(REFRESH_TOKEN_PREFIX + memberId) != null;
+    public void isMatchedRefreshTokenInRedis(Long memberIdInAccessToken, String RefreshToken) {
+        redisTemplate.opsForValue().get(REFRESH_TOKEN_PREFIX + memberIdInAccessToken).equals(RefreshToken);
     }
 }

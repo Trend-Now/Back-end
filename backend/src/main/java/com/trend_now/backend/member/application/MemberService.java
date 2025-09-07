@@ -2,6 +2,7 @@ package com.trend_now.backend.member.application;
 
 import com.trend_now.backend.common.AesUtil;
 import com.trend_now.backend.common.CookieUtil;
+import com.trend_now.backend.config.auth.JwtTokenFilter;
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.config.auth.oauth.OAuthAttributes;
 import com.trend_now.backend.exception.CustomException.DuplicateException;
@@ -31,12 +32,13 @@ import java.util.Random;
 public class MemberService {
 
     private static final String NOT_EXIST_MEMBER = "존재하지 않는 회원입니다.";
-    private static final String NOT_EXIST_MEMBER_IN_REIDS = "Redis에 존재하지 않는 회원입니다.";
+    private static final String NOT_EXIST_MATCHED_REFRESH_TOKEN_IN_REDIS = "Redis에 일치하는 Refresh Token이 존재하지 않습니다.";
     private static final String DUPLICATE_NICKNAME = "이미 존재하는 닉네임입니다.";
     private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String REFRESH_TOKEN_KEY = "refresh_token";
     private static final String REISSUANCE_ACCESS_TOKEN_SUCCESS = "Access Token 재발급에 성공하였습니다.";
     private static final String REISSUANCE_ACCESS_TOKEN_FAIL = "Access Token 재발급에 실패하였습니다.";
+    private static final String NOT_EXIST_ACCESS_TOKEN = "Access Token이 존재하지 않습니다.";
     private static final String NOT_EXIST_REFRESH_TOKEN = "Refresh Token이 존재하지 않습니다.";
 
     private final MemberRepository memberRepository;
@@ -45,6 +47,7 @@ public class MemberService {
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberRedisService memberRedisService;
     private final AesUtil aesUtil;
+    private final JwtTokenFilter jwtTokenFilter;
 
     @Value("${jwt.access-token.expiration}")
     private int accessTokenExpiration;
@@ -141,25 +144,31 @@ public class MemberService {
 
     /**
      * Access Token 재발급
-     * - Refresh Token을 복호화하여 Member Id 추출
-     * - Redis에 key(Member Id)가 존재하면 Access Token 생성하여 Cookie 저장
+     * - 만료된 Access Token에서 Member Id 추출
+     * - Redis에 key(Member Id)에 대한 Refresh Token과 Request의 Refresh Token이 일치하면 Access Token 생성하여 Cookie 저장
      */
     public String reissuanceAccessToken(HttpServletRequest request, HttpServletResponse response) {
+        Cookie expiredAccessToken = CookieUtil.getCookie(request, ACCESS_TOKEN_KEY).orElseThrow(
+                () -> new InvalidTokenException(NOT_EXIST_ACCESS_TOKEN)
+        );
+
         Cookie refreshToken = CookieUtil.getCookie(request, REFRESH_TOKEN_KEY).orElseThrow(
                 () -> new InvalidTokenException(NOT_EXIST_REFRESH_TOKEN)
         );
 
-        String decrtptedMemberId = aesUtil.decrypt(refreshToken.getValue());
-        boolean isMemberIdInRedis = memberRedisService.isMemberIdInRedis(decrtptedMemberId);
+        Long memberIdInAccessToken = jwtTokenFilter.extractMemberId(expiredAccessToken.getValue());
 
-        log.info("[MemberService.reissuanceAccessToken] : 추출된 Refresh Token = {}", refreshToken.getValue());
+        log.info("[MemberService.reissuanceAccessToken] : 추출된 Access Token = {}, Refresh Token = {}, Member Id = {}"
+                , expiredAccessToken.getValue(), refreshToken.getValue(), memberIdInAccessToken);
 
-        if(isMemberIdInRedis) {
-            String accessToken = jwtTokenProvider.createAccessToken(Long.valueOf(decrtptedMemberId));
-            CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, accessToken, accessTokenExpiration);
-            return REISSUANCE_ACCESS_TOKEN_SUCCESS;
-        } else {
-            throw new NotFoundException(NOT_EXIST_MEMBER_IN_REIDS);
+        // Redis에 key(Member Id)의 value(Refresh Token)이 입력된 Refresh Token과 일치하는지 확인
+        try {
+            memberRedisService.isMatchedRefreshTokenInRedis(memberIdInAccessToken, refreshToken.getValue());
+        } catch (Exception e) {
+            throw new NotFoundException(NOT_EXIST_MATCHED_REFRESH_TOKEN_IN_REDIS);
         }
+        String reissuancedAccessToken = jwtTokenProvider.createAccessToken(memberIdInAccessToken);
+        CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, reissuancedAccessToken, accessTokenExpiration);
+        return REISSUANCE_ACCESS_TOKEN_SUCCESS;
     }
 }

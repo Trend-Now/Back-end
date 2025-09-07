@@ -135,4 +135,16 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return null;
         }
     }
+
+    /**
+     * JWT에서 Member ID 추출 메서드
+     */
+    public Long extractMemberId(String accessToken) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(secretKey)
+                .parseClaimsJws(accessToken)
+                .getBody();
+
+        return Long.valueOf(claims.getSubject());
+    }
 }
