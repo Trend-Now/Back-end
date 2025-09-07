@@ -1,7 +1,7 @@
 package com.trend_now.backend.config.auth;
 
-import com.trend_now.backend.common.MemberRedisService;
-import com.trend_now.backend.common.Util;
+import com.trend_now.backend.common.AesUtil;
+import com.trend_now.backend.member.application.MemberRedisService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -23,9 +23,10 @@ public class JwtTokenProvider {
     private final int refreshTokenExpiration;       // Refresh Token 만료 기간
 
     private final MemberRedisService memberRedisService;
+    private final AesUtil aesUtil;
 
     public JwtTokenProvider(@Value("${jwt.access-token.secret}") String secretKey, @Value("${jwt.access-token.expiration}") int expiration,
-                            MemberRedisService memberRedisService, @Value("${jwt.refresh-token.expiration}") int refreshTokenExpiration) {
+                            MemberRedisService memberRedisService, @Value("${jwt.refresh-token.expiration}") int refreshTokenExpiration, AesUtil aesUtil) {
         this.secretKey = secretKey;
         this.expiration = expiration;
         this.memberRedisService = memberRedisService;
@@ -38,6 +39,7 @@ public class JwtTokenProvider {
          */
         this.SECRET_KEY = new SecretKeySpec(java.util.Base64.getDecoder().decode(secretKey),
                 SignatureAlgorithm.HS512.getJcaName());
+        this.aesUtil = aesUtil;
     }
 
     /**
@@ -60,17 +62,19 @@ public class JwtTokenProvider {
 
     /**
      *  Refresh Token 생성 메서드
+     *  - Refresh Token은 AES 암호화를 통해 생성
      *  - Redis에 아래 형식의 key : value 를 저장한다.
-     *      - [Refresh Token 문자열] : [유저 식별자]
+     *      - [유저 식별자] : [Refresh Token 문자열]
      *      - Redis 데이터 만료 시간은 yml에 지정
      *  - Redis에 동일 key(유저 식별자)가 존재하면 Redis 자료구조에 의해 value(Refresh Token)과 만료 시간이 새 것으로 대체
      */
     public String createRefreshToken(Long memberId) {
-        String refreshToken = Util.createUuid();
+        String refreshToken =aesUtil.encrypt(memberId.toString());
+
         log.info("[JwtTokenProvider.createRefreshToken] 생성된 Refresh Token = {}", refreshToken);
 
         // Redis에 저장
-        memberRedisService.saveRefreshToken(refreshToken, memberId, refreshTokenExpiration);
+        memberRedisService.saveRefreshToken(memberId, refreshToken, refreshTokenExpiration);
 
         return refreshToken;
     }

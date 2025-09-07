@@ -1,5 +1,6 @@
 package com.trend_now.backend.member.application;
 
+import com.trend_now.backend.common.AesUtil;
 import com.trend_now.backend.common.CookieUtil;
 import com.trend_now.backend.config.auth.JwtTokenProvider;
 import com.trend_now.backend.config.auth.oauth.OAuthAttributes;
@@ -30,6 +31,7 @@ import java.util.Random;
 public class MemberService {
 
     private static final String NOT_EXIST_MEMBER = "존재하지 않는 회원입니다.";
+    private static final String NOT_EXIST_MEMBER_IN_REIDS = "Redis에 존재하지 않는 회원입니다.";
     private static final String DUPLICATE_NICKNAME = "이미 존재하는 닉네임입니다.";
     private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String REFRESH_TOKEN_KEY = "refresh_token";
@@ -42,6 +44,7 @@ public class MemberService {
     private final ScrapRepository scrapRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberRedisService memberRedisService;
+    private final AesUtil aesUtil;
 
     @Value("${jwt.access-token.expiration}")
     private int accessTokenExpiration;
@@ -138,24 +141,25 @@ public class MemberService {
 
     /**
      * Access Token 재발급
-     * - Redis에 key(Refresh Token)가 존재하면 value(Member Id)를 통해 Access Token 생성하여 Cookie 저장
+     * - Refresh Token을 복호화하여 Member Id 추출
+     * - Redis에 key(Member Id)가 존재하면 Access Token 생성하여 Cookie 저장
      */
     public String reissuanceAccessToken(HttpServletRequest request, HttpServletResponse response) {
         Cookie refreshToken = CookieUtil.getCookie(request, REFRESH_TOKEN_KEY).orElseThrow(
                 () -> new InvalidTokenException(NOT_EXIST_REFRESH_TOKEN)
         );
 
-        String redisMemberId = memberRedisService.findMemberIdByRefreshToken(refreshToken.getValue());
+        String decrtptedMemberId = aesUtil.decrypt(refreshToken.getValue());
+        boolean isMemberIdInRedis = memberRedisService.isMemberIdInRedis(decrtptedMemberId);
 
         log.info("[MemberService.reissuanceAccessToken] : 추출된 Refresh Token = {}", refreshToken.getValue());
-        log.info("[MemberService.reissuanceAccessToken] : 추출된 redisMemberId = {}", redisMemberId);
 
-        if(redisMemberId != null) {
-            String accessToken = jwtTokenProvider.createAccessToken(Long.valueOf(redisMemberId));
+        if(isMemberIdInRedis) {
+            String accessToken = jwtTokenProvider.createAccessToken(Long.valueOf(decrtptedMemberId));
             CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, accessToken, accessTokenExpiration);
             return REISSUANCE_ACCESS_TOKEN_SUCCESS;
         } else {
-            throw new NotFoundException(NOT_EXIST_MEMBER);
+            throw new NotFoundException(NOT_EXIST_MEMBER_IN_REIDS);
         }
     }
 }
