@@ -8,6 +8,8 @@ import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostLikesIncrementDto;
 import com.trend_now.backend.post.repository.PostLikesRepository;
 import com.trend_now.backend.post.repository.PostsRepository;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class PostLikesService {
 
+    private static final String BOARD_RANK_KEY = "board_rank";
     private static final String NOT_EXIST_POSTS = "게시글이 존재하지 않습니다.";
     private static final String NOT_EXIST_MEMBERS = "회원을 찾을 수 없습니다.";
     private static final String NOT_EXIST_LIKES = "좋아요 객체가 존재하지 않습니다.";
@@ -133,6 +136,12 @@ public class PostLikesService {
                 }
 
                 redisMembersTemplate.expire(boardKey, keyLiveTime, TimeUnit.SECONDS);
+                Double currentScore = redisMembersTemplate.opsForZSet().score(BOARD_RANK_KEY, boardKey);
+                if(currentScore != null) {
+                    Instant currentExpireScore = Instant.ofEpochMilli(currentScore.longValue());
+                    Instant newExpireScore = currentExpireScore.plus(POST_LIKES_TIME_UP, ChronoUnit.SECONDS);
+                    redisMembersTemplate.opsForZSet().add(BOARD_RANK_KEY, boardKey, newExpireScore.toEpochMilli());
+                }
             }
         }
     }
