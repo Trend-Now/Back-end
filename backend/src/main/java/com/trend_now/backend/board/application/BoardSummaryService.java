@@ -36,7 +36,7 @@ public class BoardSummaryService {
         # 입력 데이터
         뉴스 기사 10개: '%s'
         """;
-    private static final String GEMINI_MODEL_NAME = "gemini-2.5-flash";
+    private static final String GEMINI_MODEL_NAME = "gemini-2.5-flash-lite";
     // 네이버 뉴스 API에서 한 번에 가져올 뉴스 기사 수
     private static final int NAVER_NEWS_DISPLAY_COUNT = 5;
 
