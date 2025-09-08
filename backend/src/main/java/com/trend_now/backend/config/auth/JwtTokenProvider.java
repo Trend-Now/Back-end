@@ -17,7 +17,6 @@ import java.util.Date;
 @Slf4j
 public class JwtTokenProvider {
 
-    private final String secretKey;     // 인코딩된 secret key
     private final int expiration;       // application.yml 에서 가져온 분 단위의 만료 시간
     private Key SECRET_KEY;     // 서명에 사용되는 secret key
     private final int refreshTokenExpiration;       // Refresh Token 만료 기간
@@ -26,7 +25,6 @@ public class JwtTokenProvider {
 
     public JwtTokenProvider(@Value("${jwt.access-token.secret}") String secretKey, @Value("${jwt.access-token.expiration}") int expiration,
                             MemberRedisService memberRedisService, @Value("${jwt.refresh-token.expiration}") int refreshTokenExpiration) {
-        this.secretKey = secretKey;
         this.expiration = expiration;
         this.memberRedisService = memberRedisService;
         this.refreshTokenExpiration = refreshTokenExpiration;
