@@ -13,14 +13,14 @@ public class Top10WithDiff {
     @Setter
     private Long boardId;
     private RankChangeType rankChangeType;
-    private Integer previousRank;
+    private Integer diffRank;
 
     public Top10WithDiff(int rank, String keyword, RankChangeType rankChangeType,
-        Integer previousRank) {
+        Integer diffRank) {
         this.rank = rank;
         this.keyword = keyword;
         this.rankChangeType = rankChangeType;
-        this.previousRank = previousRank;
+        this.diffRank = diffRank;
         this.boardId = null;
     }
 

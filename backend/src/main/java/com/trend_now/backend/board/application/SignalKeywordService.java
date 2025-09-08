@@ -73,11 +73,10 @@ public class SignalKeywordService {
         List<String> realTimeKeywordList = new ArrayList<>();
         // signal.bz에서 받아온 현재 실시간 검색어 리스트
         List<Top10> currentKeywordList = signalKeywordDto.getTop10();
+        // 이전에 저장돼 있던 값을 Map 형태로 변환하여 조회
+        Map<String, Integer> previousRankMap = getRealtimeKeywordMap();
         for (int i = 0; i < currentKeywordList.size(); i++) {
-            // 이전에 저장돼 있던 값을 Map 형태로 변환하여 조회
-            Map<String, Integer> previousRankMap = getRealtimeKeywordMap();
             Top10 currentKeyword = currentKeywordList.get(i);
-
             // 현재 순위
             Integer currentRank = currentKeyword.getRank();
             // 키워드 (게시판 이름)
