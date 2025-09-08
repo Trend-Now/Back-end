@@ -28,6 +28,7 @@ public class BoardService {
     /**
      * 게시판이 존재하지 않으면 저장, 삭제된 게시판이면 isDeleted 상태 변경 후 반환
      */
+    @Transactional
     public Boards saveOrUpdateBoard(BoardSaveDto boardSaveDto) {
         Optional<Boards> optionalBoards = boardRepository.findByName(boardSaveDto.getBoardName());
 
