@@ -2,12 +2,13 @@ package com.trend_now.backend.board.presentation;
 
 import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.application.SignalKeywordService;
-import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.SseDisconnectDto;
 import com.trend_now.backend.board.dto.TimeSyncDto;
+import com.trend_now.backend.board.dto.Top10WithDiff;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import reactor.core.publisher.Mono;
 
 @Slf4j
 @RestController
@@ -39,9 +39,9 @@ public class SignalKeywordController {
 
     @Operation(summary = "실시간 검색어 조회", description = "현재 실시간 검색어를 가져옵니다.")
     @GetMapping("/news/realtime")
-    public Mono<SignalKeywordDto> getRealTimeNews() {
+    public List<Top10WithDiff> getRealTimeNews() {
         log.info(SIGNAL_BZ_KEYWORD_SUCCESS_MESSAGE);
-        return signalKeywordService.fetchRealTimeKeyword();
+        return signalKeywordService.getRealTimeKeyword();
     }
 
     @Operation(summary = "서버 시간 동기화", description = "서버의 최신 시간 동기화 정보를 반환합니다.")
