@@ -54,7 +54,7 @@ public class SignalKeywordJob implements Job {
                 Top10 top10 = signalKeywordDto.getTop10().get(i);
                 BoardSaveDto boardSaveDto = BoardSaveDto.from(top10);
 
-                Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
+                Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, top10.getState());
                 boardSaveDto.setBoardId(boardId);
 
                 // score 값을 현재 Instant 시간에서 2시간이 지난 값으로 설정하여 saveBoardRedis에 전달

@@ -14,4 +14,5 @@ public class BoardInfoDto {
     private long boardLiveTime;
     private long boardExpiredTime;
     private double score;
+    private String summary;
 }

@@ -26,7 +26,8 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class SignalKeywordService {
 
-    private static final String SIGNAL_BZ_BASE_URI = "/news/realtime";
+    private static final String SIGNAL_BZ_BASE_URL = "https://api.signal.bz";
+    private static final String SIGNAL_BZ_REQUEST_URI = "/news/realtime";
     private static final String CLIENT_ERROR_MESSAGE = "4xx";
     private static final String SERVER_ERROR_MESSAGE = "5xx";
     private static final String JSON_PARSE_ERROR_MESSAGE = "JSON 파싱에 오류가 생겼습니다.";
@@ -34,14 +35,15 @@ public class SignalKeywordService {
     private static final String SIGNAL_KEYWORD_LIST_EMITTER_NAME = "signalKeywordList";
     private static final String SIGNAL_KEYWORD_LIST = "realtime_keywords";
 
-    private final WebClient webClient;
+    private final WebClient.Builder webClientBuilder;
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, String> redisTemplate;
     private final SseEmitterService sseEmitterService;
 
     public Mono<SignalKeywordDto> fetchRealTimeKeyword() {
+        WebClient webClient = webClientBuilder.baseUrl(SIGNAL_BZ_BASE_URL).build();
         return webClient.get()
-                .uri(SIGNAL_BZ_BASE_URI)
+                .uri(SIGNAL_BZ_REQUEST_URI)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
                     throw new RuntimeException(CLIENT_ERROR_MESSAGE);

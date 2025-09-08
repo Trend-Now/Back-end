@@ -2,6 +2,7 @@ package com.trend_now.backend.board.application;
 
 import com.trend_now.backend.board.cache.BoardCache;
 import com.trend_now.backend.board.domain.BoardCategory;
+import com.trend_now.backend.board.domain.BoardSummary;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardPagingRequestDto;
@@ -10,6 +11,7 @@ import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.RealTimeBoardTimeUpEvent;
 import com.trend_now.backend.board.dto.RealtimeBoardDto;
 import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.board.repository.BoardSummaryRepository;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import com.trend_now.backend.post.application.PostLikesService;
 import com.trend_now.backend.post.application.PostViewService;
@@ -54,6 +56,7 @@ public class BoardRedisService {
     private static final int POSTS_INCREMENT_UNIT = 1;
 
     private static final String NOT_EXIST_BOARD = "선택하신 게시판이 존재하지 않습니다.";
+    private static final String NOT_EXIST_BOARD_SUMMARY = "해당 게시판의 AI 요약 정보가 존재하지 않습니다.";
 
     private final RedisTemplate<String, String> redisTemplate;
     private final RedisPublisher redisPublisher;
@@ -61,6 +64,7 @@ public class BoardRedisService {
     private final PostViewService postViewService;
     private final PostLikesService postLikesService;
     private final BoardCache boardCache;
+    private final BoardSummaryRepository boardSummaryRepository;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, double score) {
         String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
@@ -197,7 +201,7 @@ public class BoardRedisService {
 
     @Transactional // 조회수, 좋아요 개수 데이터 동기화를 하나의 트랜잭션으로 묶는다.
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
-            BoardPagingRequestDto boardPagingRequestDto) {
+        BoardPagingRequestDto boardPagingRequestDto) {
         // Redis에서의 조회는 0부터 시작하므로, size로 받은 숫자에서 1을 뺀 값을 사용한다.
         int start = boardPagingRequestDto.getPage() * boardPagingRequestDto.getSize();
         int end = start + boardPagingRequestDto.getSize() - 1;
@@ -289,11 +293,18 @@ public class BoardRedisService {
         // 게시판 만료 시각을 ms 단위로 계산
         Long expiredBoardTime = System.currentTimeMillis() + (boardLiveTime * 1000);
 
+        // AI 요약 정보 조회
+        BoardSummary boardSummary = boardSummaryRepository.findByBoards(findBoard)
+            .orElse(BoardSummary.builder()
+                .summary(NOT_EXIST_BOARD_SUMMARY)
+                .build());
+
         return BoardInfoDto.builder()
-                .boardId(findBoard.getId())
-                .boardName(findBoard.getName())
-                .boardLiveTime(boardLiveTime)
-                .boardExpiredTime(expiredBoardTime)
-                .build();
+            .boardId(findBoard.getId())
+            .boardName(findBoard.getName())
+            .boardLiveTime(boardLiveTime)
+            .boardExpiredTime(expiredBoardTime)
+            .summary(boardSummary.getSummary())
+            .build();
     }
 }
