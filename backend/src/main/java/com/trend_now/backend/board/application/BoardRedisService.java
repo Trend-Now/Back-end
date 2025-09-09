@@ -294,7 +294,7 @@ public class BoardRedisService {
         Long expiredBoardTime = System.currentTimeMillis() + (boardLiveTime * 1000);
 
         // AI 요약 정보 조회
-        BoardSummary boardSummary = boardSummaryRepository.findByBoards(findBoard)
+        BoardSummary boardSummary = boardSummaryRepository.findByBoards_Id(findBoard.getId())
             .orElse(BoardSummary.builder()
                 .summary(NOT_EXIST_BOARD_SUMMARY)
                 .build());
