@@ -21,7 +21,7 @@ public class AsyncSummaryGeneratorService {
         
         # 목표
         분석할 키워드 = '%s'
-        아래 10개의 뉴스 기사를 바탕으로, '[분석할 키워드]'에 대한 핵심 이슈를 3~4개의 완결된 문장으로 요약해 주세요.
+        아래 5개의 뉴스 기사를 바탕으로, '[분석할 키워드]'에 대한 핵심 이슈를 3~4개의 완결된 문장으로 요약해 주세요.
         
         # 규칙
         -   반드시 제공된 기사 내용에만 근거하여 작성하세요.
@@ -32,7 +32,7 @@ public class AsyncSummaryGeneratorService {
         
         
         # 입력 데이터
-        뉴스 기사 10개: '%s'
+        뉴스 기사 5개: '%s'
         """;
     private static final String GEMINI_MODEL_NAME = "gemini-2.5-flash-lite";
     // 네이버 뉴스 API에서 한 번에 가져올 뉴스 기사 수
@@ -47,7 +47,7 @@ public class AsyncSummaryGeneratorService {
     @Async
     public void generateSummaryAndSave(Long boardId, String keyword) {
         log.info(START_GENERATION_SUMMARY, getClass().getName(), keyword);
-        // 키워드 관련 네이버 뉴스 기사 10개 조회
+        // 키워드 관련 네이버 뉴스 기사 5개 조회
         NaverNewsResponseDto naverNewsResponseDto = naverApiClient.searchNewsByKeyword(keyword,
             NAVER_NEWS_DISPLAY_COUNT);
 
