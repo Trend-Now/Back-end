@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -30,6 +31,15 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
 
+    private static final String ACCESS_TOKEN_KEY = "access_token";
+    private static final String REFRESH_TOKEN_KEY = "refresh_token";
+
+    @Value("${jwt.access-token.expiration}")
+    private int accessTokenExpiration;
+
+    @Value("${jwt.refresh-token.expiration}")
+    private int refreshTokenExpiration;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         log.info("소셜 로그인 성공, JWT 생성 시작");
@@ -38,17 +48,20 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         // CustomOAuth2UserService에서 저장한 Member 객체 가져오기
         Members member = customUserDetails.getMembers();
 
-        // JWT 토큰 생성
-        String jwtToken = jwtTokenProvider.createToken(member.getId());
+        // Access Token & Refresh Token 생성
+        String accessToken = jwtTokenProvider.createAccessToken(member.getId());
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
 
         // 쿠키에서 가져온 redirect URL을 가져온다
         String redirectUrl = CookieUtil.getCookie(request, CustomAuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME)
             .map(Cookie::getValue)
             .orElse("/");
 
-        // 리다이렉트 할 URL에 JWT 토큰을 쿼리 파라미터로 추가
+        // HttpOnly Cookie 방식으로 Access Token 저장하여 response에 지정
+        CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, accessToken, accessTokenExpiration);
+        CookieUtil.addCookie(response, REFRESH_TOKEN_KEY, refreshToken, refreshTokenExpiration);
+
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)
-            .queryParam("jwt", jwtToken)
             .build()
             .toUriString();
 
