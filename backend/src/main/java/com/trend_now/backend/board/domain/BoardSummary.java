@@ -1,6 +1,7 @@
 package com.trend_now.backend.board.domain;
 
 import com.trend_now.backend.config.domain.BaseEntity;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -26,6 +27,7 @@ public class BoardSummary extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 1000)
     private String summary;
 
     @OneToOne(fetch = FetchType.LAZY)
