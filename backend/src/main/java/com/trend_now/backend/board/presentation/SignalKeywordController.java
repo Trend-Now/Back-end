@@ -4,11 +4,10 @@ import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.application.SignalKeywordService;
 import com.trend_now.backend.board.dto.SseDisconnectDto;
 import com.trend_now.backend.board.dto.TimeSyncDto;
-import com.trend_now.backend.board.dto.Top10WithDiff;
+import com.trend_now.backend.board.dto.Top10WithChange;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,7 +30,6 @@ public class SignalKeywordController {
 
     private static final String SIGNAL_BZ_KEYWORD_SUCCESS_MESSAGE = "실시간 검색어 컨트롤러가 호출되었습니다.";
     private static final String TIME_SYNC_SUCCESS_MESSAGE = "시간 동기화 컨트롤러가 호출되었습니다.";
-    private static final String SUBSCRIBE_SUCCESS_MESSAGE = "사용자가 서버의 SSE 구독을 완료했습니다.";
     private static final String UNSUBSCRIBE_SUCCESS_MESSAGE = "사용자가 서버의 SSE 구독 취소를 완료했습니다.";
 
     private final SignalKeywordService signalKeywordService;
@@ -39,7 +37,7 @@ public class SignalKeywordController {
 
     @Operation(summary = "실시간 검색어 조회", description = "현재 실시간 검색어를 가져옵니다.")
     @GetMapping("/news/realtime")
-    public List<Top10WithDiff> getRealTimeNews() {
+    public Top10WithChange getRealTimeNews() {
         log.info(SIGNAL_BZ_KEYWORD_SUCCESS_MESSAGE);
         return signalKeywordService.getRealTimeKeyword();
     }

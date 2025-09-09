@@ -5,6 +5,7 @@ import com.trend_now.backend.board.dto.MsgFormat;
 import com.trend_now.backend.board.dto.RankChangeType;
 import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.Top10;
+import com.trend_now.backend.board.dto.Top10WithChange;
 import com.trend_now.backend.board.dto.Top10WithDiff;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -33,6 +33,7 @@ public class SignalKeywordService {
     private static final String SERVER_ERROR_MESSAGE = "5xx";
     private static final String JSON_PARSE_ERROR_MESSAGE = "JSON 파싱에 오류가 생겼습니다.";
     private static final String FETCH_KEYWORD_ERROR_MESSAGE = "실시간 검색어 순위 리스트가 존재하지 않습니다.";
+    private static final String REALTIME_KEYWORD_LAST_UPDATED_KEY = "realtime_keywords:last_updated";
     private static final String CLIENT_ID_KEY = "clientId";
     private static final String SIGNAL_KEYWORD_LIST_EMITTER_NAME = "signalKeywordList";
     private static final String SIGNAL_KEYWORD_LIST = "realtime_keywords";
@@ -105,13 +106,29 @@ public class SignalKeywordService {
         return realTimeKeywordList;
     }
 
-    public List<Top10WithDiff> getRealTimeKeyword() {
+    // 실시간 검색어가 마지막으로 갱신된 시간 업데이트
+    public void updateLastUpdatedTime(long timestamp) {
+        redisTemplate.opsForValue().set(REALTIME_KEYWORD_LAST_UPDATED_KEY, String.valueOf(timestamp));
+    }
+
+    // 실시간 검색어가 마지막으로 갱신된 시간 조회
+    public long getLastUpdatedTime() {
+        String lastUpdated = redisTemplate.opsForValue().get(REALTIME_KEYWORD_LAST_UPDATED_KEY);
+        if (lastUpdated == null) {
+            return 0L;
+        }
+        return Long.parseLong(lastUpdated);
+    }
+
+    public Top10WithChange getRealTimeKeyword() {
         List<String> realtimeKeywordList = redisTemplate.opsForList()
             .range(SIGNAL_KEYWORD_LIST, 0, -1);
         if (realtimeKeywordList == null || realtimeKeywordList.isEmpty()) {
             throw new RuntimeException(FETCH_KEYWORD_ERROR_MESSAGE);
         }
-        return realtimeKeywordList.stream().map(Top10WithDiff::from).toList();
+        long lastUpdatedTime = getLastUpdatedTime();
+        List<Top10WithDiff> top10WithDiffList = realtimeKeywordList.stream().map(Top10WithDiff::from).toList();
+        return new Top10WithChange(lastUpdatedTime, top10WithDiffList);
     }
 
     private Map<String, Integer> getRealtimeKeywordMap() {

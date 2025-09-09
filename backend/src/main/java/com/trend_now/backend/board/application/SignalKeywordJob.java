@@ -80,8 +80,9 @@ public class SignalKeywordJob implements Job {
                 // Redis zSet(board_rank)에 score와 함께 저장
                 boardRedisService.saveBoardRedis(boardSaveDto, score);
             }
-            // Redis에 저장된 게시판의 TTL 설정 (2시간)
+            // Redis(board_rank_valid)의 유효시간 갱신
             boardRedisService.setRankValidListTime();
+            signalKeywordService.updateLastUpdatedTime(signalKeywordDto.getNow());
 
             // 인메모리 캐시에 게시판 정보 갱신
             boardCache.setBoardInfo(boardRedisService.getBoardRank(0, -1));
