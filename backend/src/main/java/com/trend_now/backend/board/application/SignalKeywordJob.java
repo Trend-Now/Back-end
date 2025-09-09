@@ -1,5 +1,6 @@
 package com.trend_now.backend.board.application;
 
+import com.trend_now.backend.board.application.board_summary.BoardSummaryTriggerService;
 import com.trend_now.backend.board.cache.BoardCache;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSaveDto;
@@ -39,9 +40,13 @@ public class SignalKeywordJob implements Job {
         BoardRedisService boardRedisService = applicationContext.getBean(BoardRedisService.class);
         RedisPublisher redisPublisher = applicationContext.getBean(RedisPublisher.class);
         BoardCache boardCache = applicationContext.getBean(BoardCache.class);
-        BoardSummaryService boardSummaryService = applicationContext.getBean(BoardSummaryService.class);
+        BoardSummaryTriggerService boardSummaryTriggerService = applicationContext.getBean(
+            BoardSummaryTriggerService.class);
 
+        // Redis의 realtime_keywords에 boardId 값을 저장하기 위한 리스트
         List<Long> boardIdList = new ArrayList<>();
+        // 스케줄러 실행 시 생기는 시간 차이를 줄이기 위해 Instant.now()를 최초 1회만 호출
+        Instant now = Instant.now();
         try {
             SignalKeywordDto signalKeywordDto = signalKeywordService.fetchRealTimeKeyword().block();
             boardRedisService.cleanUpExpiredKeys();
@@ -65,13 +70,13 @@ public class SignalKeywordJob implements Job {
                 boardSaveDto.setBoardId(boards.getId());
 
                 // 저장된 게시판의 AI 요약 저장 또는 업데이트
-                boardSummaryService.saveOrUpdateBoardSummary(boards, top10.getState());
+                boardSummaryTriggerService.triggerSummaryUpdate(boards.getId(), boards.getName(), top10.getState());
 
                 // Redis의 realtime_keywords에 저장하기 위해 boardId를 따로 리스트에 수집
                 boardIdList.add(boards.getId());
 
                 // i는 10번을 순회하면서 첫 번째는 0.01, 두 번째는 0.02, ... , 열 번째는 0.1의 값을 위 시간에서 더한다
-                double score = calculateScore(i);
+                double score = calculateScore(now, i);
                 // Redis zSet(board_rank)에 score와 함께 저장
                 boardRedisService.saveBoardRedis(boardSaveDto, score);
             }
@@ -102,9 +107,8 @@ public class SignalKeywordJob implements Job {
         }
     }
 
-    private double calculateScore(int index) {
+    private double calculateScore(Instant now, int index) {
         // score 값을 현재 Instant 시간에서 2시간이 지난 값으로 설정하여 saveBoardRedis에 전달
-        Instant now = Instant.now();
         Instant twoHoursLater = now.plus(2, ChronoUnit.HOURS);
 
         long epochMilli = twoHoursLater.toEpochMilli(); // UTC 기준 2시간이 지난 시간을 밀리초로 변환
