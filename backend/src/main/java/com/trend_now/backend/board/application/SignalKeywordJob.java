@@ -64,8 +64,8 @@ public class SignalKeywordJob implements Job {
                 Instant twoHoursLater = now.plus(2, ChronoUnit.HOURS);
                 long epochMilli = twoHoursLater.toEpochMilli(); // UTC 기준 2시간이 지난 시간을 밀리초로 변환
 
-                double rank = (i + 1) * 0.01;
-                boardRedisService.saveBoardRedis(boardSaveDto, epochMilli + rank);
+                double rank = (10 - i) * 0.01;
+                boardRedisService.saveBoardRedis(boardSaveDto, (epochMilli + rank) * -1);
 
                 /* 동일 객체 참조로 내부 원본의 각 검색어의 게시판 ID를 포함하여 반환 */
                 top10WithChange.getTop10WithDiff().get(i).setBoardId(boardId);
