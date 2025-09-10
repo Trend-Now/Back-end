@@ -1,7 +1,7 @@
 package com.trend_now.backend.post.presentation;
 
 import com.trend_now.backend.board.application.BoardService;
-import com.trend_now.backend.global.ResponseDto;
+import com.trend_now.backend.global.dto.ApiResponse;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.dto.CheckPostCooldownResponse;
@@ -67,7 +67,7 @@ public class PostsController {
 
     @Operation(summary = "게시글 상세 조회", description = "게시판의 게시글을 상세 조회합니다.")
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<ResponseDto<PostInfoResponseDto>> findPostById(
+    public ResponseEntity<ApiResponse<PostInfoResponseDto>> findPostById(
         @PathVariable(value = "boardId") Long boardId,
         @PathVariable(value = "postId") Long postId
     ) {
@@ -77,12 +77,12 @@ public class PostsController {
             authentication);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ResponseDto.onSuccess(postInfoResponseDto, SUCCESS_FIND_POSTS_MESSAGE));
+            .body(ApiResponse.onSuccess(postInfoResponseDto, SUCCESS_FIND_POSTS_MESSAGE));
     }
 
     @Operation(summary = "게시글 저장", description = "게시판에 게시글을 저장합니다.")
     @PostMapping("/posts")
-    public ResponseEntity<ResponseDto<PostInfoResponseDto>> savePosts(
+    public ResponseEntity<ApiResponse<PostInfoResponseDto>> savePosts(
         @Valid @RequestBody PostsSaveDto postsSaveDto,
         @PathVariable(value = "boardId") Long boardId,
         @AuthenticationPrincipal(expression = "members") Members members) {
@@ -91,12 +91,12 @@ public class PostsController {
             boardId);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ResponseDto.onSuccess(postInfoResponseDto, SUCCESS_SAVE_POSTS_MESSAGE));
+            .body(ApiResponse.onSuccess(postInfoResponseDto, SUCCESS_SAVE_POSTS_MESSAGE));
     }
 
     @Operation(summary = "게시글 수정", description = "게시판에 게시글의 제목 또는 내용을 수정합니다.")
     @PutMapping("/posts/{postId}")
-    public ResponseEntity<ResponseDto<PostInfoResponseDto>> updatePosts(
+    public ResponseEntity<ApiResponse<PostInfoResponseDto>> updatePosts(
         @Valid @RequestBody PostsUpdateRequestDto postsUpdateRequestDto,
         @PathVariable(value = "boardId") Long boardId,
         @PathVariable(value = "postId") Long postId,
@@ -106,7 +106,7 @@ public class PostsController {
             postsUpdateRequestDto, boardId, postId, members.getId());
 
         return ResponseEntity.status(HttpStatus.OK)
-            .body(ResponseDto.onSuccess(postInfoResponseDto, SUCCESS_UPDATE_POSTS_MESSAGE));
+            .body(ApiResponse.onSuccess(postInfoResponseDto, SUCCESS_UPDATE_POSTS_MESSAGE));
     }
 
     @Operation(summary = "게시글 삭제", description = "작성한 게시글을 삭제합니다.")

@@ -1,4 +1,4 @@
-package com.trend_now.backend.global;
+package com.trend_now.backend.global.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
-public class ResponseDto<T> {
+public class ApiResponse<T> {
 
     @JsonProperty("isSuccess")
     private final boolean isSuccess;
@@ -20,18 +20,18 @@ public class ResponseDto<T> {
     private T data;
 
     // 성공 시 응답: result 데이터 포함
-    public static <T> ResponseDto<T> onSuccess(T data, String message) {
-        return new ResponseDto<>(true, message, HttpStatus.OK, data);
+    public static <T> ApiResponse<T> onSuccess(T data, String message) {
+        return new ApiResponse<>(true, message, HttpStatus.OK, data);
     }
 
     // 성공 시 응답: result 데이터 미포함 (e.g., 생성, 수정, 삭제)
-    public static <T> ResponseDto<T> onSuccess(String message) {
-        return new ResponseDto<>(true, message, HttpStatus.OK, null);
+    public static <T> ApiResponse<T> onSuccess(String message) {
+        return new ApiResponse<>(true, message, HttpStatus.OK, null);
     }
 
     // 실패 시 응답
-    public static <T> ResponseDto<T> onFailure(HttpStatus code, String message) {
-        return new ResponseDto<>(false, message, code, null);
+    public static <T> ApiResponse<T> onFailure(HttpStatus code, String message) {
+        return new ApiResponse<>(false, message, code, null);
     }
 
 }
