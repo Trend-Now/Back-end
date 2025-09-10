@@ -56,7 +56,6 @@ public class BoardRedisService {
     private static final int POSTS_INCREMENT_UNIT = 1;
 
     private static final String NOT_EXIST_BOARD = "선택하신 게시판이 존재하지 않습니다.";
-    private static final String NOT_EXIST_BOARD_SUMMARY = "해당 게시판의 AI 요약 정보가 존재하지 않습니다.";
 
     private final RedisTemplate<String, String> redisTemplate;
     private final RedisPublisher redisPublisher;
@@ -296,7 +295,7 @@ public class BoardRedisService {
         // AI 요약 정보 조회
         BoardSummary boardSummary = boardSummaryRepository.findByBoards(findBoard)
             .orElse(BoardSummary.builder()
-                .summary(NOT_EXIST_BOARD_SUMMARY)
+                .summary(null)
                 .build());
 
         return BoardInfoDto.builder()
