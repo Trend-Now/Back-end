@@ -51,4 +51,6 @@ public interface BoardRepository extends JpaRepository<Boards, Long> {
     RealtimeBoardDto findRealtimeBoardById(Long boardId);
 
 
+    @Query("SELECT b.name FROM Boards b WHERE b.id = :id")
+    String findNameById(Long id);
 }
