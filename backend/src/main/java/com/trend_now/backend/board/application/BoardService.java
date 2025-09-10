@@ -36,7 +36,7 @@ public class BoardService {
                 )
             );
         // 실시간 검색어 목록에 새로 등재된 경우에만 BoardSummary 생성
-        boardSummaryService.saveOrUpdateBoardSummary(board, state);
+//        boardSummaryService.saveOrUpdateBoardSummary(board, state);
         return board.getId();
     }
 
