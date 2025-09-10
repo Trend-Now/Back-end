@@ -10,11 +10,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class PostInfoResponseDto {
 
-    private final String message;
     private final PostsInfoDto postInfoDto;
     private final List<ImageInfoDto> imageInfos;
 
-    public static PostInfoResponseDto of(String message, PostsInfoDto postInfoDto, List<ImageInfoDto> imageInfos) {
-        return new PostInfoResponseDto(message, postInfoDto, imageInfos);
+    public static PostInfoResponseDto of(PostsInfoDto postInfoDto, List<ImageInfoDto> imageInfos) {
+        return new PostInfoResponseDto(postInfoDto, imageInfos);
     }
 }
