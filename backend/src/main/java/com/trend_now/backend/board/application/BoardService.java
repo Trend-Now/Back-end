@@ -3,6 +3,7 @@ package com.trend_now.backend.board.application;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSaveDto;
+import com.trend_now.backend.board.dto.RankChangeType;
 import com.trend_now.backend.board.dto.RealtimeBoardDto;
 import com.trend_now.backend.board.dto.FixedBoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
@@ -18,13 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BoardService {
 
-    private final BoardRepository boardRepository;
-    private final BoardCache boardCache;
-
     private final static String BOARD_NOT_FOUND_MESSAGE = "해당 게시판이 존재하지 않습니다: ";
 
+    private final BoardRepository boardRepository;
+    private final BoardCache boardCache;
+    private final BoardSummaryService boardSummaryService;
+
     @Transactional
-    public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto) {
+    public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto, RankChangeType state) {
         Boards board = boardRepository.findByName(boardSaveDto.getBoardName())
             .orElseGet(() -> boardRepository.save(
                     Boards.builder()
@@ -33,6 +35,8 @@ public class BoardService {
                         .build()
                 )
             );
+        // 실시간 검색어 목록에 새로 등재된 경우에만 BoardSummary 생성
+        boardSummaryService.saveOrUpdateBoardSummary(board, state);
         return board.getId();
     }
 
@@ -41,7 +45,8 @@ public class BoardService {
     public void updateBoardIsDeleted(BoardSaveDto boardSaveDto, boolean isInRedis) {
         // 요구사항을 기반으로 Redis에 있는 게시판 데이터는 DB에도 존재해야 한다.
         Boards findBoards = boardRepository.findByName(boardSaveDto.getBoardName())
-            .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardSaveDto.getBoardName()));
+            .orElseThrow(
+                () -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardSaveDto.getBoardName()));
 
         if (isInRedis) {
             if (findBoards.isDeleted()) {

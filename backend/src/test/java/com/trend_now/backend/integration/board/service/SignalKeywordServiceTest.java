@@ -51,9 +51,9 @@ public class SignalKeywordServiceTest {
         when(listOperations.range(SIGNAL_KEYWORD_LIST, 0, -1)).thenReturn(null);
 
         List<Top10> currentTop10 = Arrays.asList(
-                new Top10(1, "아이폰"),
-                new Top10(2, "갤럭시"),
-                new Top10(3, "맥북")
+                new Top10(1, "아이폰", RankChangeType.SAME),
+                new Top10(2, "갤럭시", RankChangeType.SAME),
+                new Top10(3, "맥북", RankChangeType.SAME)
         );
 
         SignalKeywordDto dto = new SignalKeywordDto();
@@ -80,9 +80,9 @@ public class SignalKeywordServiceTest {
         );
 
         List<Top10> currentTop10 = Arrays.asList(
-                new Top10(1, "아이폰"),   // 기존 2위 → 1위 → UP
-                new Top10(2, "에어팟"),   // 기존 3위 → 2위 → UP
-                new Top10(3, "갤럭시")    // 기존 1위 → 3위 → DOWN
+                new Top10(1, "아이폰", RankChangeType.SAME),   // 기존 2위 → 1위 → UP
+                new Top10(2, "에어팟", RankChangeType.SAME),   // 기존 3위 → 2위 → UP
+                new Top10(3, "갤럭시", RankChangeType.SAME)    // 기존 1위 → 3위 → DOWN
         );
 
         SignalKeywordDto dto = new SignalKeywordDto();
@@ -124,9 +124,9 @@ public class SignalKeywordServiceTest {
 
         // 현재 키워드 리스트: "에어팟" (기존 3위 → 현재 1위 → UP), "갤럭시" (기존 2위 → 현재 2위 → SAME), "맥북" (새로운 키워드)
         List<Top10> currentTop10 = Arrays.asList(
-                new Top10(1, "에어팟"),
-                new Top10(2, "갤럭시"),
-                new Top10(3, "맥북")
+                new Top10(1, "에어팟", RankChangeType.SAME),
+                new Top10(2, "갤럭시", RankChangeType.SAME),
+                new Top10(3, "맥북", RankChangeType.SAME)
         );
 
         SignalKeywordDto dto = new SignalKeywordDto();

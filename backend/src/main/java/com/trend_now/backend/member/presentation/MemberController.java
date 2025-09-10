@@ -5,6 +5,7 @@ import com.trend_now.backend.comment.data.dto.CommentInfoDto;
 import com.trend_now.backend.comment.data.dto.CommentListPagingResponseDto;
 import com.trend_now.backend.member.application.MemberService;
 import com.trend_now.backend.member.data.dto.MyPageResponseDto;
+import com.trend_now.backend.member.data.dto.RefreshTokenRequestDto;
 import com.trend_now.backend.member.data.dto.UpdateNicknameRequestDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
@@ -13,6 +14,8 @@ import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.MyPostListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +43,7 @@ public class MemberController {
     private static final String FIND_SCRAP_POSTS_SUCCESS_MESSAGE = "사용자가 스크랩한 게시글 조회 완료";
     private static final String FIND_MEMBER_POSTS_SUCCESS_MESSAGE = "사용자가 작성한 게시글 조회 완료";
     private static final String FIND_MEMBER_COMMENTS_SUCCESS_MESSAGE = "사용자가 작성한 댓글 조회 완료";
+    private static final String REISSUANCE_ACCESS_TOKEN_SUCCESS = "Access Token 재발급에 성공하였습니다.";
 
 
     // 연결 확인
@@ -52,8 +56,8 @@ public class MemberController {
     // 테스트용 JWT 발급 API
     @GetMapping("/test-jwt")
     @Operation(summary = "JWT 발급", description = "테스트용 JWT 발급 API")
-    public ResponseEntity<String> getJwt() {
-        return new ResponseEntity<>(memberService.getTestJwt(), HttpStatus.OK);
+    public ResponseEntity<String> getJwt(HttpServletResponse response) {
+        return new ResponseEntity<>(memberService.getTestJwt(response), HttpStatus.OK);
     }
 
     /**
@@ -139,5 +143,13 @@ public class MemberController {
             CommentListPagingResponseDto.of(FIND_MEMBER_COMMENTS_SUCCESS_MESSAGE,
                 commentsByMemberId.getTotalPages(), commentsByMemberId.getTotalElements(), commentsByMemberId.getContent()),
             HttpStatus.OK);
+    }
+
+    @PostMapping("/access-token")
+    @Operation(summary = "Access Token 재발급 API", description = "Access Token을 재발급합니다.")
+    public ResponseEntity<String> reissuanceAccessToken(
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        return new ResponseEntity<>(memberService.reissuanceAccessToken(request, response), HttpStatus.OK);
     }
 }
