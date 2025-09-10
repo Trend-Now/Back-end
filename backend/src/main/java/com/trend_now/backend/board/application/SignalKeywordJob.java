@@ -113,8 +113,8 @@ public class SignalKeywordJob implements Job {
         Instant twoHoursLater = now.plus(2, ChronoUnit.HOURS);
 
         long epochMilli = twoHoursLater.toEpochMilli(); // UTC 기준 2시간이 지난 시간을 밀리초로 변환
-        double rank = (index + 1) * 0.01;
+        double rank = (10 - index) * 0.01;
 
-        return epochMilli + rank;
+        return (epochMilli + rank) * -1; // 내림차순 정렬을 위해 음수로 변환
     }
 }
