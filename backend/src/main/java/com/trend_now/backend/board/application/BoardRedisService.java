@@ -18,6 +18,7 @@ import com.trend_now.backend.post.application.PostViewService;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -29,8 +30,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,35 +98,35 @@ public class BoardRedisService {
 
             int postCount = Integer.parseInt(postCountStr);
             String threshold50 = boardName + BOARD_KEY_DELIMITER + boardId + BOARD_KEY_DELIMITER
-                    + BOARD_TIME_UP_50_THRESHOLD;
+                + BOARD_TIME_UP_50_THRESHOLD;
             String threshold100 = boardName + BOARD_KEY_DELIMITER + boardId + BOARD_KEY_DELIMITER
-                    + (postCount / BOARD_TIME_UP_100_THRESHOLD) * BOARD_TIME_UP_100_THRESHOLD;
+                + (postCount / BOARD_TIME_UP_100_THRESHOLD) * BOARD_TIME_UP_100_THRESHOLD;
 
             if (postCount == BOARD_TIME_UP_50_THRESHOLD && !Boolean.TRUE.equals(
-                    redisTemplate.opsForSet()
-                            .isMember(BOARD_THRESHOLD_KEY, threshold50))) {
+                redisTemplate.opsForSet()
+                    .isMember(BOARD_THRESHOLD_KEY, threshold50))) {
                 log.info("{} 게시판의 게시글 수가 50개 도달, 시간 5분 추가!", boardName);
                 extendBoardExpireTime(key, currentExpireTime, BOARD_TIME_UP_50, threshold50);
             } else if (postCount % BOARD_TIME_UP_100_THRESHOLD == 0 && !Boolean.TRUE.equals(
-                    redisTemplate.opsForSet()
-                            .isMember(BOARD_THRESHOLD_KEY, threshold100))) {
+                redisTemplate.opsForSet()
+                    .isMember(BOARD_THRESHOLD_KEY, threshold100))) {
                 log.info("{} 게시판의 게시글 수가 100개 도달, 시간 10분 추가!", boardName);
                 extendBoardExpireTime(key, currentExpireTime, BOARD_TIME_UP_100, threshold100);
             }
             log.info("{} 게시판의 증가 후 남은 시간은 {}입니다", boardName,
-                    redisTemplate.getExpire(key, TimeUnit.SECONDS));
+                redisTemplate.getExpire(key, TimeUnit.SECONDS));
         }
     }
 
     private void extendBoardExpireTime(String key, Long currentExpireTime, long additionalSeconds,
-            String thresholdKey) {
+        String thresholdKey) {
         // 실시간 게시판의 남은 시간(TTL)이 증가
         redisTemplate.expire(key, currentExpireTime + additionalSeconds, TimeUnit.SECONDS);
         redisTemplate.opsForSet().add(BOARD_THRESHOLD_KEY, thresholdKey);
 
         // TTL이 증가하는 만큼 score도 증가
         Double currentScore = redisTemplate.opsForZSet()
-                .score(BOARD_RANK_KEY, key); // 현재 저장된 만료 시간을 가져옴
+            .score(BOARD_RANK_KEY, key); // 현재 저장된 만료 시간을 가져옴
         if (currentScore == null) {
             return; // 실시간 게시판이 아직 등록되지 않은 경우
         }
@@ -137,7 +138,7 @@ public class BoardRedisService {
 
         String boardName = key.split(Pattern.quote(BOARD_KEY_DELIMITER))[0];
         redisPublisher.publishRealTimeBoardTimeUpEvent(
-                RealTimeBoardTimeUpEvent.from(boardName, additionalSeconds));
+            RealTimeBoardTimeUpEvent.from(boardName, additionalSeconds));
     }
 
     /**
@@ -154,7 +155,7 @@ public class BoardRedisService {
 
     public void setRankValidListTime() {
         String validTime = Long.toString(
-                LocalTime.now().plusSeconds(KEY_LIVE_TIME).toSecondOfDay());
+            LocalTime.now().plusSeconds(KEY_LIVE_TIME).toSecondOfDay());
         redisTemplate.opsForValue().set(BOARD_RANK_VALID_KEY, validTime);
     }
 
@@ -165,8 +166,8 @@ public class BoardRedisService {
         }
 
         allRankKey.stream()
-                .filter(key -> !Boolean.TRUE.equals(redisTemplate.hasKey(key)))
-                .forEach(key -> redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, key));
+            .filter(key -> !Boolean.TRUE.equals(redisTemplate.hasKey(key)))
+            .forEach(key -> redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, key));
 
         Set<String> thresholdSet = redisTemplate.opsForSet().members(BOARD_THRESHOLD_KEY);
         if (thresholdSet == null || thresholdSet.isEmpty()) {
@@ -174,11 +175,11 @@ public class BoardRedisService {
         }
 
         thresholdSet.stream()
-                .filter(key -> {
-                    String boardKey = key.substring(0, key.lastIndexOf(BOARD_KEY_DELIMITER));
-                    return !Boolean.TRUE.equals(redisTemplate.hasKey(boardKey));
-                })
-                .forEach(key -> redisTemplate.opsForSet().remove(BOARD_THRESHOLD_KEY, key));
+            .filter(key -> {
+                String boardKey = key.substring(0, key.lastIndexOf(BOARD_KEY_DELIMITER));
+                return !Boolean.TRUE.equals(redisTemplate.hasKey(boardKey));
+            })
+            .forEach(key -> redisTemplate.opsForSet().remove(BOARD_THRESHOLD_KEY, key));
     }
 
     /**
@@ -202,77 +203,73 @@ public class BoardRedisService {
     @Transactional // 조회수, 좋아요 개수 데이터 동기화를 하나의 트랜잭션으로 묶는다.
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
         BoardPagingRequestDto boardPagingRequestDto) {
+        int page = boardPagingRequestDto.getPage();
+        int size = boardPagingRequestDto.getSize();
         // Redis에서의 조회는 0부터 시작하므로, size로 받은 숫자에서 1을 뺀 값을 사용한다.
-        int start = boardPagingRequestDto.getPage() * boardPagingRequestDto.getSize();
-        int end = start + boardPagingRequestDto.getSize() - 1;
-        Set<String> boardKeys = getBoardRank(start, end);
+        int start = page * size;
+        int end = start + size - 1;
+        List<TypedTuple<String>> boardRankList = getBoardRankList(start, end);
 
-        if (boardKeys == null || boardKeys.isEmpty()) {
+        if (boardRankList == null || boardRankList.isEmpty()) {
             return BoardPagingResponseDto.from(0, 0, Collections.emptyList());
         }
-
         // Redis에서 조회한 실시간 게시판 목록 데이터에서 boardId 값만 추출하여 List를 생성한다.
-        List<Long> boardIdList = extractBoardIdList(boardKeys);
+        List<Long> boardIdList = extractBoardIdList(boardRankList);
+
+        // DB에서 실시간 게시판 목록 조회
+        List<RealtimeBoardDto> realtimeBoardList = boardRepository.findRealtimeBoardsByIds(
+            boardIdList);
 
         // 조회수와 좋아요 개수 동기화
         postViewService.syncViewCountToDatabase();
         postLikesService.syncLikesToDatabase();
 
-        // DB에서 실시간 게시판 목록 조회
-        List<RealtimeBoardDto> realtimeBoardList = boardRepository.findRealtimeBoardsByIds(
-                boardIdList);
-
-        // Redis Pipeline을 이용해서 각 Board 별 TTL과 zScore 조회
-        List<Object> results = getTtlAndScorePipeline(realtimeBoardList);
-
         // realtimeBoardList에 ttl과 zScore를 매핑
+        long now = Instant.now().toEpochMilli();
         IntStream.range(0, realtimeBoardList.size())
-                .forEach(i -> {
-                    RealtimeBoardDto realtimeBoardDto = realtimeBoardList.get(i);
-                    // result에 ttl과 zScore값이 번갈아가면서 들어있다. {ttl_0, zScore_0, ttl_1, zScore_1 ...}
-                    realtimeBoardDto.setBoardLiveTime((Long) results.get(i * 2));
-                    realtimeBoardDto.setScore((Double) results.get(i * 2 + 1));
-                });
+            .forEach(i -> {
+                RealtimeBoardDto realtimeBoardDto = realtimeBoardList.get(i);
+                Double score = boardRankList.get(i).getScore();
+                // boardLiveTime는 score의 정수부를 long으로 변환하여 현재 시간과 차이를 계산
+                realtimeBoardDto.setBoardLiveTime((score.longValue() * -1) - now);
+                // score는 page가 0일 경우 0 ~ 9, page가 1일 경우 10 ~ 19, ... 와 같이 설정
+                realtimeBoardDto.setScore((i + 1) + (page * 10));
+            });
 
         // boardLiveTime은 실시간 게시판이 Redis에 expire만 관리
         // score을 사용해 실시간 게시판을 정렬하여 반환
         List<RealtimeBoardDto> sortedRealTimeBoardList = realtimeBoardList.stream()
-                .sorted(Comparator.comparingDouble(RealtimeBoardDto::getScore)) // score 오름차순 정렬만 적용
-                .collect(Collectors.toList());
+            .sorted(Comparator.comparingDouble(RealtimeBoardDto::getScore)) // score 오름차순 정렬만 적용
+            .collect(Collectors.toList());
 
         long realtimeBoardCount = boardCache.getBoardCacheEntryMap()
-                .estimatedSize(); // 캐시에서 실시간 게시판 목록의 사이즈 조회
+            .estimatedSize(); // 캐시에서 실시간 게시판 목록의 사이즈 조회
         long totalPages = (long) Math.ceil(
-                (double) realtimeBoardCount / boardPagingRequestDto.getSize());
+            (double) realtimeBoardCount / boardPagingRequestDto.getSize());
         return BoardPagingResponseDto.from(totalPages, realtimeBoardCount, sortedRealTimeBoardList);
     }
 
-    private List<Object> getTtlAndScorePipeline(List<RealtimeBoardDto> realtimeBoardDtoList) {
-        List<Object> results = redisTemplate.executePipelined(
-                (RedisCallback<Object>) connection -> {
-                    for (RealtimeBoardDto dto : realtimeBoardDtoList) {
-                        String boardKey =
-                                dto.getBoardName() + BOARD_KEY_DELIMITER + dto.getBoardId();
-                        connection.keyCommands().ttl(boardKey.getBytes());
-                        connection.zSetCommands()
-                                .zScore(BOARD_RANK_KEY.getBytes(), boardKey.getBytes());
-                    }
+    private static List<Long> extractBoardIdList(List<TypedTuple<String>> boardRankSet) {
+        return boardRankSet.stream()
+            .map(value -> {
+                String key = value.getValue();
+                String[] parts = key.split(BOARD_KEY_DELIMITER);
+                if (parts.length < BOARD_KEY_PARTS_LENGTH) {
                     return null;
-                });
-        return results;
+                }
+                return Long.parseLong(parts[BOARD_ID_INDEX]);
+            })
+            .filter(Objects::nonNull)
+            .toList();
     }
 
-    private static List<Long> extractBoardIdList(Set<String> boardKeyList) {
-        return boardKeyList.stream()
-                .map(key -> {
-                    String[] parts = key.split(BOARD_KEY_DELIMITER);
-                    if (parts.length < BOARD_KEY_PARTS_LENGTH) {
-                        return null;
-                    }
-                    return Long.parseLong(parts[BOARD_ID_INDEX]);
-                })
-                .filter(Objects::nonNull)
-                .toList();
+    public List<TypedTuple<String>> getBoardRankList(int start, int end) {
+        Set<TypedTuple<String>> boardRankSet = redisTemplate.opsForZSet()
+            .rangeWithScores(BOARD_RANK_KEY, start, end);
+        if (boardRankSet == null || boardRankSet.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(boardRankSet);
     }
 
     public Set<String> getBoardRank(int start, int end) {
@@ -285,7 +282,7 @@ public class BoardRedisService {
 
     public BoardInfoDto getBoardInfo(Long boardId) {
         Boards findBoard = boardRepository.findById(boardId)
-                .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
 
         String key = findBoard.getName() + BOARD_KEY_DELIMITER + findBoard.getId();
         Long boardLiveTime = redisTemplate.getExpire(key, TimeUnit.SECONDS);
