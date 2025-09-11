@@ -69,10 +69,11 @@ public class BoardRedisService {
         String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         long keyLiveTime = KEY_LIVE_TIME;
 
-        Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
-        if (currentExpire != null && currentExpire > KEY_EXPIRE) {
-            keyLiveTime = currentExpire;
-        }
+        // 기존 키의 TTL이 남아 있을 경우 새로운 시간이 할당되지 않고, 기존 시간이 그대로 유지되는 버그 때문에 주석 처리
+//        Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+//        if (currentExpire != null && currentExpire > KEY_EXPIRE) {
+//            keyLiveTime = currentExpire;
+//        }
 
         redisTemplate.opsForValue().set(key, BOARD_INITIAL_COUNT);
         redisTemplate.expire(key, keyLiveTime, TimeUnit.SECONDS);
