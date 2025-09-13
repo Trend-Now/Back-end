@@ -12,8 +12,6 @@ import com.trend_now.backend.post.application.PostLikesService;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostLikesIncrementDto;
 import com.trend_now.backend.post.repository.PostsRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -31,7 +29,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -112,7 +109,7 @@ public class PostLikesConcurrencyTest {
         for (int i = 0; i < threadCount; i++) {
             int idx = i;
             PostLikesIncrementDto postLikesIncrementDto = PostLikesIncrementDto.of(
-                    members.get(idx).getName(), boards.getName(), boards.getId(), posts.getId());
+                    members.get(idx).getName(), boards.getId(), posts.getId());
             executorService.submit(() -> {
                 try {
                     postLikesService.increaseLikeLock(postLikesIncrementDto);
