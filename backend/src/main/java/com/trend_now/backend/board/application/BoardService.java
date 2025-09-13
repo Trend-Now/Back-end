@@ -10,6 +10,7 @@ import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.board.cache.BoardCache;
 import com.trend_now.backend.exception.CustomException.NotFoundException;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,21 +24,28 @@ public class BoardService {
 
     private final BoardRepository boardRepository;
     private final BoardCache boardCache;
-    private final BoardSummaryService boardSummaryService;
 
+    /**
+     * 게시판이 존재하지 않으면 저장, 삭제된 게시판이면 isDeleted 상태 변경 후 반환
+     */
     @Transactional
-    public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto, RankChangeType state) {
-        Boards board = boardRepository.findByName(boardSaveDto.getBoardName())
-            .orElseGet(() -> boardRepository.save(
-                    Boards.builder()
-                        .name(boardSaveDto.getBoardName())
-                        .boardCategory(boardSaveDto.getBoardCategory())
-                        .build()
-                )
+    public Boards saveOrUpdateBoard(BoardSaveDto boardSaveDto) {
+        Optional<Boards> optionalBoards = boardRepository.findByName(boardSaveDto.getBoardName());
+
+        if (optionalBoards.isPresent()) {
+            // 삭제된 게시판이 다시 실시간 검색어에 등재된 경우, isDeleted 상태 변경
+            Boards board = optionalBoards.get();
+            board.changeDeleted();
+            return board;
+        } else {
+            // 새로운 게시판일 경우 새로운 객체 생성 후 저장
+            return boardRepository.save(
+                Boards.builder()
+                    .name(boardSaveDto.getBoardName())
+                    .boardCategory(boardSaveDto.getBoardCategory())
+                    .build()
             );
-        // 실시간 검색어 목록에 새로 등재된 경우에만 BoardSummary 생성
-//        boardSummaryService.saveOrUpdateBoardSummary(board, state);
-        return board.getId();
+        }
     }
 
 

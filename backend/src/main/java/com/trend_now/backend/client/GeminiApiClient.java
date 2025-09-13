@@ -1,9 +1,9 @@
 package com.trend_now.backend.client;
 
 import com.google.genai.Client;
-//import com.google.genai.types.GenerateContentConfig;
-//import com.google.genai.types.GoogleSearch;
-//import com.google.genai.types.Tool;
+import com.google.genai.types.GenerateContentConfig;
+import com.google.genai.types.GoogleSearch;
+import com.google.genai.types.Tool;
 import com.google.genai.types.GenerateContentResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -19,21 +19,24 @@ public class GeminiApiClient {
     }
 
     public String generateAnswer(String prompt, String model) {
-        // Google Search API 연동 예시 (필요시 활성화)
-//        GoogleSearch googleSearch = GoogleSearch.builder().build();
-//        Tool tool = Tool.builder()
-//            .googleSearch(googleSearch)
-//            .build();
-//        GenerateContentConfig config = GenerateContentConfig.builder()
-//            .tools(tool).build();
-
         GenerateContentResponse response =
             client.models.generateContent(
                 model,
                 prompt,
                 null
-//                config
             );
         return response.text();
+    }
+
+    /**
+     * Google Search 옵션 활성화 설정
+     */
+    private GenerateContentConfig googleSearchTool() {
+        GoogleSearch googleSearch = GoogleSearch.builder().build();
+        Tool tool = Tool.builder()
+            .googleSearch(googleSearch)
+            .build();
+        return GenerateContentConfig.builder()
+            .tools(tool).build();
     }
 }

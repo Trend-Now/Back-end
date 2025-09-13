@@ -54,19 +54,8 @@ import org.springframework.test.context.TestPropertySource;
 public class BoardsRedisServiceTest {
 
     private static final String BOARD_RANK_KEY = "board_rank";
-    private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
     private static final String BOARD_THRESHOLD_KEY = "board_threshold";
-    private static final String BOARD_INITIAL_COUNT = "0";
     public static final String BOARD_KEY_DELIMITER = ":";
-    public static final int BOARD_KEY_PARTS_LENGTH = 2;
-    public static final int BOARD_ID_INDEX = 1;
-    private static final long KEY_LIVE_TIME = 7201L;
-    private static final long BOARD_TIME_UP_50 = 300L;
-    private static final long BOARD_TIME_UP_100 = 600L;
-    private static final int KEY_EXPIRE = 0;
-    private static final int BOARD_TIME_UP_50_THRESHOLD = 50;
-    private static final int BOARD_TIME_UP_100_THRESHOLD = 100;
-    private static final int POSTS_INCREMENT_UNIT = 1;
 
     @InjectMocks
     private BoardRedisService boardRedisService;
@@ -86,27 +75,11 @@ public class BoardsRedisServiceTest {
     @Mock
     private RedisPublisher redisPublisher;
 
-    @Mock
-    private BoardRepository boardRepository;
-
-    @Mock
-    private BoardCache boardCache;
-
-    @Mock
-    private Cache<Long, BoardCacheEntry> mockCache;
-
-    @Mock
-    private PostLikesService postLikesService;
-
-    @Mock
-    private PostViewService postViewService;
-
     @BeforeEach
     void setUp() {
         when(redisTemplate.opsForValue()).thenReturn(valueOps);
         when(redisTemplate.opsForSet()).thenReturn(setOps);
         when(redisTemplate.opsForZSet()).thenReturn(zSetOps);
-        when(boardCache.getBoardCacheEntryMap()).thenReturn(mockCache);
     }
 
     @ParameterizedTest

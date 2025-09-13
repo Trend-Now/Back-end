@@ -47,7 +47,7 @@ public class BoardsRedisServiceTest {
     private static final String BOARD_THRESHOLD_KEY = "board_threshold";
     private static final String BOARD_KEY_DELIMITER = ":";
     private static final int BOARD_COUNT = 10;
-    private static final long KEY_LIVE_TIME = 301L;
+    private static final long KEY_LIVE_TIME = 7201L;
 
     @Autowired
     private BoardRedisService boardRedisService;
@@ -91,7 +91,7 @@ public class BoardsRedisServiceTest {
         //when
         for (int i = 0; i < BOARD_COUNT; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+            Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
@@ -120,7 +120,7 @@ public class BoardsRedisServiceTest {
         //when
         for (int i = 0; i < BOARD_COUNT; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+            Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
@@ -145,7 +145,7 @@ public class BoardsRedisServiceTest {
         //when
         for (int i = 0; i < BOARD_COUNT; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+            Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i + 1);
         }
@@ -197,7 +197,7 @@ public class BoardsRedisServiceTest {
         //페이징을 위해 BOARD_RANK_KEY에 대한 ZSet은 만료된 키를 제외하고 남겨둔다
         for (int i = 0; i < BOARD_COUNT; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+            Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
@@ -228,7 +228,7 @@ public class BoardsRedisServiceTest {
         //when
         for (int i = 0; i < BOARD_COUNT; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+            Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
@@ -266,7 +266,7 @@ public class BoardsRedisServiceTest {
 
         for (int i = 0; i < pagination_board_count; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(pagination_top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+            Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
@@ -308,7 +308,7 @@ public class BoardsRedisServiceTest {
 
         for (int i = 0; i < pagination_board_count; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(pagination_top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+            Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
             // 마지막 게시글 10개 시간 증가를 위해 id를 따로 저장해준다.
             if (i >= 10) {
                 incrementIdMap.put(boardSaveDto.getBoardName(), boardId);
@@ -367,7 +367,7 @@ public class BoardsRedisServiceTest {
         Map<String, Long> boardIdMap = new HashMap<>();
         for (int i = 0; i < pagination_board_count; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(pagination_top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+            Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
             boardIdMap.put(boardSaveDto.getBoardName(), boardId);
@@ -397,7 +397,7 @@ public class BoardsRedisServiceTest {
     public void 게시판_초기생성_게시글_0개() throws Exception {
         //given
         BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
-        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+        Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
 
         //when
         boardSaveDto.setBoardId(boardId);
@@ -415,7 +415,7 @@ public class BoardsRedisServiceTest {
         //given
         //게시판의 게시글 수가 49개인 게시판이 주어졌을 때
         BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
-        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+        Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
         boardSaveDto.setBoardId(boardId);
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
@@ -441,7 +441,7 @@ public class BoardsRedisServiceTest {
         //given
         //게시판의 게시글 수가 99개인 게시판이 주어졌을 때
         BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
-        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+        Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
         boardSaveDto.setBoardId(boardId);
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
@@ -467,7 +467,7 @@ public class BoardsRedisServiceTest {
         //given
         //게시판의 게시글 수가 199개인 게시판이 주어졌을 때
         BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
-        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+        Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
         boardSaveDto.setBoardId(boardId);
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
@@ -495,7 +495,7 @@ public class BoardsRedisServiceTest {
 
         //given
         BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
-        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+        Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
         boardSaveDto.setBoardId(boardId);
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
@@ -521,7 +521,7 @@ public class BoardsRedisServiceTest {
 
         //given
         BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
-        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+        Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
         boardSaveDto.setBoardId(boardId);
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
@@ -546,7 +546,7 @@ public class BoardsRedisServiceTest {
     public void 임계점_삭제() throws Exception {
         //given
         BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(0));
-        Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+        Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
         boardSaveDto.setBoardId(boardId);
         boardRedisService.saveBoardRedis(boardSaveDto, 0);
 
