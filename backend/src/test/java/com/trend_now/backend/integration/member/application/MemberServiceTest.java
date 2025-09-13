@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -89,10 +90,13 @@ class MemberServiceTest {
         List<String> jwts = new ArrayList<>();
         Set<Long> memberIds = new HashSet<>();
 
+        // Mock HttpServletResponse 생성
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
         // when
         // 테스트 JWT 생성 메서드를 count번 호출한다.
         for (int i = 0; i < count; i++) {
-            String jwt = memberService.getTestJwt();
+            String jwt = memberService.getTestJwt(response);
             jwts.add(jwt);
         }
 
@@ -100,8 +104,8 @@ class MemberServiceTest {
         // 생성된 JWT 값은 유효해야 한다.
         for (String jwt : jwts) {
             // JWT 토큰이 유효한지 검증
-            // jwtTokenFilter.validateToken(jwt) 반환이 null이 아니면 유효한 토큰
-            Claims claims = jwtTokenFilter.validateToken(jwt);
+            // jwtTokenFilter.validateAccessToken(jwt) 반환이 null이 아니면 유효한 토큰
+            Claims claims = jwtTokenFilter.validateAccessToken(jwt);
             assertThat(claims).isNotNull();
 
             // Claims에서 사용자 ID 추출 (subject 또는 다른 필드명 사용)

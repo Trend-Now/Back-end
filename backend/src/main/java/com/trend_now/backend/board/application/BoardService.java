@@ -48,6 +48,7 @@ public class BoardService {
         }
     }
 
+
     @Transactional
     public void updateBoardIsDeleted(BoardSaveDto boardSaveDto, boolean isInRedis) {
         // 요구사항을 기반으로 Redis에 있는 게시판 데이터는 DB에도 존재해야 한다.

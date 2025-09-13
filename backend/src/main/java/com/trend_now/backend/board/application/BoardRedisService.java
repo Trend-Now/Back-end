@@ -57,7 +57,6 @@ public class BoardRedisService {
     private static final int POSTS_INCREMENT_UNIT = 1;
 
     private static final String NOT_EXIST_BOARD = "선택하신 게시판이 존재하지 않습니다.";
-    private static final String NOT_EXIST_BOARD_SUMMARY = "해당 게시판의 AI 요약 정보가 존재하지 않습니다.";
 
     private final RedisTemplate<String, String> redisTemplate;
     private final RedisPublisher redisPublisher;
@@ -71,10 +70,11 @@ public class BoardRedisService {
         String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
         long keyLiveTime = KEY_LIVE_TIME;
 
-        Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
-        if (currentExpire != null && currentExpire > KEY_EXPIRE) {
-            keyLiveTime = currentExpire;
-        }
+        // 기존 키의 TTL이 남아 있을 경우 새로운 시간이 할당되지 않고, 기존 시간이 그대로 유지되는 버그 때문에 주석 처리
+//        Long currentExpire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+//        if (currentExpire != null && currentExpire > KEY_EXPIRE) {
+//            keyLiveTime = currentExpire;
+//        }
 
         redisTemplate.opsForValue().set(key, BOARD_INITIAL_COUNT);
         redisTemplate.expire(key, keyLiveTime, TimeUnit.SECONDS);
@@ -293,7 +293,7 @@ public class BoardRedisService {
         // AI 요약 정보 조회
         BoardSummary boardSummary = boardSummaryRepository.findByBoards_Id(findBoard.getId())
             .orElse(BoardSummary.builder()
-                .summary(NOT_EXIST_BOARD_SUMMARY)
+                .summary(null)
                 .build());
 
         return BoardInfoDto.builder()

@@ -75,7 +75,7 @@ public class SignalKeywordJob implements Job {
                 // Redis의 realtime_keywords에 저장하기 위해 boardId를 따로 리스트에 수집
                 boardIdList.add(boards.getId());
 
-                // i는 10번을 순회하면서 첫 번째는 0.01, 두 번째는 0.02, ... , 열 번째는 0.1의 값을 위 시간에서 더한다
+                // i는 10번을 순회하면서 첫 번째는 0.1, 두 번째는 0.09, ... , 열 번째는 0.01의 값을 위 시간에서 더한다
                 double score = calculateScore(now, i);
                 // Redis zSet(board_rank)에 score와 함께 저장
                 boardRedisService.saveBoardRedis(boardSaveDto, score);
