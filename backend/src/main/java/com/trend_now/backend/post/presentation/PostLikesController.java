@@ -27,17 +27,16 @@ public class PostLikesController {
     private final PostLikesService postLikesService;
 
     @Operation(summary = "좋아요 증가", description = "게시판에 등록된 게시글의 좋아요를 증가시킵니다.")
-    @PostMapping("{boardName}/{boardId}/posts/{postId}/likes")
+    @PostMapping("/{boardId}/posts/{postId}/likes")
     public ResponseEntity<String> incrementPostLikes(
             @AuthenticationPrincipal(expression = "members") Members member,
-            @PathVariable(value = "boardName") String boardName,
             @PathVariable(value = "boardId") Long boardId,
             @PathVariable(value = "postId") Long postId) {
 
         log.info("좋아요를 증가시키는 컨트롤러 메서드가 호출되었습니다.");
 
         PostLikesIncrementDto postLikesIncrementDto = PostLikesIncrementDto.of(member.getName(),
-                boardName, boardId, postId);
+                boardId, postId);
 
         postLikesService.increaseLikeLock(postLikesIncrementDto);
 

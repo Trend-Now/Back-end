@@ -115,7 +115,7 @@ public class PostLikesServiceTest {
                         + posts.getId();
         for (int i = 0; i < 5; i++) {
             PostLikesIncrementDto postLikesIncrementDto = PostLikesIncrementDto.of(
-                    members.get(i).getName(), boards.getName(), boards.getId(),
+                    members.get(i).getName(), boards.getId(),
                     posts.getId());
             postLikesService.increaseLikeLock(postLikesIncrementDto);
         }
@@ -136,7 +136,7 @@ public class PostLikesServiceTest {
         //given
         for (int i = 0; i < 10; i++) {
             PostLikesIncrementDto postLikesIncrementDto = PostLikesIncrementDto.of(
-                    members.get(i).getName(), boards.getName(), boards.getId(),
+                    members.get(i).getName(), boards.getId(),
                     posts.getId());
             postLikesService.increaseLikeLock(postLikesIncrementDto);
         }

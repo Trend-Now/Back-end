@@ -10,6 +10,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class PostsInfoDto {
+    private final Long postId;
     private final String title;
     private final String content;
     private final Long writerId;
@@ -25,8 +26,9 @@ public class PostsInfoDto {
     private final LocalDateTime updatedAt;
 
 
-    public PostsInfoDto(String title, String writer, String content, Long commentCount,
+    public PostsInfoDto(Long postId, String title, String writer, String content, Long commentCount,
         boolean modifiable, String boardName, LocalDateTime createdAt, LocalDateTime updatedAt, Long writerId) {
+        this.postId = postId;
         this.title = title;
         this.writer = writer;
         this.content = content;

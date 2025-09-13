@@ -102,6 +102,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
 
     @Query("""
         SELECT new com.trend_now.backend.post.dto.PostsInfoDto(
+                p.id,
                 p.title,
                 p.writer,
                 p.content,

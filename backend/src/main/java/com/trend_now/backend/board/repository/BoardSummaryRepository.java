@@ -10,5 +10,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface BoardSummaryRepository extends JpaRepository<BoardSummary, Long> {
 
-    Optional<BoardSummary> findByBoards(Boards boards);
+    Optional<BoardSummary> findByBoards_Id(Long boardsId);
 }

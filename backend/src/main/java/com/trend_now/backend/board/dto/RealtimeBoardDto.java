@@ -17,7 +17,7 @@ public class RealtimeBoardDto {
     @Setter
     private Long boardLiveTime;
     @Setter
-    private Double score;
+    private int score;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

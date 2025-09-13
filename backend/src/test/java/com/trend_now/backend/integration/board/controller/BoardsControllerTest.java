@@ -42,7 +42,7 @@ public class BoardsControllerTest {
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
     private static final String BOARD_RANK_REALTIME_KEY = "board_rank_realtime";
     private static final int BOARD_COUNT = 20;
-    private static final long KEY_LIVE_TIME = 301L;
+    private static final long KEY_LIVE_TIME = 7201L;
 
     @Autowired
     private MockMvc mockMvc;
@@ -78,7 +78,7 @@ public class BoardsControllerTest {
         redisTemplate.getConnectionFactory().getConnection().flushDb();
         for (int i = 0; i < BOARD_COUNT; i++) {
             BoardSaveDto boardSaveDto = BoardSaveDto.from(top10s.get(i));
-            Long boardId = boardService.saveBoardIfNotExists(boardSaveDto, RankChangeType.SAME);
+            Long boardId = boardService.saveOrUpdateBoard(boardSaveDto).getId();
             boardSaveDto.setBoardId(boardId);
             boardRedisService.saveBoardRedis(boardSaveDto, i);
         }
