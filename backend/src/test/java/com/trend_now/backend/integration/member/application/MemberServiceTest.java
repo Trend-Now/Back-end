@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -90,13 +91,14 @@ class MemberServiceTest {
         List<String> jwts = new ArrayList<>();
         Set<Long> memberIds = new HashSet<>();
 
-        // Mock HttpServletResponse 생성
+        // Mock HttpServletRequest, Response 생성
+        MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         // when
         // 테스트 JWT 생성 메서드를 count번 호출한다.
         for (int i = 0; i < count; i++) {
-            String jwt = memberService.getTestJwt(response);
+            String jwt = memberService.getTestJwt(request, response);
             jwts.add(jwt);
         }
 

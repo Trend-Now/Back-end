@@ -56,8 +56,8 @@ public class MemberController {
     // 테스트용 JWT 발급 API
     @GetMapping("/test-jwt")
     @Operation(summary = "JWT 발급", description = "테스트용 JWT 발급 API")
-    public ResponseEntity<String> getJwt(HttpServletResponse response) {
-        return new ResponseEntity<>(memberService.getTestJwt(response), HttpStatus.OK);
+    public ResponseEntity<String> getJwt(HttpServletRequest request, HttpServletResponse response) {
+        return new ResponseEntity<>(memberService.getTestJwt(request, response), HttpStatus.OK);
     }
 
     /**
