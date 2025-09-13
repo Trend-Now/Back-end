@@ -119,7 +119,7 @@ public class MemberService {
      * - test 계정이 없으면 해당 계정을 저장 후, id 값을 가져와 JWT 값 생성
      */
     @Transactional
-    public String getTestJwt(HttpServletResponse response) {
+    public String getTestJwt(HttpServletRequest request, HttpServletResponse response) {
         Members testMember = memberRepository.findBySnsId("test_snsId")
                 .orElseGet(
                         () -> memberRepository.save(
@@ -135,8 +135,8 @@ public class MemberService {
         String testJwt = jwtTokenProvider.createAccessToken(testMember.getId());
         String testRefreshToken = jwtTokenProvider.createRefreshToken(testMember.getId());
         log.info("[MemberService.getTestJwt] : 테스트용 JWT = {}, Refresh Token {}", testJwt, testRefreshToken);
-        CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, testJwt, accessTokenExpiration);
-        CookieUtil.addCookie(response, REFRESH_TOKEN_KEY, testRefreshToken, refreshTokenExpiration);
+        CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, testJwt, accessTokenExpiration);
+        CookieUtil.addCookie(request, response, REFRESH_TOKEN_KEY, testRefreshToken, refreshTokenExpiration);
         return testJwt;
     }
 
@@ -162,7 +162,7 @@ public class MemberService {
         // Redis에 key(Member Id)의 value(Refresh Token)이 입력된 Refresh Token과 일치하는지 확인
         if(memberRedisService.isMatchedRefreshTokenInRedis(memberIdInAccessToken, refreshToken.getValue())) {
             String reissuancedAccessToken = jwtTokenProvider.createAccessToken(memberIdInAccessToken);
-            CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, reissuancedAccessToken, accessTokenExpiration);
+            CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, reissuancedAccessToken, accessTokenExpiration);
             return REISSUANCE_ACCESS_TOKEN_SUCCESS;
         } else {
             throw new NotFoundException(NOT_EXIST_MATCHED_REFRESH_TOKEN_IN_REDIS);

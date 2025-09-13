@@ -58,8 +58,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             .orElse("/");
 
         // HttpOnly Cookie 방식으로 Access Token 저장하여 response에 지정
-        CookieUtil.addCookie(response, ACCESS_TOKEN_KEY, accessToken, accessTokenExpiration);
-        CookieUtil.addCookie(response, REFRESH_TOKEN_KEY, refreshToken, refreshTokenExpiration);
+        CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, accessToken, accessTokenExpiration);
+        CookieUtil.addCookie(request, response, REFRESH_TOKEN_KEY, refreshToken, refreshTokenExpiration);
 
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)
             .build()

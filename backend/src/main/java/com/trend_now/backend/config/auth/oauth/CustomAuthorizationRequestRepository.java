@@ -29,12 +29,12 @@ public class CustomAuthorizationRequestRepository implements AuthorizationReques
         }
         // 인가 요청 정보를 쿠키에 저장
         String serializedAuthRequest = Base64.getUrlEncoder().encodeToString(SerializationUtils.serialize(authorizationRequest));
-        CookieUtil.addCookie(response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, serializedAuthRequest, 180);
+        CookieUtil.addCookie(request, response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, serializedAuthRequest, 180);
 
         // redirect_url를 별도 쿠키로 저장
         String redirectUriAfterLogin = request.getParameter(REDIRECT_URI_PARAM_COOKIE_NAME);
         if (redirectUriAfterLogin != null) {
-            CookieUtil.addCookie(response, REDIRECT_URI_PARAM_COOKIE_NAME, redirectUriAfterLogin, 180);
+            CookieUtil.addCookie(request, response, REDIRECT_URI_PARAM_COOKIE_NAME, redirectUriAfterLogin, 180);
         }
     }
 
