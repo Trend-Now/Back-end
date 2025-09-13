@@ -230,8 +230,10 @@ public class BoardRedisService {
             .forEach(i -> {
                 RealtimeBoardDto realtimeBoardDto = realtimeBoardList.get(i);
                 Double score = boardRankList.get(i).getScore();
-                // boardLiveTime는 score의 정수부를 long으로 변환하여 현재 시간과 차이를 계산
-                realtimeBoardDto.setBoardLiveTime((score.longValue() * -1) - now);
+                // boardLiveTime는 score의 정수부를 long으로 변환하여 현재 시간과 차이를 계산 (ms 단위)
+                long boardLiveTimeInMs = (score.longValue() * -1) - now;
+                // boardLiveTime을 초 단위로 변환하여 설정
+                realtimeBoardDto.setBoardLiveTime(boardLiveTimeInMs / 1000);
                 // score는 page가 0일 경우 0 ~ 9, page가 1일 경우 10 ~ 19, ... 와 같이 설정
                 realtimeBoardDto.setScore((i + 1) + (page * 10));
             });
@@ -285,10 +287,11 @@ public class BoardRedisService {
             .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
 
         String key = findBoard.getName() + BOARD_KEY_DELIMITER + findBoard.getId();
-        Long boardLiveTime = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+        Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, key);
 
-        // 게시판 만료 시각을 ms 단위로 계산
-        Long expiredBoardTime = System.currentTimeMillis() + (boardLiveTime * 1000);
+        // 게시판의 남은 시간 (ms 단위)
+        long now = Instant.now().toEpochMilli();
+        long boardLiveTime = ((score.longValue() * -1) - now);
 
         // AI 요약 정보 조회
         BoardSummary boardSummary = boardSummaryRepository.findByBoards_Id(findBoard.getId())
@@ -299,8 +302,8 @@ public class BoardRedisService {
         return BoardInfoDto.builder()
             .boardId(findBoard.getId())
             .boardName(findBoard.getName())
-            .boardLiveTime(boardLiveTime)
-            .boardExpiredTime(expiredBoardTime)
+            .boardLiveTime(boardLiveTime / 1000) // 초 단위로 변환
+            .boardExpiredTime(score)
             .summary(boardSummary.getSummary())
             .build();
     }
