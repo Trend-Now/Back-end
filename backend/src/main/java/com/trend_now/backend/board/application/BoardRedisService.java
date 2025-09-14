@@ -43,7 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BoardRedisService {
 
-    private static final String BOARD_RANK_KEY = "board_rank";
+    public static final String BOARD_RANK_KEY = "board_rank";
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
     private static final String BOARD_THRESHOLD_KEY = "board_threshold";
     private static final String BOARD_INITIAL_COUNT = "0";
@@ -286,11 +286,11 @@ public class BoardRedisService {
             .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
 
         String key = findBoard.getName() + BOARD_KEY_DELIMITER + findBoard.getId();
-        Double score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, key);
+        long score = redisTemplate.opsForZSet().score(BOARD_RANK_KEY, key).longValue() * -1;
 
         // 게시판의 남은 시간 (ms 단위)
         long now = Instant.now().toEpochMilli();
-        long boardLiveTime = ((score.longValue() * -1) - now);
+        long boardLiveTime = score - now;
 
         // AI 요약 정보 조회
         BoardSummary boardSummary = boardSummaryRepository.findByBoards_Id(findBoard.getId())

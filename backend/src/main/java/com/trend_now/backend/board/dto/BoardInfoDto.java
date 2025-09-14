@@ -12,7 +12,7 @@ public class BoardInfoDto {
     private Long boardId;
     private String boardName;
     private long boardLiveTime;
-    private Double boardExpiredTime;
+    private long boardExpiredTime;
     private double score;
     private String summary;
 }

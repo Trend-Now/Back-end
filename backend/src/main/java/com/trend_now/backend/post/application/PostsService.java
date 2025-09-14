@@ -126,8 +126,11 @@ public class PostsService {
      * 게시글 상세 조회 API에 응답되는 메서드
      */
     public PostInfoResponseDto findPostsById(Long boardId, Long postId, Authentication authentication) {
+        Boards boards = boardRepository.findById(boardId).
+            orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
+
         // 게시판이 존재하는지, 가변 타이머가 작동 중인지 확인
-        Boards boards = findAndValidateBoard(boardId);
+//        Boards boards = findAndValidateBoard(boardId);
 
         // 게시글 정보 조회
         PostsInfoDto postsInfoDto = postsRepository.findPostInfoById(postId)

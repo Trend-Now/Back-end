@@ -72,7 +72,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String accessToken = CookieUtil.getCookie(request, ACCESS_TOKEN_KEY)
                 .map(Cookie::getValue)
                 .orElse(null);
-        log.info("[JwtTokenFilter.doFilter] Cookie에서 JWT 토큰 추출: {}", accessToken);
+//        log.info("[JwtTokenFilter.doFilter] Cookie에서 JWT 토큰 추출: {}", accessToken);
 
         try {
             if (accessToken != null) {
