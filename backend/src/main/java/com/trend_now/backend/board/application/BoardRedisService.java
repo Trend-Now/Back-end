@@ -244,8 +244,7 @@ public class BoardRedisService {
                 return realtimeBoardDto;
             }).toList();
 
-        long realtimeBoardCount = boardCache.getBoardCacheEntryMap()
-            .estimatedSize(); // 캐시에서 실시간 게시판 목록의 사이즈 조회
+        Long realtimeBoardCount = redisTemplate.opsForZSet().zCard(BOARD_RANK_KEY);// 캐시에서 실시간 게시판 목록의 사이즈 조회
         long totalPages = (long) Math.ceil(
             (double) realtimeBoardCount / boardPagingRequestDto.getSize());
         return BoardPagingResponseDto.from(totalPages, realtimeBoardCount, realtimeBoardList);
