@@ -22,12 +22,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -203,11 +205,11 @@ public class BoardRedisService {
     @Transactional // 조회수, 좋아요 개수 데이터 동기화를 하나의 트랜잭션으로 묶는다.
     public BoardPagingResponseDto findAllRealTimeBoardPaging(
         BoardPagingRequestDto boardPagingRequestDto) {
-        int page = boardPagingRequestDto.getPage();
-        int size = boardPagingRequestDto.getSize();
+        int page = boardPagingRequestDto.getPage(); // 0
+        int size = boardPagingRequestDto.getSize(); // 5
         // Redis에서의 조회는 0부터 시작하므로, size로 받은 숫자에서 1을 뺀 값을 사용한다.
-        int start = page * size;
-        int end = start + size - 1;
+        int start = page * size; // 0
+        int end = start + size - 1; // 4
         List<TypedTuple<String>> boardRankList = getBoardRankList(start, end);
 
         if (boardRankList == null || boardRankList.isEmpty()) {
@@ -216,9 +218,10 @@ public class BoardRedisService {
         // Redis에서 조회한 실시간 게시판 목록 데이터에서 boardId 값만 추출하여 List를 생성한다.
         List<Long> boardIdList = extractBoardIdList(boardRankList);
 
-        // DB에서 실시간 게시판 목록 조회
-        List<RealtimeBoardDto> realtimeBoardList = boardRepository.findRealtimeBoardsByIds(
-            boardIdList);
+        // DB에서 실시간 게시판 목록 조회 후 Map으로 변환
+        Map<Long, RealtimeBoardDto> realtimeBoardMap = boardRepository.findRealtimeBoardsByIds(
+            boardIdList).stream().collect(
+            Collectors.toMap(RealtimeBoardDto::getBoardId, realtimeBoard -> realtimeBoard));
 
         // 조회수와 좋아요 개수 동기화
         postViewService.syncViewCountToDatabase();
@@ -226,9 +229,10 @@ public class BoardRedisService {
 
         // realtimeBoardList에 ttl과 zScore를 매핑
         long now = Instant.now().toEpochMilli();
-        IntStream.range(0, realtimeBoardList.size())
-            .forEach(i -> {
-                RealtimeBoardDto realtimeBoardDto = realtimeBoardList.get(i);
+        List<RealtimeBoardDto> realtimeBoardList = IntStream.range(0, boardIdList.size())
+            .mapToObj(i -> {
+                Long boardId = boardIdList.get(i);
+                RealtimeBoardDto realtimeBoardDto = realtimeBoardMap.get(boardId);
                 Double score = boardRankList.get(i).getScore();
                 // boardLiveTime는 score의 정수부를 long으로 변환하여 현재 시간과 차이를 계산 (ms 단위)
                 long boardLiveTimeInMs = (score.longValue() * -1) - now;
@@ -236,19 +240,15 @@ public class BoardRedisService {
                 realtimeBoardDto.setBoardLiveTime(boardLiveTimeInMs / 1000);
                 // score는 page가 0일 경우 0 ~ 9, page가 1일 경우 10 ~ 19, ... 와 같이 설정
                 realtimeBoardDto.setScore((i + 1) + (page * 10));
-            });
 
-        // boardLiveTime은 실시간 게시판이 Redis에 expire만 관리
-        // score을 사용해 실시간 게시판을 정렬하여 반환
-        List<RealtimeBoardDto> sortedRealTimeBoardList = realtimeBoardList.stream()
-            .sorted(Comparator.comparingDouble(RealtimeBoardDto::getScore)) // score 오름차순 정렬만 적용
-            .collect(Collectors.toList());
+                return realtimeBoardDto;
+            }).toList();
 
         long realtimeBoardCount = boardCache.getBoardCacheEntryMap()
             .estimatedSize(); // 캐시에서 실시간 게시판 목록의 사이즈 조회
         long totalPages = (long) Math.ceil(
             (double) realtimeBoardCount / boardPagingRequestDto.getSize());
-        return BoardPagingResponseDto.from(totalPages, realtimeBoardCount, sortedRealTimeBoardList);
+        return BoardPagingResponseDto.from(totalPages, realtimeBoardCount, realtimeBoardList);
     }
 
     private static List<Long> extractBoardIdList(List<TypedTuple<String>> boardRankSet) {

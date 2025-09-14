@@ -2,10 +2,12 @@ package com.trend_now.backend.board.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public class Top10WithDiff {
 
     private int rank;
