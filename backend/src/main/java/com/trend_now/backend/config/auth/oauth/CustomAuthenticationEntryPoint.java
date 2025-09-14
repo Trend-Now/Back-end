@@ -30,7 +30,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                          HttpServletResponse response,
                          AuthenticationException authException) throws IOException, ServletException {
 
-        log.info("인증되지 않은 사용자에게 요청이 들어왔습니다. 요청 URI: {}", request.getRequestURI());
+//        log.info("인증되지 않은 사용자에게 요청이 들어왔습니다. 요청 URI: {}", request.getRequestURI());
 
         // 응답 상태 코드 설정
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
