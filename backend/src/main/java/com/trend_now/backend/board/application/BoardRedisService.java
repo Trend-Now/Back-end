@@ -43,7 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BoardRedisService {
 
-    private static final String BOARD_RANK_KEY = "board_rank";
+    public static final String BOARD_RANK_KEY = "board_rank";
     private static final String BOARD_RANK_VALID_KEY = "board_rank_valid";
     private static final String BOARD_THRESHOLD_KEY = "board_threshold";
     private static final String BOARD_INITIAL_COUNT = "0";

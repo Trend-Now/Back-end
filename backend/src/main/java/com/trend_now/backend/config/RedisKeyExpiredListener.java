@@ -1,5 +1,6 @@
 package com.trend_now.backend.config;
 
+import static com.trend_now.backend.board.application.BoardRedisService.BOARD_RANK_KEY;
 import static com.trend_now.backend.post.application.PostsService.POST_COOLDOWN_PREFIX;
 
 import com.trend_now.backend.board.application.RedisPublisher;
@@ -8,6 +9,7 @@ import com.trend_now.backend.comment.application.CommentsService;
 import com.trend_now.backend.post.application.PostsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.KeyExpirationEventMessageListener;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.stereotype.Component;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
 
+    private final RedisTemplate<String, String> redisTemplate;
     private final RedisPublisher redisPublisher;
     private final RedisMessageListenerContainer listenerContainer;
     private final PostsService postsService;
@@ -25,12 +28,14 @@ public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
 
     public RedisKeyExpiredListener(
             RedisMessageListenerContainer listenerContainer,
+            RedisTemplate<String, String> redisTemplate,
             RedisPublisher redisPublisher, PostsService postsService, CommentsService commentsService) {
         super(listenerContainer);
         this.redisPublisher = redisPublisher;
         this.listenerContainer = listenerContainer;
         this.postsService = postsService;
         this.commentsService = commentsService;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -54,6 +59,8 @@ public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
         }
         postsService.updateModifiable(Long.parseLong(key[1]));
         commentsService.updateModifiable(Long.parseLong(key[1]));
+
+        redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, messageToStr);
 
         log.info("RedisKeyExpiredListener에서 수신된 데이터 : {}", messageToStr);
         redisPublisher.publishRealTimeBoardExpiredEvent(
