@@ -69,7 +69,8 @@ public class SignalKeywordService {
     /**
      * 순위 변동 추이를 계산하여 Redis - realtime_keywords에 저장하는 함수 기존에 저장돼 있던 값은 전부 삭제하고, 새로 받아온 값으로 갱신한다.
      */
-    public List<String> saveRealtimeKeywords(SignalKeywordDto signalKeywordDto, List<Long> boardIdList) {
+    public List<String> saveRealtimeKeywords(SignalKeywordDto signalKeywordDto,
+        List<Long> boardIdList) {
         // 이 메서드에서 저장한 값을 반환하기 위한 리스트
         List<String> realTimeKeywordList = new ArrayList<>();
         // signal.bz에서 받아온 현재 실시간 검색어 리스트
@@ -87,7 +88,10 @@ public class SignalKeywordService {
             // 이전에 저장돼 있던 순위
             Integer previousRank = previousRankMap.get(currentKeyword.getKeyword());
             // signal.bz에서 제공하는 변동 상태 (만약 TrendNow 시스템이 처음 시작돼서 이전에 저장돼 있던 값이 없다면 NEW로 처리)
-            RankChangeType state = previousRank == null ? RankChangeType.NEW : currentKeyword.getState();
+            RankChangeType state = previousRank == null ? RankChangeType.NEW
+                : currentRank.equals(previousRank) ? RankChangeType.SAME
+                    : currentRank < previousRank ? RankChangeType.UP
+                        : RankChangeType.DOWN;
             // 변동폭
             // state 값이 NEW/SAME 이거나 이전에 저장 돼 있던 값이 없다면 0
             // state 값이 UP/DOWN 이면서 이전에 저장 돼 있던 값이 있다면 절대값으로 계산)
@@ -108,7 +112,8 @@ public class SignalKeywordService {
 
     // 실시간 검색어가 마지막으로 갱신된 시간 업데이트
     public void updateLastUpdatedTime(long timestamp) {
-        redisTemplate.opsForValue().set(REALTIME_KEYWORD_LAST_UPDATED_KEY, String.valueOf(timestamp));
+        redisTemplate.opsForValue()
+            .set(REALTIME_KEYWORD_LAST_UPDATED_KEY, String.valueOf(timestamp));
     }
 
     // 실시간 검색어가 마지막으로 갱신된 시간 조회
@@ -127,7 +132,8 @@ public class SignalKeywordService {
             throw new RuntimeException(FETCH_KEYWORD_ERROR_MESSAGE);
         }
         long lastUpdatedTime = getLastUpdatedTime();
-        List<Top10WithDiff> top10WithDiffList = realtimeKeywordList.stream().map(Top10WithDiff::from).toList();
+        List<Top10WithDiff> top10WithDiffList = realtimeKeywordList.stream()
+            .map(Top10WithDiff::from).toList();
         return new Top10WithChange(lastUpdatedTime, top10WithDiffList);
     }
 
