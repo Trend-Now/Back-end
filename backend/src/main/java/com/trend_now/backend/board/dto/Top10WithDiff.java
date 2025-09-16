@@ -30,6 +30,6 @@ public class Top10WithDiff {
         // realtimeKeyword: "순위:검색어:게시판아이디:상태:등락폭"
         String[] split = realtimeKeyword.split(":");
         return new Top10WithDiff(Integer.parseInt(split[0]), split[1], Long.parseLong(split[2]),
-            RankChangeType.fromSymbol(split[3]), Integer.parseInt(split[4]));
+            RankChangeType.valueOf(split[3]), Integer.parseInt(split[4]));
     }
 }
