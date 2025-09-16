@@ -25,11 +25,13 @@ public enum RankChangeType {
      * signal.bz에서 받아온 JSON 데이터의 state 값을 RankChangeType enum으로 변환
      */
     @JsonCreator
-    public static RankChangeType fromSymbol(String symbol) {
-        return Arrays.stream(RankChangeType.values())
-            .filter(op -> op.getSymbol().equals(symbol))
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 랭크 변화 타입입니다: " + symbol));
+    public static RankChangeType fromString(String value) {
+        for (RankChangeType type : RankChangeType.values()) {
+            if (type.name().equalsIgnoreCase(value) || type.getSymbol().equals(value)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("지원하지 않는 랭크 변화 타입입니다: " + value);
     }
 
 }
