@@ -139,7 +139,7 @@ public class SearchService {
             .asMap();
 
         List<AutoCompleteDto> filteredBoards = boardCacheEntryMap.entrySet().stream()
-            .filter(fixedBoard -> fixedBoard.getValue().getBoardName()
+            .filter(fixedBoard -> fixedBoard.getValue().getBoardName().replaceAll(" ", "")
                 .contains(trimmedPrefix))
             .map(fixedBoard -> AutoCompleteDto.builder()
                 .boardId(fixedBoard.getKey())
