@@ -35,7 +35,7 @@ public class SignalKeywordService {
     private static final String FETCH_KEYWORD_ERROR_MESSAGE = "실시간 검색어 순위 리스트가 존재하지 않습니다.";
     private static final String REALTIME_KEYWORD_LAST_UPDATED_KEY = "realtime_keywords:last_updated";
     private static final String CLIENT_ID_KEY = "clientId";
-    private static final String SIGNAL_KEYWORD_LIST_EMITTER_NAME = "signalKeywordList";
+    private static final String SUBSCRIPTION_SUCCESS_EMITTER_NAME = "subscriptionSuccess";
     private static final String SIGNAL_KEYWORD_LIST = "realtime_keywords";
 
     private final Builder webClientBuilder;
@@ -173,7 +173,7 @@ public class SignalKeywordService {
             redisTemplate.opsForSet().remove(CLIENT_ID_KEY, clientId);
         });
 
-        sseEmitterService.send(MsgFormat.SUBSCRIBE, SIGNAL_KEYWORD_LIST_EMITTER_NAME, clientId,
+        sseEmitterService.send(MsgFormat.SUBSCRIBE, SUBSCRIPTION_SUCCESS_EMITTER_NAME, clientId,
             sseEmitter);
         return sseEmitter;
     }
