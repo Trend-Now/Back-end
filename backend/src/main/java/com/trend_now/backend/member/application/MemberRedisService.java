@@ -16,7 +16,7 @@ public class MemberRedisService {
 
     private final RedisTemplate<String, String> redisTemplate;
 
-    private static final String REFRESH_TOKEN_PREFIX = "RefreshToken_";
+    public static final String REFRESH_TOKEN_PREFIX = "RefreshToken_";
     private static final String NOT_EXIST_REFRESH_TOKEN_IN_REDIS = "Redis에 입력된 Member Id의 key가 없습니다.";
 
     /**
