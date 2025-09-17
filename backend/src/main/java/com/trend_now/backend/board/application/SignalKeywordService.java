@@ -170,6 +170,7 @@ public class SignalKeywordService {
         sseEmitter.onError((e) -> sseEmitter.complete());
         sseEmitter.onCompletion(() -> {
             sseEmitterService.deleteEmitter(clientId);
+            redisTemplate.opsForSet().remove(CLIENT_ID_KEY, clientId);
         });
 
         sseEmitterService.send(MsgFormat.SUBSCRIBE, SIGNAL_KEYWORD_LIST_EMITTER_NAME, clientId,

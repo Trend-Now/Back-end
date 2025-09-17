@@ -101,8 +101,6 @@ public class SseEmitterService {
              * Redis와 Repository에서 clientId를 삭제한다
              */
             sseEmitter.completeWithError(e);
-            sseEmitterRepository.deleteById(clientId);
-            redisTemplate.opsForSet().remove(CLIENT_ID_KEY, clientId);
         }
     }
 }

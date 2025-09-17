@@ -5,9 +5,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+@Slf4j
 @Repository
 public class SseEmitterRepository {
 
@@ -23,6 +25,7 @@ public class SseEmitterRepository {
     }
 
     public void deleteById(String eventId) {
+        log.info("삭제된 SSE Emitter ID: {}", eventId);
         emitters.remove(eventId);
     }
 
