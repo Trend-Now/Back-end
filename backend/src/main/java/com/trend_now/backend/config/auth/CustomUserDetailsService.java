@@ -1,6 +1,6 @@
 package com.trend_now.backend.config.auth;
 
-import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.customException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;

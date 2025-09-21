@@ -1,6 +1,6 @@
 package com.trend_now.backend.common;
 
-import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.customException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import lombok.RequiredArgsConstructor;
 

@@ -1,6 +1,8 @@
 package com.trend_now.backend.post.presentation;
 
 import com.trend_now.backend.board.application.BoardService;
+import com.trend_now.backend.exception.customException.InvalidTokenException;
+import com.trend_now.backend.exception.customException.UnauthorizedException;
 import com.trend_now.backend.global.dto.ApiResponse;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
@@ -14,6 +16,7 @@ import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -42,6 +45,7 @@ public class PostsController {
     private static final String SUCCESS_SAVE_POSTS_MESSAGE = "게시글을 저장하는 데 성공했습니다.";
     private static final String SUCCESS_UPDATE_POSTS_MESSAGE = "게시글을 수정하는 데 성공했습니다.";
     private static final String SUCCESS_DELETE_POSTS_MESSAGE = "게시글을 삭제하는 데 성공했습니다.";
+    private static final String LOGIN_REQUIRED_MESSAGE = "로그인이 필요한 서비스입니다.";
 
     private final PostsService postsService;
     private final BoardService boardService;
@@ -122,13 +126,15 @@ public class PostsController {
         return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_DELETE_POSTS_MESSAGE);
     }
 
-    @Operation(summary = "게시판 글쓰기 가능 여부 확인", description = "요청한 사용자가 현재 게시판에 게시글을 작성한 후 5분 이내에는 추가 작성이 불가능하도록 쿨다운 상태를 확인합니다.")
+    @Operation(summary = "게시판 글 작성 가능 여부 확인", description = "요청한 사용자가 현재 게시판에 게시글을 작성한 후 5분 이내에는 추가 작성이 불가능하도록 쿨다운 상태를 확인합니다.")
     @GetMapping("/posts/cooldown")
     public ResponseEntity<CheckPostCooldownResponse> checkPostCooldown(
         @PathVariable(value = "boardId") Long boardId,
-        @AuthenticationPrincipal(expression = "members") Members members) {
-
+        @AuthenticationPrincipal Optional<Members> memberOptional) {
+        Members member = memberOptional.orElseThrow(() ->
+            new UnauthorizedException(LOGIN_REQUIRED_MESSAGE)
+        );
         return ResponseEntity.status(HttpStatus.OK)
-            .body(postsService.checkPostCooldown(boardId, members.getId()));
+            .body(postsService.checkPostCooldown(boardId, member.getId()));
     }
 }

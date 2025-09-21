@@ -1,6 +1,6 @@
 package com.trend_now.backend.infra.s3.application;
 
-import com.trend_now.backend.exception.CustomException.S3FileUploadException;
+import com.trend_now.backend.exception.customException.S3FileUploadException;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;

@@ -1,7 +1,7 @@
 package com.trend_now.backend.image.application;
 
 import com.trend_now.backend.infra.s3.application.S3Service;
-import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.customException.NotFoundException;
 import com.trend_now.backend.image.domain.Images;
 import com.trend_now.backend.image.dto.ImageInfoDto;
 import com.trend_now.backend.image.dto.ImageUploadRequestDto;

@@ -6,7 +6,7 @@ import com.trend_now.backend.board.cache.BoardCacheEntry;
 import com.trend_now.backend.board.cache.BoardCache;
 import com.trend_now.backend.board.dto.RealtimeBoardDto;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.customException.NotFoundException;
 import com.trend_now.backend.post.application.PostLikesService;
 import com.trend_now.backend.post.application.PostViewService;
 import com.trend_now.backend.post.dto.PostSummaryDto;
