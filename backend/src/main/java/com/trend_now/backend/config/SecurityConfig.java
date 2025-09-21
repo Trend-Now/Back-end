@@ -112,7 +112,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(
-            Arrays.asList("http://localhost:3000", "http://localhost:63342", "http://local.trendnow.me:3000",
+            Arrays.asList("http://localhost:3000", "http://localhost:63342", "https://local.trendnow.me:3000",
                 // 개발 프론트엔드 도메인 허용
                 "https://www.trendnow.me",
                 "https://front-end-git-bugfix-login-trendnow.vercel.app",
