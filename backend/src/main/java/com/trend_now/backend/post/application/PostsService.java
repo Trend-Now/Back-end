@@ -26,6 +26,7 @@ import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
+import com.trend_now.backend.post.dto.PostsSaveWithImagesDto;
 import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.List;
@@ -285,6 +286,8 @@ public class PostsService {
         if (posts.isNotSameId(memberId)) {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
         }
+
+        log.info("게시글 수정 내용 원본: {} 수정할 내용 {}", posts.getContent(), postsUpdateRequestDto.getContent());
 
         // 삭제된 이미지 서버에서 삭제
         List<Long> deleteImageIdList = postsUpdateRequestDto.getDeleteImageIdList();
