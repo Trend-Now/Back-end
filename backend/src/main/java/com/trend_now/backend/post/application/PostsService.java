@@ -286,7 +286,11 @@ public class PostsService {
             throw new IllegalArgumentException(NOT_SAME_WRITER);
         }
 
-        log.info("게시글 수정 내용 요청 {}", postsUpdateRequestDto);
+        // 제목, 내용 업데이트
+        posts.changePosts(postsUpdateRequestDto.getTitle(), postsUpdateRequestDto.getContent());
+
+        log.info("게시글 수정 요청 - 내용: {} 삭제 이미지: {} 추가 이미지: {}", postsUpdateRequestDto.getContent(),
+            postsUpdateRequestDto.getDeleteImageIdList(), postsUpdateRequestDto.getNewImageIdList());
 
         // 삭제된 이미지 서버에서 삭제
         List<Long> deleteImageIdList = postsUpdateRequestDto.getDeleteImageIdList();
@@ -303,8 +307,6 @@ public class PostsService {
                 }
             );
         }
-        // 제목, 내용 업데이트
-        posts.changePosts(postsUpdateRequestDto.getTitle(), postsUpdateRequestDto.getContent());
 
         log.info("게시글 수정 완료 - content: {}", posts.getContent());
 
