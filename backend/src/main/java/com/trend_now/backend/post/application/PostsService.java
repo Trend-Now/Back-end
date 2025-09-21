@@ -26,7 +26,6 @@ import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
-import com.trend_now.backend.post.dto.PostsSaveWithImagesDto;
 import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.List;
