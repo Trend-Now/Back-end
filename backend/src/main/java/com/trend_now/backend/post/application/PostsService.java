@@ -288,6 +288,7 @@ public class PostsService {
 
         // 제목, 내용 업데이트
         posts.changePosts(postsUpdateRequestDto.getTitle(), postsUpdateRequestDto.getContent());
+        // 이미지 삭제 벌크 연산 이후 1차 캐시가 초기화 되기 떄문에 강제로 flush
         postsRepository.flush();
 
         // 삭제된 이미지 서버에서 삭제
