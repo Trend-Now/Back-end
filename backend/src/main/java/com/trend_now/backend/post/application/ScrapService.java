@@ -1,6 +1,6 @@
 package com.trend_now.backend.post.application;
 
-import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.customException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.domain.Posts;

@@ -1,12 +1,11 @@
 package com.trend_now.backend.exception;
 
-import com.trend_now.backend.exception.CustomException.DuplicateException;
-import com.trend_now.backend.exception.CustomException.NotFoundException;
-import com.trend_now.backend.exception.CustomException.S3FileUploadException;
+import com.trend_now.backend.exception.customException.DuplicateException;
+import com.trend_now.backend.exception.customException.NotFoundException;
+import com.trend_now.backend.exception.customException.UnauthorizedException;
 import com.trend_now.backend.exception.dto.ErrorResponseDto;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -65,6 +64,16 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return ResponseEntity.badRequest().body(errorResponseDto);
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponseDto> handleUnauthorizedException(UnauthorizedException exception, HttpServletRequest request) {
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+                HttpStatus.UNAUTHORIZED,
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponseDto);
     }
 
     /**

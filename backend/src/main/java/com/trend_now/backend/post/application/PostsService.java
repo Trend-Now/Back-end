@@ -12,8 +12,8 @@ import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.config.auth.CustomUserDetails;
-import com.trend_now.backend.exception.CustomException.InvalidRequestException;
-import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.customException.InvalidRequestException;
+import com.trend_now.backend.exception.customException.NotFoundException;
 import com.trend_now.backend.image.application.ImagesService;
 import com.trend_now.backend.image.domain.Images;
 import com.trend_now.backend.image.dto.ImageInfoDto;
@@ -288,9 +288,8 @@ public class PostsService {
 
         // 제목, 내용 업데이트
         posts.changePosts(postsUpdateRequestDto.getTitle(), postsUpdateRequestDto.getContent());
-
-        log.info("게시글 수정 요청 - 내용: {} 삭제 이미지: {} 추가 이미지: {}", postsUpdateRequestDto.getContent(),
-            postsUpdateRequestDto.getDeleteImageIdList(), postsUpdateRequestDto.getNewImageIdList());
+        // 이미지 삭제 벌크 연산 이후 1차 캐시가 초기화 되기 떄문에 강제로 flush
+        postsRepository.flush();
 
         // 삭제된 이미지 서버에서 삭제
         List<Long> deleteImageIdList = postsUpdateRequestDto.getDeleteImageIdList();
@@ -308,13 +307,9 @@ public class PostsService {
             );
         }
 
-        log.info("게시글 수정 완료 - content: {}", posts.getContent());
-
         // 응답 생성
         PostsInfoDto postsInfoDto = findPostsById(boardId, posts.getId(), memberId);
-        log.info("게시글 수정 이후 응답 - postInfo {}", postsInfoDto);
         List<ImageInfoDto> imageInfoDtoList = imagesService.findImagesByPost(posts.getId());
-        log.info("게시글 수정 이후 응답 - imageInfo {}", imageInfoDtoList);
 
         return PostInfoResponseDto.of(postsInfoDto, imageInfoDtoList);
     }
