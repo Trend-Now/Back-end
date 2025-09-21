@@ -22,6 +22,7 @@ public class AsyncSummaryGeneratorService {
         # 목표
         분석할 키워드 = '%s'
         아래 5개의 뉴스 기사를 바탕으로, '[분석할 키워드]'에 대한 핵심 이슈를 3~4개의 완결된 문장으로 요약해 주세요.
+        만약 아래에 제공된 뉴스기사가 없다면 자체적인 검색을 통해 해당 이슈에 대해 요약해 주세요.
         
         # 규칙
         -   반드시 제공된 기사 내용에만 근거하여 작성하세요.
@@ -52,13 +53,16 @@ public class AsyncSummaryGeneratorService {
         NaverNewsResponseDto naverNewsResponseDto = naverApiClient.searchNewsByKeyword(keyword,
             NAVER_NEWS_DISPLAY_COUNT);
 
+        // TODO: Gemini API가 응답하지 않는 경우에 대한 예외 처리 필요
+
         // 프롬프트 작성
         String prompt = String.format(SUMMARIZE_REQUEST_PROMPT, keyword,
             naverNewsResponseDto.getItems());
+        // 뉴스 기사가 없으면 자체 검색 모델로 요약, 있으면 일반 모델로 제공된 기사 바탕 요약
+        String summary = naverNewsResponseDto.getItems().isEmpty()
+            ? geminiApiClient.generateAnswerWithGoogleSearch(prompt, GEMINI_MODEL_NAME)
+            : geminiApiClient.generateAnswer(prompt, GEMINI_MODEL_NAME);
 
-        // 응답 요청
-        // TODO: Gemini API가 응답하지 않는 경우에 대한 예외 처리 필요
-        String summary = geminiApiClient.generateAnswer(prompt, GEMINI_MODEL_NAME);
         log.info(COMPLETE_GENERATION_SUMMARY, getClass().getName(), keyword);
 
         // 게시판 요약 저장 또는 업데이트
