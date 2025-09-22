@@ -72,4 +72,8 @@ public class BoardCache {
             )
         );
     }
+
+    public boolean isInBoardCache(Long boardId) {
+        return boardCacheEntryMap.getIfPresent(boardId) != null;
+    }
 }
