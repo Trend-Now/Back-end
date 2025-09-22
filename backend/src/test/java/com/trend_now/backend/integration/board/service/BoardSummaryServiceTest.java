@@ -48,7 +48,7 @@ public class BoardSummaryServiceTest {
         Boards saveBoard = boardRepository.save(board);
 
         // when
-        boardSummaryTriggerService.triggerSummaryUpdate(saveBoard.getId(), saveBoard.getName(), RankChangeType.NEW);
+        boardSummaryTriggerService.triggerSummaryUpdate(saveBoard.getId(), saveBoard.getName());
 
         // then
         await()

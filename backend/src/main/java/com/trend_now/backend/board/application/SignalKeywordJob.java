@@ -70,7 +70,7 @@ public class SignalKeywordJob implements Job {
                 boardSaveDto.setBoardId(boards.getId());
 
                 // 저장된 게시판의 AI 요약 저장 또는 업데이트
-                boardSummaryTriggerService.triggerSummaryUpdate(boards.getId(), boards.getName(), top10.getState());
+                boardSummaryTriggerService.triggerSummaryUpdate(boards.getId(), boards.getName());
 
                 // Redis의 realtime_keywords에 저장하기 위해 boardId를 따로 리스트에 수집
                 boardIdList.add(boards.getId());
