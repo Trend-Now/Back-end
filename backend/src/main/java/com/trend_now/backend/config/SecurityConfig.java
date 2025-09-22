@@ -64,9 +64,7 @@ public class SecurityConfig {
                     "/api/v1/boards/**",
                     "/api/v1/search/**",
                     // ALB 헬스 체크를 위한 엔드포인트 허용
-                    "/health",
-                    // 게시판 cooldown 확인
-                    "/api/v1/boards/{boardId}/posts/cooldown"
+                    "/health"
                 ).permitAll()
                 .requestMatchers(
                     "/api/v1/member/login/**", "/swagger-ui/**", "/v3/api-docs/**",
