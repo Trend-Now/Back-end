@@ -28,6 +28,16 @@ public class GeminiApiClient {
         return response.text();
     }
 
+    public String generateAnswerWithGoogleSearch(String prompt, String model) {
+        GenerateContentResponse response =
+            client.models.generateContent(
+                model,
+                prompt,
+                googleSearchTool()
+            );
+        return response.text();
+    }
+
     /**
      * Google Search 옵션 활성화 설정
      */
