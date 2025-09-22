@@ -1,5 +1,8 @@
 package com.trend_now.backend.board.application.board_summary;
 
+import static com.trend_now.backend.board.application.BoardRedisService.BOARD_RANK_KEY;
+
+import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.cache.BoardCache;
 import com.trend_now.backend.board.domain.BoardSummary;
 import com.trend_now.backend.board.dto.RankChangeType;
@@ -7,6 +10,7 @@ import com.trend_now.backend.board.repository.BoardSummaryRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -17,6 +21,7 @@ public class BoardSummaryTriggerService {
     private final BoardSummaryRepository boardSummaryRepository;
     private final AsyncSummaryGeneratorService asyncSummaryGeneratorService;
     private final BoardCache boardCache;
+    private final RedisTemplate<String, String> redisTemplate;
 
     // Self-Invocation 문제 해결을 위해 별도의 서비스로 분리
     public void triggerSummaryUpdate(Long boardId, String keyword) {

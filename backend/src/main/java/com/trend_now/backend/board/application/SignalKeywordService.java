@@ -36,7 +36,7 @@ public class SignalKeywordService {
     private static final String REALTIME_KEYWORD_LAST_UPDATED_KEY = "realtime_keywords:last_updated";
     private static final String CLIENT_ID_KEY = "clientId";
     private static final String SUBSCRIPTION_SUCCESS_EMITTER_NAME = "subscriptionSuccess";
-    private static final String SIGNAL_KEYWORD_LIST = "realtime_keywords";
+    public static final String SIGNAL_KEYWORD_LIST = "realtime_keywords";
 
     private final Builder webClientBuilder;
     private final ObjectMapper objectMapper;

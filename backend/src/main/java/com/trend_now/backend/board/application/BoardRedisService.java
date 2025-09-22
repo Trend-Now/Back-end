@@ -63,7 +63,6 @@ public class BoardRedisService {
     private final BoardRepository boardRepository;
     private final PostViewService postViewService;
     private final PostLikesService postLikesService;
-    private final BoardCache boardCache;
     private final BoardSummaryRepository boardSummaryRepository;
 
     public void saveBoardRedis(BoardSaveDto boardSaveDto, double score) {
