@@ -16,6 +16,7 @@ public class CookieUtil {
     private static final String PREFIX_HTTPS = "https";
     private static final String SET_COOKIE = "Set-Cookie";
     private static final String LOCALHOST = "localhost";
+    private static final String DOMAIN = ".trendnow.me";
 
     public static Optional<Cookie> getCookie(HttpServletRequest request, String name) {
         Cookie[] cookies = request.getCookies();
@@ -45,6 +46,7 @@ public class CookieUtil {
                 .maxAge(maxAge)
                 .secure(isProd)
                 .sameSite(isProd ? "None" : "Lax")
+                .domain(DOMAIN)
                 .build();
 
         response.addHeader(SET_COOKIE, cookie.toString());
