@@ -30,13 +30,13 @@ public class AsyncSummaryGeneratorService {
         -   당신의 의견을 추가하지 마세요.
         -   높임말을 사용하세요.
         -   전체 기사들 중, 대다수가 다루는 핵심 주제와 거리가 먼 소수의 기사가 있다면, 해당 기사는 요약 내용에 포함하지 말고 무시하세요.
-        -   "뉴스 기사를 분석한 결과", "요약하면", "분석하면" 등의 서술적 표현 없이 바로 핵심 내용만 전달하세요.
+        -   "제공된 뉴스 기사에 따르면", "뉴스 기사를 분석한 결과", "요약하면", "분석하면" 등의 서술적 표현 없이 바로 핵심 내용만 전달하세요.
         -   분석 과정이나 방법론을 언급하지 말고, 오직 핵심 사실만 기술하세요.
         
         # 입력 데이터
         뉴스 기사 5개: '%s'
         """;
-    private static final String GEMINI_MODEL_NAME = "gemini-2.5-flash-lite";
+    private static final String GEMINI_MODEL_NAME = "gemini-2.5-flash";
     // 네이버 뉴스 API에서 한 번에 가져올 뉴스 기사 수
     private static final String SUMMARY_SAVE_ERROR = "{}: 게시판 요약 저장에 실패했습니다. -> {}";
     private static final String COMPLETE_GENERATION_SUMMARY = "{}: 게시판 요약 생성이 완료되었습니다. -> {}";
