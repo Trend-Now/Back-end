@@ -14,6 +14,7 @@ import com.trend_now.backend.comment.repository.CommentsRepository;
 import com.trend_now.backend.config.auth.CustomUserDetails;
 import com.trend_now.backend.exception.customException.InvalidRequestException;
 import com.trend_now.backend.exception.customException.NotFoundException;
+import com.trend_now.backend.exception.customException.UnauthorizedException;
 import com.trend_now.backend.image.application.ImagesService;
 import com.trend_now.backend.image.domain.Images;
 import com.trend_now.backend.image.dto.ImageInfoDto;
@@ -54,6 +55,8 @@ public class PostsService {
     private static final String NOT_SAME_WRITER = "작성자가 일치하지 않습니다.";
     private static final String NOT_REAL_TIME_BOARD = "타이머가 종료된 게시판입니다. 타이머가 남아있는 게시판에서만 요청할 수 있습니다.";
     private static final String NOT_MODIFIABLE_POSTS = "게시글이 수정/삭제 불가능한 상태입니다.";
+    private static final String LOGIN_REQUIRED_MESSAGE = "로그인이 필요한 서비스입니다.";
+
     private static final String POST_COOLDOWN_MESSAGE = "게시글 작성은 %s초 후에 가능합니다.";
     private static final String LAST_POST_TIME_KEY = "last_post_time";
     public static final String POST_COOLDOWN_PREFIX = "post-cooldown:";
@@ -190,7 +193,12 @@ public class PostsService {
     /**
      * 게시글 작성 시, 같은 사용자가 같은 게시판에서 5분 이내에 게시글을 작성할 수 있는지 확인하는 메서드
      */
-    public CheckPostCooldownResponse checkPostCooldown(Long boardId, Long memberId) {
+    public CheckPostCooldownResponse checkPostCooldown(Long boardId, Object principal) {
+        // 로그인하지 않은 사용자라면 예외 발생
+        if (!(principal instanceof CustomUserDetails userDetails)) {
+            throw new UnauthorizedException(LOGIN_REQUIRED_MESSAGE);
+        }
+        Long memberId = userDetails.getMembers().getId();
         String boardUserKey = String.format(POST_COOLDOWN_PREFIX + POST_COOLDOWN_KEY, boardId,
             memberId);
         long postCoolDown = getPostCooldown(boardUserKey);
