@@ -130,11 +130,12 @@ public class PostsController {
     @GetMapping("/posts/cooldown")
     public ResponseEntity<CheckPostCooldownResponse> checkPostCooldown(
         @PathVariable(value = "boardId") Long boardId,
-        @AuthenticationPrincipal Optional<Members> memberOptional) {
-        Members member = memberOptional.orElseThrow(() ->
-            new UnauthorizedException(LOGIN_REQUIRED_MESSAGE)
-        );
+        @AuthenticationPrincipal Members members) {
+        if (members == null) {
+            throw new UnauthorizedException(LOGIN_REQUIRED_MESSAGE);
+        }
+
         return ResponseEntity.status(HttpStatus.OK)
-            .body(postsService.checkPostCooldown(boardId, member.getId()));
+            .body(postsService.checkPostCooldown(boardId, members.getId()));
     }
 }
