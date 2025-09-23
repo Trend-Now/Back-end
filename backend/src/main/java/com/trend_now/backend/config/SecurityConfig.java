@@ -38,9 +38,6 @@ public class SecurityConfig {
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
-    @Value("${chrome.extension.id}")
-    private static String CHROME_EXTENSION_ID;
-
     @Bean
     public PasswordEncoder makePassword() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
@@ -116,9 +113,7 @@ public class SecurityConfig {
                 // 개발 프론트엔드 도메인 허용
                 "https://www.trendnow.me",
                 "https://front-end-git-bugfix-login-trendnow.vercel.app",
-                "https://front-end-git-dev-trendnow.vercel.app",
-                // 크롬 익스텐션 도메인 허용
-                "chrome-extension://" + CHROME_EXTENSION_ID));
+                "https://front-end-git-dev-trendnow.vercel.app"));
         configuration.setAllowedMethods(Arrays.asList("*"));    // 모든 HTTP 메서드 허용
         configuration.setAllowedHeaders(Arrays.asList("*"));    // 모든 헤더 값 허용
         configuration.setAllowCredentials(true);    // 자격 증명을 허용(Authorization 헤더를 허용 목적)
