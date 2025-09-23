@@ -36,7 +36,7 @@ public class AsyncSummaryGeneratorService {
         # 입력 데이터
         뉴스 기사 5개: '%s'
         """;
-    private static final String GEMINI_MODEL_NAME = "gemini-2.5-flash";
+    private static final String GEMINI_MODEL_NAME = "gemini-2.5-flash-lite";
     // 네이버 뉴스 API에서 한 번에 가져올 뉴스 기사 수
     private static final String SUMMARY_SAVE_ERROR = "{}: 게시판 요약 저장에 실패했습니다. -> {}";
     private static final String COMPLETE_GENERATION_SUMMARY = "{}: 게시판 요약 생성이 완료되었습니다. -> {}";

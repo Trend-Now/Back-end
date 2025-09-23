@@ -30,6 +30,7 @@ public class BoardSummaryTriggerService {
 
         // 게시판 요약이 존재하고, 이전에 실시간 순위에 있던 게시판이라면 요약 생성 작업 무시
         if (optionalBoardSummary.isPresent() && inBoardCache) {
+            log.info("{} 게시판의 요약 생성 작업을 생략합니다.", keyword);
             return;
         }
 
