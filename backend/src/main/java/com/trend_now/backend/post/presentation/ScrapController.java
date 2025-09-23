@@ -30,6 +30,7 @@ public class ScrapController {
     @Operation(summary = "게시글 스크랩", description = "게시글을 스크랩합니다.")
     public ResponseEntity<ScrapResponseDto> scarpPost(
         @AuthenticationPrincipal(expression = "members") Members members,
+        @PathVariable Long boardId,
         @PathVariable Long postId) {
 
         ScrapAction scrapAction = scrapService.scrapPost(members.getId(), postId);
