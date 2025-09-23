@@ -15,8 +15,8 @@ public class CookieUtil {
     private static final String REFERER = "Referer";
     private static final String PREFIX_HTTPS = "https";
     private static final String SET_COOKIE = "Set-Cookie";
-    private static final String LOCALHOST = "localhost";
-    private static final String DOMAIN = ".trendnow.me";
+    private static final String LOCALHOST_DOMAIN = "localhost";
+    private static final String TREND_NOW_DOMAIN = ".trendnow.me";
 
     public static Optional<Cookie> getCookie(HttpServletRequest request, String name) {
         Cookie[] cookies = request.getCookies();
@@ -46,7 +46,7 @@ public class CookieUtil {
                 .maxAge(maxAge)
                 .secure(isProd)
                 .sameSite(isProd ? "None" : "Lax")
-                .domain(DOMAIN)
+                .domain(isProd ? TREND_NOW_DOMAIN : LOCALHOST_DOMAIN)
                 .build();
 
         response.addHeader(SET_COOKIE, cookie.toString());
@@ -59,7 +59,7 @@ public class CookieUtil {
     }
 
     private static boolean isLocalEnvironment(String sourceUrl) {
-        return sourceUrl.contains(LOCALHOST) ||
+        return sourceUrl.contains(LOCALHOST_DOMAIN) ||
                 sourceUrl.contains("127.0.0.1") ||
                 sourceUrl.contains("0.0.0.0");
     }
