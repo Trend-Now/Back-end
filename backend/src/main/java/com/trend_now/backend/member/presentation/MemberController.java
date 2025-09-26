@@ -111,7 +111,7 @@ public class MemberController {
             member.getId(), page - 1, size);
         return new ResponseEntity<>(
             MyPostListResponse.of(FIND_SCRAP_POSTS_SUCCESS_MESSAGE,
-                scrappedPostsByMemberId.getTotalPages() + 1, scrappedPostsByMemberId.getTotalElements(), scrappedPostsByMemberId.getContent()),
+                scrappedPostsByMemberId.getTotalPages(), scrappedPostsByMemberId.getTotalElements(), scrappedPostsByMemberId.getContent()),
             HttpStatus.OK);
     }
 
