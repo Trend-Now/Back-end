@@ -48,8 +48,8 @@ public class MemberService {
     private final MemberRedisService memberRedisService;
     private final JwtTokenFilter jwtTokenFilter;
 
-    @Value("${jwt.access-token.expiration}")
-    private int accessTokenExpiration;
+//    @Value("${jwt.access-token.expiration}")
+//    private int accessTokenExpiration;
 
     @Value("${jwt.refresh-token.expiration}")
     private int refreshTokenExpiration;
@@ -163,7 +163,7 @@ public class MemberService {
         // Redis에 key(Member Id)의 value(Refresh Token)이 입력된 Refresh Token과 일치하는지 확인
         if(memberRedisService.isMatchedRefreshTokenInRedis(memberIdInAccessToken, refreshToken.getValue())) {
             String reissuancedAccessToken = jwtTokenProvider.createAccessToken(memberIdInAccessToken);
-            CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, reissuancedAccessToken, accessTokenExpiration);
+            CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, reissuancedAccessToken, ONE_YEAR);
             return REISSUANCE_ACCESS_TOKEN_SUCCESS;
         } else {
             throw new NotFoundException(NOT_EXIST_MATCHED_REFRESH_TOKEN_IN_REDIS);
