@@ -44,7 +44,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String JWT_PREFIX = "Bearer ";
-    private static final String INVALID_TOKEN = "유효하지 않은 토큰입니다.";
+    private static final String INVALID_TOKEN_RETURN_MESSAGE = "Invalid Access Token";
     private static final String EXPIRED_TOKEN_RETURN_MESSAGE = "Expired Access Token";
 
     @Value("${jwt.access-token.secret}")
@@ -87,7 +87,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 // Access Token 검증 및 Claims 객체 추출
                 Claims claims = validateAccessToken(accessToken);
                 if (claims == null) {
-                    throw new InvalidTokenException(INVALID_TOKEN);
+                    throw new InvalidTokenException(INVALID_TOKEN_RETURN_MESSAGE);
                 }
 
                 // Access Token 만료기간 검증 (accessTokenExpiration 변수 사용)
@@ -101,7 +101,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     }
                 } else {
                     // issuedAt 자체가 없으면 JWT 예외로 판단
-                    throw new InvalidTokenException(INVALID_TOKEN);
+                    throw new InvalidTokenException(INVALID_TOKEN_RETURN_MESSAGE);
                 }
 
                 /**
@@ -152,7 +152,19 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             e.printStackTrace();
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setContentType("application/json");
-            response.getWriter().write("invalid token");
+
+            // 요청 path 가져오기
+            String path = request.getRequestURI();
+
+            // DTO 생성
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    HttpStatus.UNAUTHORIZED,
+                    INVALID_TOKEN_RETURN_MESSAGE,
+                    path
+            );
+
+            // JSON 직렬화
+            new ObjectMapper().writeValue(response.getWriter(), errorResponse);
         }
     }
 
