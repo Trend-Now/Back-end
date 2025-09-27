@@ -50,4 +50,11 @@ public class MemberRedisService {
 
         return refreshTokenInRedis.equals(refreshToken);
     }
+
+    /**
+     * Redis 내부의 key에 해당되는 value 삭제
+     */
+    public void delete(String key) {
+        redisTemplate.delete(REFRESH_TOKEN_PREFIX + key);
+    }
 }

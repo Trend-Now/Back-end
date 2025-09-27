@@ -40,6 +40,8 @@ public class MemberService {
     private static final String NOT_EXIST_ACCESS_TOKEN = "Access Token이 존재하지 않습니다.";
     private static final String NOT_EXIST_REFRESH_TOKEN = "Refresh Token이 존재하지 않습니다.";
     private static final int ONE_YEAR = 365*24*60*60;   // 1년을 초로 변환
+    private static final String LOGOUT_SUCCESS = "로그아웃에 성공하였습니다.";
+    private static final String LOGOUT_FAIL = "로그아웃에 실패하였습니다.";
 
     private final MemberRepository memberRepository;
     private final PostsRepository postsRepository;
@@ -167,6 +169,27 @@ public class MemberService {
             return REISSUANCE_ACCESS_TOKEN_SUCCESS;
         } else {
             throw new NotFoundException(NOT_EXIST_MATCHED_REFRESH_TOKEN_IN_REDIS);
+        }
+    }
+
+    /**
+     * 로그아웃
+     * - Redis의 Refresh Token 부분을 삭제
+     * - Cookie 측에 Access Token과 Refresh Token 부분을 삭제
+     */
+    public String logout(HttpServletRequest request, HttpServletResponse response, Members member) {
+        try {
+            // Redis에 key(Member Id)의 value(Refresh Token) 부분을 삭제
+            memberRedisService.delete(String.valueOf(member.getId()));
+
+            // Cookie 측에 Access Token과 Refresh Token 삭제
+            CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, null, 0);
+            CookieUtil.addCookie(request, response, REFRESH_TOKEN_KEY, null, 0);
+
+            return LOGOUT_SUCCESS;
+        } catch (Exception e) {
+            log.error("[MemberService.logout] 로그아웃 에러 = {}", e.getMessage());
+            return LOGOUT_FAIL;
         }
     }
 }

@@ -152,4 +152,13 @@ public class MemberController {
             HttpServletResponse response) {
         return new ResponseEntity<>(memberService.reissuanceAccessToken(request, response), HttpStatus.OK);
     }
+
+    @PostMapping("/logout")
+    @Operation(summary = "로그아웃 API", description = "로그아웃을 진행합니다.")
+    public ResponseEntity<String> logout(
+            @AuthenticationPrincipal(expression = "members") Members member,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        return new ResponseEntity<>(memberService.logout(request, response, member), HttpStatus.OK);
+    }
 }
