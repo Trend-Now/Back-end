@@ -39,6 +39,7 @@ public class MemberService {
     private static final String REISSUANCE_ACCESS_TOKEN_FAIL = "Access Token 재발급에 실패하였습니다.";
     private static final String NOT_EXIST_ACCESS_TOKEN = "Access Token이 존재하지 않습니다.";
     private static final String NOT_EXIST_REFRESH_TOKEN = "Refresh Token이 존재하지 않습니다.";
+    private static final int ONE_YEAR = 365*24*60*60;   // 1년을 초로 변환
 
     private final MemberRepository memberRepository;
     private final PostsRepository postsRepository;
@@ -135,7 +136,7 @@ public class MemberService {
         String testJwt = jwtTokenProvider.createAccessToken(testMember.getId());
         String testRefreshToken = jwtTokenProvider.createRefreshToken(testMember.getId());
         log.info("[MemberService.getTestJwt] : 테스트용 JWT = {}, Refresh Token {}", testJwt, testRefreshToken);
-        CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, testJwt, accessTokenExpiration);
+        CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, testJwt, ONE_YEAR);
         CookieUtil.addCookie(request, response, REFRESH_TOKEN_KEY, testRefreshToken, refreshTokenExpiration);
         return testJwt;
     }
