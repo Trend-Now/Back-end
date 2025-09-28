@@ -2,7 +2,9 @@ package com.trend_now.backend.post.presentation;
 
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostLikesService;
+import com.trend_now.backend.post.domain.PostLikesAction;
 import com.trend_now.backend.post.dto.PostLikesIncrementDto;
+import com.trend_now.backend.post.dto.PostLikesResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +25,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class PostLikesController {
 
     private static final String SUCCESS_INCREMENT_POSTLIKES_MESSAGE = "좋아요를 증가시키는 데 성공했습니다.";
+    private static final String FAILURE_INCREMENT_POSTLIKES_MESSAGE = "좋아요를 증가시키는 데 실패했습니다.";
 
     private final PostLikesService postLikesService;
 
     @Operation(summary = "좋아요 증가", description = "게시판에 등록된 게시글의 좋아요를 증가시킵니다.")
     @PostMapping("/{boardId}/posts/{postId}/likes")
-    public ResponseEntity<String> incrementPostLikes(
+    public ResponseEntity<PostLikesResponseDto> incrementPostLikes(
             @AuthenticationPrincipal(expression = "members") Members member,
             @PathVariable(value = "boardId") Long boardId,
             @PathVariable(value = "postId") Long postId) {
@@ -38,9 +41,11 @@ public class PostLikesController {
         PostLikesIncrementDto postLikesIncrementDto = PostLikesIncrementDto.of(member.getName(),
                 boardId, postId);
 
-        postLikesService.increaseLikeLock(postLikesIncrementDto);
+        PostLikesAction postLikesAction = postLikesService.increaseLikeLock(postLikesIncrementDto);
+        String message =
+                postLikesAction == PostLikesAction.LIKED ? SUCCESS_INCREMENT_POSTLIKES_MESSAGE
+                        : FAILURE_INCREMENT_POSTLIKES_MESSAGE;
 
-        return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_INCREMENT_POSTLIKES_MESSAGE);
+        return ResponseEntity.status(HttpStatus.OK).body(PostLikesResponseDto.of(message, postLikesAction));
     }
-
 }
