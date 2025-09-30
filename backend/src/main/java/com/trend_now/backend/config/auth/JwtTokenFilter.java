@@ -1,7 +1,13 @@
 package com.trend_now.backend.config.auth;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trend_now.backend.common.CookieUtil;
-import com.trend_now.backend.exception.customException.InvalidTokenException;
+import com.trend_now.backend.exception.CustomException.ExpiredTokenException;
+import com.trend_now.backend.exception.CustomException.InvalidTokenException;
+import com.trend_now.backend.exception.dto.ErrorResponseDto;
+import com.trend_now.backend.member.domain.Members;
+import com.trend_now.backend.member.repository.MemberRepository;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.*;
@@ -21,6 +27,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 @Component
@@ -32,10 +39,14 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String JWT_PREFIX = "Bearer ";
-    private static final String INVALID_TOKEN = "유효하지 않은 토큰입니다.";
+    private static final String INVALID_TOKEN_RETURN_MESSAGE = "Invalid Access Token";
+    private static final String EXPIRED_TOKEN_RETURN_MESSAGE = "Expired Access Token";
 
     @Value("${jwt.access-token.secret}")
     private String secretKey;
+
+    @Value("${jwt.access-token.expiration}")
+    private int accessTokenExpiration;
 
     /**
      * 특정 path 요청은 filter 제외하도록 명시
@@ -71,7 +82,21 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 // Access Token 검증 및 Claims 객체 추출
                 Claims claims = validateAccessToken(accessToken);
                 if (claims == null) {
-                    throw new InvalidTokenException(INVALID_TOKEN);
+                    throw new InvalidTokenException(INVALID_TOKEN_RETURN_MESSAGE);
+                }
+
+                // Access Token 만료기간 검증 (accessTokenExpiration 변수 사용)
+                Date issuedAt = claims.getIssuedAt();
+                if (issuedAt != null) {
+                    long now = System.currentTimeMillis();
+                    long expirationTime = issuedAt.getTime() + (accessTokenExpiration * 1000L); // 초 단위 → ms 변환
+
+                    if (now > expirationTime) {
+                        throw new ExpiredTokenException(EXPIRED_TOKEN_RETURN_MESSAGE);
+                    }
+                } else {
+                    // issuedAt 자체가 없으면 JWT 예외로 판단
+                    throw new InvalidTokenException(INVALID_TOKEN_RETURN_MESSAGE);
                 }
 
                 /**
@@ -97,6 +122,24 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         }
+        catch (ExpiredTokenException e) {
+            log.info("[JwtTokenFilter.doFilter] : 만료된 Access Token으로 API 요청이 들어왔습니다.");
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setContentType("application/json");
+
+            // 요청 path 가져오기
+            String path = request.getRequestURI();
+
+            // DTO 생성
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    HttpStatus.UNAUTHORIZED,
+                    EXPIRED_TOKEN_RETURN_MESSAGE,
+                    path
+            );
+
+            // JSON 직렬화
+            new ObjectMapper().writeValue(response.getWriter(), errorResponse);
+        }
 
         // JWT 검증에서 예외가 발생하면 doFilter() 메서드를 통해 필터 체인에 접근하지 않고 사용자에게 에러를 반환
         catch (Exception e) {
@@ -104,7 +147,19 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             e.printStackTrace();
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setContentType("application/json");
-            response.getWriter().write("invalid token");
+
+            // 요청 path 가져오기
+            String path = request.getRequestURI();
+
+            // DTO 생성
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    HttpStatus.UNAUTHORIZED,
+                    INVALID_TOKEN_RETURN_MESSAGE,
+                    path
+            );
+
+            // JSON 직렬화
+            new ObjectMapper().writeValue(response.getWriter(), errorResponse);
         }
     }
 

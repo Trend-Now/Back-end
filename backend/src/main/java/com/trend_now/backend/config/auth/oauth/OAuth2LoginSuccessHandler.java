@@ -33,6 +33,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String REFRESH_TOKEN_KEY = "refresh_token";
+    private static final int ONE_YEAR = 365*24*60*60;   // 1년을 초로 변환
 
     @Value("${jwt.access-token.expiration}")
     private int accessTokenExpiration;
@@ -58,7 +59,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             .orElse("/");
 
         // HttpOnly Cookie 방식으로 Access Token 저장하여 response에 지정
-        CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, accessToken, accessTokenExpiration);
+        // Access Token의 경우 1년의 만료 기간을 설정하여 브라우저에서는 무한히 지속되는 효과 부여
+        CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, accessToken, ONE_YEAR);
         CookieUtil.addCookie(request, response, REFRESH_TOKEN_KEY, refreshToken, refreshTokenExpiration);
 
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)
