@@ -1,4 +1,4 @@
-package com.trend_now.backend.exception.CustomException;
+package com.trend_now.backend.exception.customException;
 
 import org.springframework.security.authentication.BadCredentialsException;
 

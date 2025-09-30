@@ -33,6 +33,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,6 +66,9 @@ public class PostLikesServiceUnitTest {
 
     @Mock
     private SetOperations<String, String> setOperations;
+
+    @Mock
+    private ZSetOperations<String, String> zSetOperations;
 
     @Spy
     private Members members;
@@ -220,6 +224,7 @@ public class PostLikesServiceUnitTest {
         //given
         when(postsRepository.findById(any(Long.class))).thenReturn(Optional.of(posts));
         when(memberRepository.findByName(any(String.class))).thenReturn(Optional.of(members));
+        when(redisMembersTemplate.opsForZSet()).thenReturn(zSetOperations);
 
         String redisKey =
                 REDIS_LIKE_USER_KEY_PREFIX + boards.getId() + REDIS_LIKE_BOARD_KEY_DELIMITER

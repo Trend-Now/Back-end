@@ -1,12 +1,11 @@
 package com.trend_now.backend.exception;
 
-import com.trend_now.backend.exception.CustomException.DuplicateException;
-import com.trend_now.backend.exception.CustomException.NotFoundException;
-import com.trend_now.backend.exception.CustomException.S3FileUploadException;
+import com.trend_now.backend.exception.customException.DuplicateException;
+import com.trend_now.backend.exception.customException.NotFoundException;
+import com.trend_now.backend.exception.customException.UnauthorizedException;
 import com.trend_now.backend.exception.dto.ErrorResponseDto;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,11 +18,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Hidden // Swagger가 이 클래스를 문서화하지 않도록 설정
 public class GlobalExceptionHandler {
 
+    public static final String HEADER_ACCEPT = "Accept";
+    public static final String TEXT_EVENT_STREAM = "text/event-stream";
+
     /**
      * Exception 에러가 들어오면 BadRequest(400) 상태코드와 함께 에러 메시지를 반환한다.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleException(Exception exception, HttpServletRequest request) {
+        if (request.getHeader(HEADER_ACCEPT) != null && request.getHeader(HEADER_ACCEPT).contains(TEXT_EVENT_STREAM)) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 HttpStatus.BAD_REQUEST,
                 exception.getMessage(),
@@ -37,6 +42,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponseDto> handleRuntimeException(RuntimeException exception, HttpServletRequest request) {
+        if (request.getHeader(HEADER_ACCEPT) != null && request.getHeader(HEADER_ACCEPT).contains(TEXT_EVENT_STREAM)) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 exception.getMessage(),
@@ -56,6 +64,16 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return ResponseEntity.badRequest().body(errorResponseDto);
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponseDto> handleUnauthorizedException(UnauthorizedException exception, HttpServletRequest request) {
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+                HttpStatus.UNAUTHORIZED,
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponseDto);
     }
 
     /**

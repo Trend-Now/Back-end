@@ -1,4 +1,4 @@
-package com.trend_now.backend.exception.CustomException;
+package com.trend_now.backend.exception.customException;
 
 /**
  *  요청 클라이언트와 매칭이 안되는 요청인 경우, 사용하는 예외

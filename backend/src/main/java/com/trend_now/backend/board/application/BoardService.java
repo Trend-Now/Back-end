@@ -7,8 +7,9 @@ import com.trend_now.backend.board.dto.RealtimeBoardDto;
 import com.trend_now.backend.board.dto.FixedBoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.board.cache.BoardCache;
-import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.customException.NotFoundException;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,22 +19,32 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BoardService {
 
+    private final static String BOARD_NOT_FOUND_MESSAGE = "해당 게시판이 존재하지 않습니다: ";
+
     private final BoardRepository boardRepository;
     private final BoardCache boardCache;
 
-    private final static String BOARD_NOT_FOUND_MESSAGE = "해당 게시판이 존재하지 않습니다: ";
-
+    /**
+     * 게시판이 존재하지 않으면 저장, 삭제된 게시판이면 isDeleted 상태 변경 후 반환
+     */
     @Transactional
-    public Long saveBoardIfNotExists(BoardSaveDto boardSaveDto) {
-        Boards board = boardRepository.findByName(boardSaveDto.getBoardName())
-            .orElseGet(() -> boardRepository.save(
-                    Boards.builder()
-                        .name(boardSaveDto.getBoardName())
-                        .boardCategory(boardSaveDto.getBoardCategory())
-                        .build()
-                )
+    public Boards saveOrUpdateBoard(BoardSaveDto boardSaveDto) {
+        Optional<Boards> optionalBoards = boardRepository.findByName(boardSaveDto.getBoardName());
+
+        if (optionalBoards.isPresent()) {
+            // 삭제된 게시판이 다시 실시간 검색어에 등재된 경우, isDeleted 상태 변경
+            Boards board = optionalBoards.get();
+            board.changeDeleted();
+            return board;
+        } else {
+            // 새로운 게시판일 경우 새로운 객체 생성 후 저장
+            return boardRepository.save(
+                Boards.builder()
+                    .name(boardSaveDto.getBoardName())
+                    .boardCategory(boardSaveDto.getBoardCategory())
+                    .build()
             );
-        return board.getId();
+        }
     }
 
 
@@ -41,7 +52,8 @@ public class BoardService {
     public void updateBoardIsDeleted(BoardSaveDto boardSaveDto, boolean isInRedis) {
         // 요구사항을 기반으로 Redis에 있는 게시판 데이터는 DB에도 존재해야 한다.
         Boards findBoards = boardRepository.findByName(boardSaveDto.getBoardName())
-            .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardSaveDto.getBoardName()));
+            .orElseThrow(
+                () -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardSaveDto.getBoardName()));
 
         if (isInRedis) {
             if (findBoards.isDeleted()) {

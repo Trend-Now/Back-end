@@ -1,13 +1,14 @@
 package com.trend_now.backend.integration.board.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.trend_now.backend.board.application.SignalKeywordService;
 import com.trend_now.backend.board.dto.RankChangeType;
 import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.Top10;
-import com.trend_now.backend.board.dto.Top10WithChange;
+import com.trend_now.backend.board.dto.Top10WithDiff;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +22,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 
 @ExtendWith(SpringExtension.class)
 @ActiveProfiles("test")
@@ -42,32 +42,38 @@ public class SignalKeywordServiceTest {
     @BeforeEach
     public void beforeEach() {
         when(redisTemplate.opsForList()).thenReturn(listOperations);
+        when(redisTemplate.opsForList().rightPush(any(), any())).thenReturn(null);
     }
 
     @Test
     @DisplayName("시스템이 시작되었을 때는 이전의 검색어가 존재하지 않으므로 RankChange를 NEW로 처리한다")
     public void 시스템시작_RankChange_NEW() throws Exception {
         //given
-        when(listOperations.range(SIGNAL_KEYWORD_LIST, 0, -1)).thenReturn(null);
-
         List<Top10> currentTop10 = Arrays.asList(
-                new Top10(1, "아이폰"),
-                new Top10(2, "갤럭시"),
-                new Top10(3, "맥북")
+                new Top10(1, "아이폰", RankChangeType.SAME),
+                new Top10(2, "갤럭시", RankChangeType.SAME),
+                new Top10(3, "맥북", RankChangeType.SAME)
         );
+        List<String> response = Arrays.asList("1:아이폰:2:NEW:0", "1:갤럭시:2:NEW:0", "1:맥북:3:NEW:0");
+
+        when(listOperations.range(SIGNAL_KEYWORD_LIST, 0, -1)).thenReturn(null, response);
+
+        List<Long> idList = Arrays.asList(1L, 2L, 3L);
 
         SignalKeywordDto dto = new SignalKeywordDto();
         dto.setNow(System.currentTimeMillis());
         dto.setTop10(currentTop10);
 
         //when
-        Top10WithChange result = signalKeywordService.calculateRankChange(dto);
+        signalKeywordService.saveRealtimeKeywords(dto, idList);
+        List<String> result = redisTemplate.opsForList().range(SIGNAL_KEYWORD_LIST, 0, -1);
 
         //then
-        assertThat(result.getTop10WithDiff()).hasSize(3);
-        result.getTop10WithDiff().forEach(diff -> {
+        assertThat(result).hasSize(3);
+        result.forEach(value -> {
+            Top10WithDiff diff = Top10WithDiff.from(value);
             assertThat(diff.getRankChangeType()).isEqualTo(RankChangeType.NEW);
-            assertThat(diff.getPreviousRank()).isEqualTo(0);
+            assertThat(diff.getDiffRank()).isEqualTo(0);
         });
     }
 
@@ -75,42 +81,48 @@ public class SignalKeywordServiceTest {
     @DisplayName("이전의 검색어에서 순위 변동이 있을 경우 계산하여 반환한다")
     public void 순위_변동() throws Exception {
         //given
-        when(listOperations.range(SIGNAL_KEYWORD_LIST, 0, -1)).thenReturn(
-                Arrays.asList("갤럭시", "아이폰", "에어팟")
-        );
+        List<String> response = Arrays.asList("1:갤럭시:2:NEW:0", "2:아이폰:2:NEW:0", "3:에어팟:3:NEW:0");
+        when(listOperations.range(SIGNAL_KEYWORD_LIST, 0, -1)).thenReturn(response)
+            .thenReturn(Arrays.asList("1:아이폰:1:UP:2", "2:에어팟:2:UP:3", "3:갤럭시:3:DOWN:1"));
 
         List<Top10> currentTop10 = Arrays.asList(
-                new Top10(1, "아이폰"),   // 기존 2위 → 1위 → UP
-                new Top10(2, "에어팟"),   // 기존 3위 → 2위 → UP
-                new Top10(3, "갤럭시")    // 기존 1위 → 3위 → DOWN
+                new Top10(1, "아이폰", RankChangeType.UP),   // 기존 2위 → 1위 → UP
+                new Top10(2, "에어팟", RankChangeType.UP),   // 기존 3위 → 2위 → UP
+                new Top10(3, "갤럭시", RankChangeType.DOWN)    // 기존 1위 → 3위 → DOWN
         );
+
+        List<Long> idList = Arrays.asList(1L, 2L, 3L);
 
         SignalKeywordDto dto = new SignalKeywordDto();
         dto.setNow(System.currentTimeMillis());
         dto.setTop10(currentTop10);
 
         //when
-        Top10WithChange result = signalKeywordService.calculateRankChange(dto);
+        signalKeywordService.saveRealtimeKeywords(dto, idList);
+        List<String> realtimeValueList = redisTemplate.opsForList().range(SIGNAL_KEYWORD_LIST, 0, -1);
 
         //then
-        assertThat(result.getTop10WithDiff()).hasSize(3);
+        assertThat(realtimeValueList).hasSize(3);
 
-        assertThat(result.getTop10WithDiff()).anySatisfy(diff -> {
+        assertThat(realtimeValueList).anySatisfy(value -> {
+            Top10WithDiff diff = Top10WithDiff.from(value);
             assertThat(diff.getKeyword()).isEqualTo("아이폰");
             assertThat(diff.getRankChangeType()).isEqualTo(RankChangeType.UP);
-            assertThat(diff.getPreviousRank()).isEqualTo(2);
+            assertThat(diff.getDiffRank()).isEqualTo(2);
         });
 
-        assertThat(result.getTop10WithDiff()).anySatisfy(diff -> {
+        assertThat(realtimeValueList).anySatisfy(value -> {
+            Top10WithDiff diff = Top10WithDiff.from(value);
             assertThat(diff.getKeyword()).isEqualTo("에어팟");
             assertThat(diff.getRankChangeType()).isEqualTo(RankChangeType.UP);
-            assertThat(diff.getPreviousRank()).isEqualTo(3);
+            assertThat(diff.getDiffRank()).isEqualTo(3);
         });
 
-        assertThat(result.getTop10WithDiff()).anySatisfy(diff -> {
+        assertThat(realtimeValueList).anySatisfy(value -> {
+            Top10WithDiff diff = Top10WithDiff.from(value);
             assertThat(diff.getKeyword()).isEqualTo("갤럭시");
             assertThat(diff.getRankChangeType()).isEqualTo(RankChangeType.DOWN);
-            assertThat(diff.getPreviousRank()).isEqualTo(1);
+            assertThat(diff.getDiffRank()).isEqualTo(1);
         });
     }
 
@@ -118,45 +130,49 @@ public class SignalKeywordServiceTest {
     @DisplayName("신규 키워드와 기존 키워드가 혼재된 경우 순위 변동과 NEW 처리를 정상적으로 수행한다")
     public void 기존_신규_혼재_정상처리() throws Exception {
         //given
-        when(listOperations.range(SIGNAL_KEYWORD_LIST, 0, -1)).thenReturn(
-                Arrays.asList("아이폰", "갤럭시", "에어팟")
+        List<Top10> currentTop10 = Arrays.asList(
+            new Top10(1, "에어팟", RankChangeType.UP),
+            new Top10(2, "갤럭시", RankChangeType.SAME),
+            new Top10(3, "맥북", RankChangeType.NEW)
         );
+        when(listOperations.range(SIGNAL_KEYWORD_LIST, 0, -1)).thenReturn(
+                Arrays.asList("1:아이폰:1:NEW:0", "2:갤럭시:2:NEW:0", "3:에어팟:3:NEW:0")
+        ).thenReturn(Arrays.asList("1:에어팟:3:UP:2", "2:갤럭시:2:SAME:0", "3:맥북:3:NEW:0"));
 
         // 현재 키워드 리스트: "에어팟" (기존 3위 → 현재 1위 → UP), "갤럭시" (기존 2위 → 현재 2위 → SAME), "맥북" (새로운 키워드)
-        List<Top10> currentTop10 = Arrays.asList(
-                new Top10(1, "에어팟"),
-                new Top10(2, "갤럭시"),
-                new Top10(3, "맥북")
-        );
+
+        List<Long> idList = Arrays.asList(1L, 2L, 3L);
 
         SignalKeywordDto dto = new SignalKeywordDto();
         dto.setNow(System.currentTimeMillis());
         dto.setTop10(currentTop10);
 
         //when
-        Top10WithChange result = signalKeywordService.calculateRankChange(dto);
+        signalKeywordService.saveRealtimeKeywords(dto, idList);
+        List<String> realtimeValueList = redisTemplate.opsForList().range(SIGNAL_KEYWORD_LIST, 0, -1);
 
         //then
-        assertThat(result.getTop10WithDiff()).hasSize(3);
+        assertThat(realtimeValueList).hasSize(3);
 
-        assertThat(result.getTop10WithDiff()).anySatisfy(diff -> {
+        assertThat(realtimeValueList).anySatisfy(value -> {
+            Top10WithDiff diff = Top10WithDiff.from(value);
             assertThat(diff.getKeyword()).isEqualTo("에어팟");
             assertThat(diff.getRankChangeType()).isEqualTo(RankChangeType.UP);
-            assertThat(diff.getPreviousRank()).isEqualTo(3);
+            assertThat(diff.getDiffRank()).isEqualTo(2);
         });
 
-        assertThat(result.getTop10WithDiff()).anySatisfy(diff -> {
+        assertThat(realtimeValueList).anySatisfy(value -> {
+            Top10WithDiff diff = Top10WithDiff.from(value);
             assertThat(diff.getKeyword()).isEqualTo("갤럭시");
             assertThat(diff.getRankChangeType()).isEqualTo(RankChangeType.SAME);
-            assertThat(diff.getPreviousRank()).isEqualTo(2);
+            assertThat(diff.getDiffRank()).isEqualTo(0);
         });
 
-        assertThat(result.getTop10WithDiff()).anySatisfy(diff -> {
+        assertThat(realtimeValueList).anySatisfy(value -> {
+            Top10WithDiff diff = Top10WithDiff.from(value);
             assertThat(diff.getKeyword()).isEqualTo("맥북");
             assertThat(diff.getRankChangeType()).isEqualTo(RankChangeType.NEW);
-            assertThat(diff.getPreviousRank()).isEqualTo(0);
+            assertThat(diff.getDiffRank()).isEqualTo(0);
         });
     }
-
-
 }

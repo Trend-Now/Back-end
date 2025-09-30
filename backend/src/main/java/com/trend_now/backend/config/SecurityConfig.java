@@ -7,6 +7,7 @@ import com.trend_now.backend.config.auth.oauth.OAuth2LoginFailureHandler;
 import com.trend_now.backend.config.auth.oauth.OAuth2LoginSuccessHandler;
 import com.trend_now.backend.config.auth.oauth.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -108,10 +109,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(
-            Arrays.asList("http://localhost:3000", "http://localhost:63342",
+            Arrays.asList("http://localhost:3000", "http://localhost:63342", "https://local.trendnow.me:3000",
+                // 개발 프론트엔드 도메인 허용
                 "https://www.trendnow.me",
                 "https://front-end-git-bugfix-login-trendnow.vercel.app",
-                "https://front-end-git-dev-trendnow.vercel.app"));    // 개발 프론트엔드 도메인 허용
+                "https://front-end-git-dev-trendnow.vercel.app"));
         configuration.setAllowedMethods(Arrays.asList("*"));    // 모든 HTTP 메서드 허용
         configuration.setAllowedHeaders(Arrays.asList("*"));    // 모든 헤더 값 허용
         configuration.setAllowCredentials(true);    // 자격 증명을 허용(Authorization 헤더를 허용 목적)

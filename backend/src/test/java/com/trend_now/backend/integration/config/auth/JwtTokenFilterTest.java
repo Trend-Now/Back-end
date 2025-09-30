@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.trend_now.backend.config.auth.CustomUserDetails;
 import com.trend_now.backend.config.auth.CustomUserDetailsService;
 import com.trend_now.backend.config.auth.JwtTokenFilter;
-import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.customException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;

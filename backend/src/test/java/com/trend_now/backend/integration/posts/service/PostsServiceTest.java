@@ -8,13 +8,14 @@ import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.exception.CustomException.InvalidRequestException;
-import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.customException.InvalidRequestException;
+import com.trend_now.backend.exception.customException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.application.PostsService;
 import com.trend_now.backend.post.domain.Posts;
+import com.trend_now.backend.post.dto.PostInfoResponseDto;
 import com.trend_now.backend.post.dto.PostSummaryDto;
 import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
@@ -108,11 +109,11 @@ public class PostsServiceTest {
         PostsSaveDto postsSaveDto = PostsSaveDto.of("testTitle", "testContent", null);
 
         //when
-        Long savePosts = postsService.savePosts(postsSaveDto, members, boards.getId());
-
+        PostInfoResponseDto postInfoResponseDto = postsService.savePosts(postsSaveDto, members,
+            boards.getId());
         //then
-        PostsInfoDto postsInfoDto = postsService.findPostsById(boards.getId(), savePosts, SecurityContextHolder.getContext().getAuthentication());
-        assertThat(savePosts).isNotNull().isGreaterThan(0);
+        PostsInfoDto postsInfoDto = postInfoResponseDto.getPostInfoDto();
+        assertThat(postsInfoDto.getPostId()).isNotNull().isGreaterThan(0);
         assertThat(postsInfoDto.getTitle()).isEqualTo(postsSaveDto.getTitle());
         assertThat(postsInfoDto.getContent()).isEqualTo(postsSaveDto.getContent());
     }
@@ -171,7 +172,9 @@ public class PostsServiceTest {
         em.clear();
 
         //then
-        PostsInfoDto postsInfoDto = postsService.findPostsById(boards.getId(), posts.getId(), SecurityContextHolder.getContext().getAuthentication());
+        PostInfoResponseDto postsById = postsService.findPostsById(boards.getId(), posts.getId(),
+            SecurityContextHolder.getContext().getAuthentication());
+        PostsInfoDto postsInfoDto = postsById.getPostInfoDto();
         assertThat(postsInfoDto.getTitle()).isEqualTo(postsUpdateRequestDto.getTitle());
         assertThat(postsInfoDto.getContent()).isEqualTo(postsUpdateRequestDto.getContent());
     }
@@ -222,7 +225,9 @@ public class PostsServiceTest {
     public void 게시판_재등록_시_기존에_작성된_게시글은_수정_삭제가_불가능하다() throws Exception {
         //given
         PostsSaveDto postsSaveDto = PostsSaveDto.of("testTitle", "testContent", null);
-        Long postId = postsService.savePosts(postsSaveDto, members, boards.getId());
+        PostInfoResponseDto postInfoResponseDto = postsService.savePosts(postsSaveDto, members,
+            boards.getId());
+        Long postId = postInfoResponseDto.getPostInfoDto().getPostId();
 
         //when
         // 게시판 삭제
@@ -237,7 +242,7 @@ public class PostsServiceTest {
         redisTemplate.opsForValue().set(key, "testBoard", 300L);
 
         //then
-        boolean modifiable = postsService.findPostsById(boards.getId(), postId, SecurityContextHolder.getContext().getAuthentication()).isModifiable();
+        boolean modifiable = postInfoResponseDto.getPostInfoDto().isModifiable();
         assertThat(modifiable).isFalse();
 
         //then

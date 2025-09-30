@@ -1,13 +1,17 @@
 package com.trend_now.backend.post.application;
 
+import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.config.RedissonConfig;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;
 import com.trend_now.backend.post.domain.PostLikes;
+import com.trend_now.backend.post.domain.PostLikesAction;
 import com.trend_now.backend.post.domain.Posts;
 import com.trend_now.backend.post.dto.PostLikesIncrementDto;
 import com.trend_now.backend.post.repository.PostLikesRepository;
 import com.trend_now.backend.post.repository.PostsRepository;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class PostLikesService {
 
+    private static final String BOARD_RANK_KEY = "board_rank";
     private static final String NOT_EXIST_POSTS = "게시글이 존재하지 않습니다.";
     private static final String NOT_EXIST_MEMBERS = "회원을 찾을 수 없습니다.";
     private static final String NOT_EXIST_LIKES = "좋아요 객체가 존재하지 않습니다.";
@@ -49,6 +54,7 @@ public class PostLikesService {
     private final PostLikesRepository postLikesRepository;
     private final RedisTemplate<String, String> redisMembersTemplate;
     private final RedissonConfig redissonConfig;
+    private final BoardRepository boardRepository;
 
     @Transactional
     public void saveLike(Long postId, Long memberId) {
@@ -75,9 +81,9 @@ public class PostLikesService {
     /**
      * 좋아요의 개수로 게시판의 시간이 결정되기 때문에 '좋아요의 개수'는 매우 중요하다 여러 사용자가 동시에 좋아요 버튼을 누르더라도 좋아요가 올바르게 눌려야 한다
      */
-    public void increaseLikeLock(PostLikesIncrementDto postLikesIncrementDto) {
-        String boardName = postLikesIncrementDto.getBoardName();
+    public PostLikesAction increaseLikeLock(PostLikesIncrementDto postLikesIncrementDto) {
         Long boardId = postLikesIncrementDto.getBoardId();
+        String boardName = boardRepository.findNameById(boardId);
         Long postId = postLikesIncrementDto.getPostId();
         String name = postLikesIncrementDto.getMemberName();
 
@@ -85,6 +91,9 @@ public class PostLikesService {
                 REDIS_LIKE_LOCK_PREFIX + boardId + REDIS_LIKE_BOARD_KEY_DELIMITER + postId;
         redissonConfig.execute(lockName, WAIT_MILLI_SEC, RELEASE_MILLI_SEC,
                 () -> doLike(boardName, boardId, postId, name));
+
+        boolean isLiked = hasMemberLiked(boardId, postId, name);
+        return isLiked ? PostLikesAction.LIKED : PostLikesAction.UNLIKED;
     }
 
     public void doLike(String boardName, Long boardId, Long postId, String name) {
@@ -133,8 +142,37 @@ public class PostLikesService {
                 }
 
                 redisMembersTemplate.expire(boardKey, keyLiveTime, TimeUnit.SECONDS);
+                Double currentScore = redisMembersTemplate.opsForZSet()
+                        .score(BOARD_RANK_KEY, boardKey);
+                if (currentScore != null) {
+                    Instant currentExpireScore = Instant.ofEpochMilli(currentScore.longValue());
+                    Instant newExpireScore = currentExpireScore.plus(POST_LIKES_TIME_UP,
+                            ChronoUnit.SECONDS);
+                    redisMembersTemplate.opsForZSet()
+                            .add(BOARD_RANK_KEY, boardKey, newExpireScore.toEpochMilli());
+                }
             }
         }
+    }
+
+    /**
+     * 회원이 게시글에 좋아요를 누른지 확인하는 메서드
+     */
+    private boolean hasMemberLiked(Long boardId, Long postId, String memberName) {
+        String redisKey =
+                REDIS_LIKE_MEMBER_KEY_PREFIX + boardId + REDIS_LIKE_BOARD_KEY_DELIMITER + postId;
+
+        // Redis에서 회원이 좋아요를 누른지 확인
+        Boolean isMember = redisMembersTemplate.opsForSet().isMember(redisKey, memberName);
+
+        if (Boolean.TRUE.equals(isMember)) {
+            return true;
+        }
+
+        // Redis 장애나 데이터가 초기화된 상황인 경우에는 DB를 확인
+        Optional<Members> findMember = memberRepository.findByName(memberName);
+
+        return postLikesRepository.existsByPostsIdAndMembersId(postId, findMember.get().getId());
     }
 
     @Transactional

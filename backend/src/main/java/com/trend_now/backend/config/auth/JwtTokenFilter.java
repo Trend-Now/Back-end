@@ -7,6 +7,7 @@ import com.trend_now.backend.exception.CustomException.InvalidTokenException;
 import com.trend_now.backend.exception.dto.ErrorResponseDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.*;
@@ -17,20 +18,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.security.sasl.AuthenticationException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -80,7 +75,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String accessToken = CookieUtil.getCookie(request, ACCESS_TOKEN_KEY)
                 .map(Cookie::getValue)
                 .orElse(null);
-        log.info("[JwtTokenFilter.doFilter] Cookie에서 JWT 토큰 추출: {}", accessToken);
+//        log.info("[JwtTokenFilter.doFilter] Cookie에서 JWT 토큰 추출: {}", accessToken);
 
         try {
             if (accessToken != null) {

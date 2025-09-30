@@ -1,6 +1,6 @@
 package com.trend_now.backend.member.application;
 
-import com.trend_now.backend.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.customException.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -16,7 +16,7 @@ public class MemberRedisService {
 
     private final RedisTemplate<String, String> redisTemplate;
 
-    private static final String REFRESH_TOKEN_PREFIX = "RefreshToken_";
+    public static final String REFRESH_TOKEN_PREFIX = "RefreshToken_";
     private static final String NOT_EXIST_REFRESH_TOKEN_IN_REDIS = "Redis에 입력된 Member Id의 key가 없습니다.";
 
     /**

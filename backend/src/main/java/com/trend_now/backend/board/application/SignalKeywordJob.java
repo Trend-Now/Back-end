@@ -1,11 +1,18 @@
 package com.trend_now.backend.board.application;
 
+import com.trend_now.backend.board.application.board_summary.BoardSummaryTriggerService;
 import com.trend_now.backend.board.cache.BoardCache;
+import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.SignalKeywordDto;
 import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10;
 import com.trend_now.backend.board.dto.Top10WithChange;
+import com.trend_now.backend.board.dto.Top10WithDiff;
+import java.util.ArrayList;
+import java.util.List;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -33,12 +40,17 @@ public class SignalKeywordJob implements Job {
         BoardRedisService boardRedisService = applicationContext.getBean(BoardRedisService.class);
         RedisPublisher redisPublisher = applicationContext.getBean(RedisPublisher.class);
         BoardCache boardCache = applicationContext.getBean(BoardCache.class);
+        BoardSummaryTriggerService boardSummaryTriggerService = applicationContext.getBean(
+            BoardSummaryTriggerService.class);
 
+        // Redis의 realtime_keywords에 boardId 값을 저장하기 위한 리스트
+        List<Long> boardIdList = new ArrayList<>();
+        // 스케줄러 실행 시 생기는 시간 차이를 줄이기 위해 Instant.now()를 최초 1회만 호출
+        Instant now = Instant.now();
         try {
             SignalKeywordDto signalKeywordDto = signalKeywordService.fetchRealTimeKeyword().block();
             boardRedisService.cleanUpExpiredKeys();
-            Top10WithChange top10WithChange = signalKeywordService.calculateRankChange(
-                    signalKeywordDto);
+
             for (int i = 0; i < signalKeywordDto.getTop10().size(); i++) {
 
                 /**
@@ -49,22 +61,40 @@ public class SignalKeywordJob implements Job {
                  *  - 해당 BoardSaveDto 객체를 통해 redis에 게시판 식별자, 게시판 이름, 게시판 종류, 순위 저장
                  */
 
+                // signal.bz의 top10 객체를 BoardSaveDto 객체로 변환
                 Top10 top10 = signalKeywordDto.getTop10().get(i);
                 BoardSaveDto boardSaveDto = BoardSaveDto.from(top10);
 
-                Long boardId = boardService.saveBoardIfNotExists(boardSaveDto);
-                boardSaveDto.setBoardId(boardId);
-                boardRedisService.saveBoardRedis(boardSaveDto, i + 1);
+                // top10 키워드로 게시판 저장 또는 업데이트
+                Boards boards = boardService.saveOrUpdateBoard(boardSaveDto);
+                boardSaveDto.setBoardId(boards.getId());
 
-                /* 동일 객체 참조로 내부 원본의 각 검색어의 게시판 ID를 포함하여 반환 */
-                top10WithChange.getTop10WithDiff().get(i).setBoardId(boardId);
+                // 저장된 게시판의 AI 요약 저장 또는 업데이트
+                boardSummaryTriggerService.triggerSummaryUpdate(boards.getId(), boards.getName());
 
-                boolean isRealTimeBoard = boardRedisService.isRealTimeBoard(boardSaveDto);
-                boardService.updateBoardIsDeleted(boardSaveDto, isRealTimeBoard);
+                // Redis의 realtime_keywords에 저장하기 위해 boardId를 따로 리스트에 수집
+                boardIdList.add(boards.getId());
+
+                // i는 10번을 순회하면서 첫 번째는 0.1, 두 번째는 0.09, ... , 열 번째는 0.01의 값을 위 시간에서 더한다
+                double score = calculateScore(now, i);
+                // Redis zSet(board_rank)에 score와 함께 저장
+                boardRedisService.saveBoardRedis(boardSaveDto, score);
             }
+            // Redis(board_rank_valid)의 유효시간 갱신
             boardRedisService.setRankValidListTime();
+            signalKeywordService.updateLastUpdatedTime(signalKeywordDto.getNow());
 
+            // 인메모리 캐시에 게시판 정보 갱신
             boardCache.setBoardInfo(boardRedisService.getBoardRank(0, -1));
+
+            // Redis(realtime_keywords)에 실시간 검색어 순위 리스트 저장 후 저장된 데이터 반환
+            List<String> realtimeKeywordList = signalKeywordService.saveRealtimeKeywords(signalKeywordDto,
+                boardIdList);
+
+            // SSE 메세지를 보내기 위한 Top10WithChange 객체 생성
+            List<Top10WithDiff> top10WithDiffList = realtimeKeywordList.stream()
+                .map(Top10WithDiff::from).toList();
+            Top10WithChange top10WithChange = new Top10WithChange(signalKeywordDto.getNow(), top10WithDiffList);
 
             Set<String> allClientId = signalKeywordService.findAllClientId();
             for (String clientId : allClientId) {
@@ -76,5 +106,15 @@ public class SignalKeywordJob implements Job {
         } catch (Exception e) {
             throw new JobExecutionException(KEYWORD_JOB_ERROR_MESSAGE, e);
         }
+    }
+
+    private double calculateScore(Instant now, int index) {
+        // score 값을 현재 Instant 시간에서 2시간이 지난 값으로 설정하여 saveBoardRedis에 전달
+        Instant twoHoursLater = now.plus(2, ChronoUnit.HOURS);
+
+        long epochMilli = twoHoursLater.toEpochMilli(); // UTC 기준 2시간이 지난 시간을 밀리초로 변환
+        double rank = (10 - index) * 0.01;
+
+        return (epochMilli + rank) * -1; // 내림차순 정렬을 위해 음수로 변환
     }
 }
