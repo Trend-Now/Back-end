@@ -2,8 +2,8 @@ package com.trend_now.backend.config.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trend_now.backend.common.CookieUtil;
-import com.trend_now.backend.exception.CustomException.ExpiredTokenException;
-import com.trend_now.backend.exception.CustomException.InvalidTokenException;
+import com.trend_now.backend.exception.customException.ExpiredTokenException;
+import com.trend_now.backend.exception.customException.InvalidTokenException;
 import com.trend_now.backend.exception.dto.ErrorResponseDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;

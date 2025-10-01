@@ -1,4 +1,4 @@
-package com.trend_now.backend.exception.CustomException;
+package com.trend_now.backend.exception.customException;
 
 /**
  * 만료된 Access Token으로 API 요청 시, 해당 예외가 발생
