@@ -9,21 +9,29 @@ import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.Top10WithDiff;
 import com.trend_now.backend.board.repository.BoardRepository;
 import jakarta.annotation.PostConstruct;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class BoardCache {
 
     public static final int EXPIRATION_TIME = 30; // 캐시 만료 시간 (분 단위)
     public static final int MAXIMUM_SIZE = 1000; // 캐시 최대 크기
+    public static final double SIMILARITY_THRESHOLD = 0.3; // 유사도 임계값 (0.3 = 두 단어 이상 일치)
+    public static final String BLANK = "\\s+"; // 공백 정규식
+
 
     private final BoardRepository boardRepository;
     private final RedisTemplate<String, String> redisTemplate;
@@ -85,6 +93,8 @@ public class BoardCache {
                 boardCacheEntryMap.put(boardRankInfo.getBoardId(),
                     BoardCacheEntry.builder()
                         .boardName(boardRankInfo.getKeyword())
+                        .splitBoardName(Arrays.stream(boardRankInfo.getKeyword().split("\\s+"))
+                            .collect(Collectors.toSet()))
                         .build()
                 );
             }
@@ -109,5 +119,31 @@ public class BoardCache {
 
     public boolean isInBoardCache(Long boardId) {
         return boardCacheEntryMap.getIfPresent(boardId) != null;
+    }
+
+    public String findKeywordSimilarity(String newKeyword) {
+        Set<String> newSet = Arrays.stream(newKeyword.split(BLANK))
+            .collect(Collectors.toSet());
+
+        for (BoardCacheEntry boardCacheEntry : boardCacheEntryMap.asMap().values()) {
+            Set<String> originSet = boardCacheEntry.getSplitBoardName();
+            // 교집합
+            Set<String> intersection = new HashSet<>(newSet);
+            intersection.retainAll(originSet);
+
+            // 합집합
+            Set<String> union = new HashSet<>(newSet);
+            union.addAll(originSet);
+
+            double similarity = (double) intersection.size() / union.size();
+
+            if (similarity > SIMILARITY_THRESHOLD) {
+                log.info("유사한 게시판 발견 - 새로운 키워드: {}, 기존 키워드: {}, 유사도: {}", newKeyword,
+                    boardCacheEntry.getBoardName(), similarity);
+                return boardCacheEntry.getBoardName();
+            }
+        }
+
+        return newKeyword;
     }
 }

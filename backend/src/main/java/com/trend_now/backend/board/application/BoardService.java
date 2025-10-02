@@ -37,7 +37,18 @@ public class BoardService {
             board.changeDeleted();
             return board;
         } else {
-            // 새로운 게시판일 경우 새로운 객체 생성 후 저장
+            // 기존 게시판들과 유사도 검증
+            String similarBoard = boardCache.findKeywordSimilarity(boardSaveDto.getBoardName());
+
+            // 비슷한 이름의 게시판이 존재하면 이름 업데이트
+            if (!similarBoard.equals(boardSaveDto.getBoardName())) {
+                Boards board = boardRepository.findByName(similarBoard)
+                    .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE));
+                board.updateName(boardSaveDto.getBoardName());
+                return board;
+            }
+
+            // 비슷한 게시판이 존재하지 않으면 새로운 게시판 저장
             return boardRepository.save(
                 Boards.builder()
                     .name(boardSaveDto.getBoardName())
