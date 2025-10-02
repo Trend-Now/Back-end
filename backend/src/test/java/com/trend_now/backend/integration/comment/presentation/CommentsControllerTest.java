@@ -5,7 +5,7 @@ import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.comment.data.vo.SaveCommentsRequest;
 import com.trend_now.backend.comment.presentation.CommentsController;
-import com.trend_now.backend.global.exception.CustomException.NotFoundException;
+import com.trend_now.backend.exception.customException.NotFoundException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
