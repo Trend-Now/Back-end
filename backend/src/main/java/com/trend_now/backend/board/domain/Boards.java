@@ -44,4 +44,8 @@ public class Boards extends BaseEntity {
     public void changeDeleted() {
         this.deleted = !this.deleted;
     }
+
+    public void updateName(String name) {
+        this.name = name;
+    }
 }
