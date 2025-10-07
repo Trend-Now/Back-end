@@ -37,7 +37,7 @@ public class BoardService {
             board.changeDeleted();
             return board;
         } else {
-            // 기존 게시판들과 유사도 검증
+            // 기존 게시판들과 유사도 검증 (비슷한 이름의 게시판이 있으면 해당 게시판의 이름 반환, 없으면 입력받은 이름 그대로 반환)
             String similarBoard = boardCache.findKeywordSimilarity(boardSaveDto.getBoardName());
 
             // 비슷한 이름의 게시판이 존재하면 이름 업데이트

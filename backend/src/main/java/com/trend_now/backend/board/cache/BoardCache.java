@@ -121,6 +121,10 @@ public class BoardCache {
         return boardCacheEntryMap.getIfPresent(boardId) != null;
     }
 
+    /**
+     * 키워드와 유사한 게시판 이름이 존재하는지 확인하고, 유사한 게시판이 있으면 해당 이름을 반환.
+     * 유사한 게시판이 없으면 입력 값으로 들어온 키워드를 그대로 반환.
+     */
     public String findKeywordSimilarity(String newKeyword) {
         Set<String> newSet = Arrays.stream(newKeyword.split(BLANK))
             .collect(Collectors.toSet());
