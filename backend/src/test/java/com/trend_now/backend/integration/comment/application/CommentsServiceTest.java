@@ -15,7 +15,7 @@ import com.trend_now.backend.comment.data.dto.SaveCommentsDto;
 import com.trend_now.backend.comment.data.dto.UpdateCommentsDto;
 import com.trend_now.backend.comment.domain.Comments;
 import com.trend_now.backend.comment.repository.CommentsRepository;
-import com.trend_now.backend.global.exception.CustomException.InvalidRequestException;
+import com.trend_now.backend.exception.customException.InvalidRequestException;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.member.repository.MemberRepository;
