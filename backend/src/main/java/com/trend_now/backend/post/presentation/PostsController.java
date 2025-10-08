@@ -106,7 +106,7 @@ public class PostsController {
         @AuthenticationPrincipal(expression = "members") Members members) {
 
         PostInfoResponseDto postInfoResponseDto = postsService.updatePostsById(
-            postsUpdateRequestDto, boardId, postId, members.getId());
+            postsUpdateRequestDto, boardId, postId, members.getId(), members.getName());
 
         return ResponseEntity.status(HttpStatus.OK)
             .body(ApiResponse.onSuccess(postInfoResponseDto, SUCCESS_UPDATE_POSTS_MESSAGE));

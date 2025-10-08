@@ -19,6 +19,7 @@ public class PostsInfoDto {
     private int likeCount;
     private boolean isMyPost;
     private boolean isScraped;
+    private boolean isLiked;
     private final Long commentCount;
     private final boolean modifiable;
     private final String boardName;

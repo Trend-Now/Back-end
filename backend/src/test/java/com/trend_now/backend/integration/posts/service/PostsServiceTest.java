@@ -167,7 +167,7 @@ public class PostsServiceTest {
 
         //when
         postsService.updatePostsById(postsUpdateRequestDto, boards.getId(), posts.getId(),
-            members.getId());
+            members.getId(), members.getName());
         em.flush();
         em.clear();
 
@@ -214,7 +214,7 @@ public class PostsServiceTest {
             .isInstanceOf(InvalidRequestException.class)
             .hasMessageContaining("타이머가 종료된 게시판입니다. 타이머가 남아있는 게시판에서만 요청할 수 있습니다.");
         assertThatThrownBy(() -> postsService.updatePostsById(postsUpdateRequestDto,
-            boards.getId(), posts.getId(), members.getId()))
+            boards.getId(), posts.getId(), members.getId(), members.getName()))
             .isInstanceOf(InvalidRequestException.class)
             .hasMessageContaining("타이머가 종료된 게시판입니다. 타이머가 남아있는 게시판에서만 요청할 수 있습니다.");
     }
@@ -250,7 +250,7 @@ public class PostsServiceTest {
         PostsUpdateRequestDto postsUpdateRequestDto = PostsUpdateRequestDto.of("updateTitle",
             "updateContent", null, null);
         assertThatThrownBy(() -> postsService.updatePostsById(postsUpdateRequestDto,
-            boards.getId(), posts.getId(), members.getId()))
+            boards.getId(), posts.getId(), members.getId(), members.getName()))
             .isInstanceOf(InvalidRequestException.class)
             .hasMessageContaining("게시글이 수정/삭제 불가능한 상태입니다.");
         // 게시글 삭제

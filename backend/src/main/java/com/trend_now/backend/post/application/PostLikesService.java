@@ -158,7 +158,7 @@ public class PostLikesService {
     /**
      * 회원이 게시글에 좋아요를 누른지 확인하는 메서드
      */
-    private boolean hasMemberLiked(Long boardId, Long postId, String memberName) {
+    public boolean hasMemberLiked(Long boardId, Long postId, String memberName) {
         String redisKey =
                 REDIS_LIKE_MEMBER_KEY_PREFIX + boardId + REDIS_LIKE_BOARD_KEY_DELIMITER + postId;
 

@@ -28,6 +28,7 @@ import com.trend_now.backend.post.dto.PostsInfoDto;
 import com.trend_now.backend.post.dto.PostsPagingRequestDto;
 import com.trend_now.backend.post.dto.PostsSaveDto;
 import com.trend_now.backend.post.dto.PostsUpdateRequestDto;
+import com.trend_now.backend.post.repository.PostLikesRepository;
 import com.trend_now.backend.post.repository.PostsRepository;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -73,6 +74,7 @@ public class PostsService {
     private final PostLikesService postLikesService;
     private final ScrapService scrapService;
     private final RedisTemplate<Object, Object> redisTemplate;
+    private final PostLikesRepository postLikesRepository;
 
     // 게시판 조회 - 가변 타이머 작동 중에만 가능
     public Page<PostSummaryDto> findAllPostsPagingByBoardId(
@@ -104,7 +106,7 @@ public class PostsService {
      * 게시글 단건 조회 - 가변 타이머 작동 중에만 가능
      * 게시글 작성, 수정 API에 응답되는 메서드
      */
-    public PostsInfoDto findPostsById(Long boardId, Long postId, Long requestMemberId) {
+    public PostsInfoDto findPostsById(Long boardId, Long postId, Long requestMemberId, String memberName) {
         // 게시판이 존재하는지, 가변 타이머가 작동 중인지 확인
         Boards boards = findAndValidateBoard(boardId);
 
@@ -113,7 +115,7 @@ public class PostsService {
             .orElseThrow(() -> new NotFoundException(NOT_EXIST_POSTS));
 
         // 현재 게시글이 내 게시글인지, 스크랩을 했던 게시글인지 조회
-        setMyPostAndIsScrapped(postId, requestMemberId, postsInfoDto);
+        setMyPostAndIsScrapAndIsLike(boardId, postId, requestMemberId, memberName, postsInfoDto);
 
         // 게시글 조회수와 게시글 좋아요 개수 값을 postsInfoDto에 설정 (Look Aside)
         setViewCountAndPostLike(postId, postsInfoDto, boards);
@@ -143,12 +145,14 @@ public class PostsService {
         if (principal instanceof CustomUserDetails userDetails) {
             // 인증 객체에 CustomUserDetails가 들어 있다면 로그인 한 회원
             Long requestMemberId = userDetails.getMembers().getId();
+            String requestMemberName = userDetails.getMembers().getName();
             // 현재 게시글에 요청한 Member가 스크랩을 했었는지 조회
-            setMyPostAndIsScrapped(postId, requestMemberId, postsInfoDto);
+            setMyPostAndIsScrapAndIsLike(boardId, postId, requestMemberId, requestMemberName, postsInfoDto);
         } else {
             // 로그인하지 않은 사용자는 isScraped와 isMyPost를 false로 설정
             postsInfoDto.setMyPost(false);
             postsInfoDto.setScraped(false);
+            postsInfoDto.setLiked(false);
         }
 
         // 게시글 조회수와 게시글 좋아요 개수 값을 postsInfoDto에 설정 (Look Aside)
@@ -182,11 +186,13 @@ public class PostsService {
         postsInfoDto.setLikeCount(postLikesCount);
     }
 
-    private void setMyPostAndIsScrapped(Long postId, Long requestMemberId, PostsInfoDto postsInfoDto) {
+    private void setMyPostAndIsScrapAndIsLike(Long boardId, Long postId, Long requestMemberId, String memberName, PostsInfoDto postsInfoDto) {
         boolean isMyPost = postsInfoDto.getWriterId().equals(requestMemberId);
         boolean isScraped = scrapService.isScrapedPost(requestMemberId, postId);
+        boolean isLiked = postLikesService.hasMemberLiked(boardId, postId, memberName);
         postsInfoDto.setMyPost(isMyPost);
         postsInfoDto.setScraped(isScraped);
+        postsInfoDto.setLiked(isLiked);
     }
     //게시글 단건 조회 - 가변 타이머 작동 중에만 가능
 
@@ -252,7 +258,7 @@ public class PostsService {
                 }
             );
         }
-        PostsInfoDto postsInfoDto = findPostsById(boardId, savePost.getId(), members.getId());
+        PostsInfoDto postsInfoDto = findPostsById(boardId, savePost.getId(), members.getId(), members.getName());
         List<ImageInfoDto> imageInfoDtoList = imagesService.findImagesByPost(savePost.getId());
         return PostInfoResponseDto.of(postsInfoDto, imageInfoDtoList);
     }
@@ -280,7 +286,7 @@ public class PostsService {
     //게시글 수정 - 가변 타이머 작동 중에만 가능
     @Transactional
     public PostInfoResponseDto updatePostsById(PostsUpdateRequestDto postsUpdateRequestDto, Long boardId,
-        Long postId, Long memberId) {
+        Long postId, Long memberId, String memberName) {
         Boards boards = boardRepository.findById(boardId)
             .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
         Posts posts = postsRepository.findById(postId)
@@ -316,7 +322,7 @@ public class PostsService {
         }
 
         // 응답 생성
-        PostsInfoDto postsInfoDto = findPostsById(boardId, posts.getId(), memberId);
+        PostsInfoDto postsInfoDto = findPostsById(boardId, posts.getId(), memberId, memberName);
         List<ImageInfoDto> imageInfoDtoList = imagesService.findImagesByPost(posts.getId());
 
         return PostInfoResponseDto.of(postsInfoDto, imageInfoDtoList);
