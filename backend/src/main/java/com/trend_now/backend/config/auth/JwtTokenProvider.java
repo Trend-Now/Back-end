@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
 @Component
@@ -44,11 +46,12 @@ public class JwtTokenProvider {
      */
     public String createAccessToken(Long memberId) {
         Claims claims = Jwts.claims().setSubject(String.valueOf(memberId));
-        Date now = new Date();
+        Instant now = Instant.now();
+        Instant expiry = now.plus(expiration, ChronoUnit.SECONDS);
         String token = Jwts.builder()
                 .setClaims(claims)
-                .setIssuedAt(now)
-                .setExpiration(new Date(now.getTime() + expiration * 60 * 1000L))
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(expiry))
                 .signWith(SECRET_KEY)
                 .compact();
 
