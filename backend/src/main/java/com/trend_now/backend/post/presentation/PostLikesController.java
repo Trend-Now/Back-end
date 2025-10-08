@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PostLikesController {
 
     private static final String SUCCESS_INCREMENT_POSTLIKES_MESSAGE = "좋아요를 증가시키는 데 성공했습니다.";
-    private static final String FAILURE_INCREMENT_POSTLIKES_MESSAGE = "좋아요를 증가시키는 데 실패했습니다.";
+    private static final String SUCCESS_CANCEL_POSTLIKES_MESSAGE = "좋아요를 취소하는 데 성공했습니다.";
 
     private final PostLikesService postLikesService;
 
@@ -44,7 +44,7 @@ public class PostLikesController {
         PostLikesAction postLikesAction = postLikesService.increaseLikeLock(postLikesIncrementDto);
         String message =
                 postLikesAction == PostLikesAction.LIKED ? SUCCESS_INCREMENT_POSTLIKES_MESSAGE
-                        : FAILURE_INCREMENT_POSTLIKES_MESSAGE;
+                        : SUCCESS_CANCEL_POSTLIKES_MESSAGE;
 
         return ResponseEntity.status(HttpStatus.OK).body(PostLikesResponseDto.of(message, postLikesAction));
     }
