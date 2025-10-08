@@ -9,6 +9,8 @@ import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.*;
 import jakarta.servlet.http.Cookie;
@@ -26,9 +28,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @Slf4j
@@ -81,23 +86,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             if (accessToken != null) {
                 // Access Token 검증 및 Claims 객체 추출
                 Claims claims = validateAccessToken(accessToken);
-                if (claims == null) {
-                    throw new InvalidTokenException(INVALID_TOKEN_RETURN_MESSAGE);
-                }
-
-                // Access Token 만료기간 검증 (accessTokenExpiration 변수 사용)
-                Date issuedAt = claims.getIssuedAt();
-                if (issuedAt != null) {
-                    long now = System.currentTimeMillis();
-                    long expirationTime = issuedAt.getTime() + (accessTokenExpiration * 1000L); // 초 단위 → ms 변환
-
-                    if (now > expirationTime) {
-                        throw new ExpiredTokenException(EXPIRED_TOKEN_RETURN_MESSAGE);
-                    }
-                } else {
-                    // issuedAt 자체가 없으면 JWT 예외로 판단
-                    throw new InvalidTokenException(INVALID_TOKEN_RETURN_MESSAGE);
-                }
 
                 /**
                  *  인증 객체 범위
@@ -142,7 +130,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         }
 
         // JWT 검증에서 예외가 발생하면 doFilter() 메서드를 통해 필터 체인에 접근하지 않고 사용자에게 에러를 반환
-        catch (Exception e) {
+        catch (InvalidTokenException e) {
             log.error("[JwtTokenFilter.doFilter] : Access Token이 올바르지 않습니다.");
             e.printStackTrace();
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
@@ -161,6 +149,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             // JSON 직렬화
             new ObjectMapper().writeValue(response.getWriter(), errorResponse);
         }
+
+        catch (Exception e) {
+            log.error("[JwtTokenFilter.doFilter] : 예외 발생");
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -169,6 +162,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
      *  - 암호화 알고리즘을 통해 나온 문자열인 서명을 입력받은 토큰의 서명 부분과 비교
      *  - 일치하면 true, 불일치면 false 반환
      *  - getBody()를 통해 페이로드 부분(Claims) 추출
+     *
+     *  - parse를 진행하면서 만료 또는 서명 등은 라이브러리 자체 검증이 진행
      */
     public Claims validateAccessToken(String accessToken) {
         try {
@@ -177,9 +172,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     .build()
                     .parseClaimsJws(accessToken)
                     .getBody();
-        } catch (Exception e) {
-            log.error("[JwtTokenFilter.validateAccessToken] : 유효하지 않은 Access Token 입니다. {}", e.getMessage());
-            return null;
+        } catch (ExpiredJwtException e) {
+            throw new ExpiredTokenException(EXPIRED_TOKEN_RETURN_MESSAGE);
+        } catch (JwtException e) {
+            throw new InvalidTokenException(INVALID_TOKEN_RETURN_MESSAGE);
         }
     }
 
