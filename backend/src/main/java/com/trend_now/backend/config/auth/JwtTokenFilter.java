@@ -80,7 +80,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String accessToken = CookieUtil.getCookie(request, ACCESS_TOKEN_KEY)
                 .map(Cookie::getValue)
                 .orElse(null);
-//        log.info("[JwtTokenFilter.doFilter] Cookie에서 JWT 토큰 추출: {}", accessToken);
 
         try {
             if (accessToken != null) {
@@ -112,42 +111,13 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         }
         catch (ExpiredTokenException e) {
             log.info("[JwtTokenFilter.doFilter] : 만료된 Access Token으로 API 요청이 들어왔습니다.");
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setContentType("application/json");
-
-            // 요청 path 가져오기
-            String path = request.getRequestURI();
-
-            // DTO 생성
-            ErrorResponseDto errorResponse = new ErrorResponseDto(
-                    HttpStatus.UNAUTHORIZED,
-                    EXPIRED_TOKEN_RETURN_MESSAGE,
-                    path
-            );
-
-            // JSON 직렬화
-            new ObjectMapper().writeValue(response.getWriter(), errorResponse);
+            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, EXPIRED_TOKEN_RETURN_MESSAGE, request.getRequestURI());
         }
 
         // JWT 검증에서 예외가 발생하면 doFilter() 메서드를 통해 필터 체인에 접근하지 않고 사용자에게 에러를 반환
         catch (InvalidTokenException e) {
             log.error("[JwtTokenFilter.doFilter] : Access Token이 올바르지 않습니다.");
-            e.printStackTrace();
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setContentType("application/json");
-
-            // 요청 path 가져오기
-            String path = request.getRequestURI();
-
-            // DTO 생성
-            ErrorResponseDto errorResponse = new ErrorResponseDto(
-                    HttpStatus.UNAUTHORIZED,
-                    INVALID_TOKEN_RETURN_MESSAGE,
-                    path
-            );
-
-            // JSON 직렬화
-            new ObjectMapper().writeValue(response.getWriter(), errorResponse);
+            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, INVALID_TOKEN_RETURN_MESSAGE, request.getRequestURI());
         }
 
         catch (Exception e) {
@@ -189,5 +159,18 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 .getBody();
 
         return Long.valueOf(claims.getSubject());
+    }
+
+    /**
+     * 공통 에러 응답 처리
+     * - 공통 에러 DTO를 JSON 직렬화하여 응답 처리
+     */
+    private void sendErrorResponse(HttpServletResponse response, HttpStatus status, String message, String path)
+            throws IOException {
+        response.setStatus(status.value());
+        response.setContentType("application/json");
+
+        ErrorResponseDto errorResponse = new ErrorResponseDto(status, message, path);
+        new ObjectMapper().writeValue(response.getWriter(), errorResponse);
     }
 }
