@@ -189,14 +189,20 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     /**
      * JWT에서 Member ID 추출 메서드
+     * - 만료된 JWT에서도 Member ID는 추출 가능하도록 처리(ex. Access Token 재발급)
      */
     public Long extractMemberId(String accessToken) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(secretKey)
-                .parseClaimsJws(accessToken)
-                .getBody();
+        try {
+            Claims claims = Jwts.parser()
+                    .setSigningKey(secretKey)
+                    .parseClaimsJws(accessToken)
+                    .getBody();
 
-        return Long.valueOf(claims.getSubject());
+            return Long.valueOf(claims.getSubject());
+        } catch (ExpiredJwtException e) {
+            Claims claims = e.getClaims();
+            return Long.valueOf(claims.getSubject());
+        }
     }
 
     /**
