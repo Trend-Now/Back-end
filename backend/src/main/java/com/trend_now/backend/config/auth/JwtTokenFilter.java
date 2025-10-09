@@ -19,21 +19,20 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -41,11 +40,13 @@ import java.util.Optional;
 public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final CustomUserDetailsService customUserDetailsService;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String JWT_PREFIX = "Bearer ";
     private static final String INVALID_TOKEN_RETURN_MESSAGE = "Invalid Access Token";
     private static final String EXPIRED_TOKEN_RETURN_MESSAGE = "Expired Access Token";
+    private static final String API_PREFIX = "/api/v1/";
 
     @Value("${jwt.access-token.secret}")
     private String secretKey;
@@ -57,19 +58,56 @@ public class JwtTokenFilter extends OncePerRequestFilter {
      * 특정 path 요청은 filter 제외하도록 명시
      * todo. 필요 부분은 아래에 추가
      */
-    private final List<String> excludedPaths = Arrays.asList(
-            "/api/v1/member/login",
-            "/api/v1/member/access-token",
-            "/api/v1/member/test-jwt"
+    private static final List<ExcludedEndpoint> EXCLUDED_ENDPOINTS = List.of(
+            new ExcludedEndpoint(API_PREFIX + "member/access-token", HttpMethod.POST),
+            new ExcludedEndpoint(API_PREFIX + "member", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "member/test-jwt", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts/{postId}", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts/cooldown", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "search/realtimePosts", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "search/realtimeBoards", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "search/fixedPosts", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "search/auto-complete", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts/{postId}/comments", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "unsubscribe", HttpMethod.POST),
+            new ExcludedEndpoint(API_PREFIX + "timeSync", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "subscribe", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "news/realtime", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/name", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/realtime", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/list", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/fixedList", HttpMethod.GET),
+            new ExcludedEndpoint("health", HttpMethod.GET)
     );
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String requestURI = request.getRequestURI();
+        HttpMethod requestMethod = HttpMethod.valueOf(request.getMethod());
 
-        // 제외할 경로인지 확인
-        return excludedPaths.stream()
-                .anyMatch(requestURI::startsWith);
+        return EXCLUDED_ENDPOINTS.stream()
+                .anyMatch(endpoint -> endpoint.matches(requestURI, requestMethod, pathMatcher));
+    }
+
+    /**
+     * 비인가 API 패턴 매칭 메서드
+     * - 동일 URL에 대하여 HTTP Method 분기 처리 및 PathVariable 처리 역할
+     */
+    private static class ExcludedEndpoint {
+        private final String pathPattern;
+        private final Set<HttpMethod> methods;
+
+        public ExcludedEndpoint(String pathPattern, HttpMethod... methods) {
+            this.pathPattern = pathPattern;
+            this.methods = Set.of(methods);
+        }
+
+        public boolean matches(String requestPath, HttpMethod requestMethod, AntPathMatcher pathMatcher) {
+            boolean pathMatches = pathMatcher.match(pathPattern, requestPath);
+            boolean methodMatches = methods.contains(requestMethod);
+            return pathMatches && methodMatches;
+        }
     }
 
     @Override
