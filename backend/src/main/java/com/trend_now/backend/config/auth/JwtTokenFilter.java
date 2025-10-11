@@ -9,6 +9,8 @@ import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.repository.MemberRepository;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.*;
 import jakarta.servlet.http.Cookie;
@@ -17,18 +19,20 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -36,11 +40,13 @@ import java.util.List;
 public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final CustomUserDetailsService customUserDetailsService;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String JWT_PREFIX = "Bearer ";
     private static final String INVALID_TOKEN_RETURN_MESSAGE = "Invalid Access Token";
     private static final String EXPIRED_TOKEN_RETURN_MESSAGE = "Expired Access Token";
+    private static final String API_PREFIX = "/api/v1/";
 
     @Value("${jwt.access-token.secret}")
     private String secretKey;
@@ -52,19 +58,56 @@ public class JwtTokenFilter extends OncePerRequestFilter {
      * 특정 path 요청은 filter 제외하도록 명시
      * todo. 필요 부분은 아래에 추가
      */
-    private final List<String> excludedPaths = Arrays.asList(
-            "/api/v1/member/login",
-            "/api/v1/member/access-token",
-            "/api/v1/member/test-jwt"
+    private static final List<ExcludedEndpoint> EXCLUDED_ENDPOINTS = List.of(
+            new ExcludedEndpoint(API_PREFIX + "member/access-token", HttpMethod.POST),
+            new ExcludedEndpoint(API_PREFIX + "member", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "member/test-jwt", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts/{postId}", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts/cooldown", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "search/realtimePosts", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "search/realtimeBoards", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "search/fixedPosts", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "search/auto-complete", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts/{postId}/comments", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "unsubscribe", HttpMethod.POST),
+            new ExcludedEndpoint(API_PREFIX + "timeSync", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "subscribe", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "news/realtime", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/name", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/realtime", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/list", HttpMethod.GET),
+            new ExcludedEndpoint(API_PREFIX + "boards/fixedList", HttpMethod.GET),
+            new ExcludedEndpoint("health", HttpMethod.GET)
     );
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String requestURI = request.getRequestURI();
+        HttpMethod requestMethod = HttpMethod.valueOf(request.getMethod());
 
-        // 제외할 경로인지 확인
-        return excludedPaths.stream()
-                .anyMatch(requestURI::startsWith);
+        return EXCLUDED_ENDPOINTS.stream()
+                .anyMatch(endpoint -> endpoint.matches(requestURI, requestMethod, pathMatcher));
+    }
+
+    /**
+     * 비인가 API 패턴 매칭 메서드
+     * - 동일 URL에 대하여 HTTP Method 분기 처리 및 PathVariable 처리 역할
+     */
+    private static class ExcludedEndpoint {
+        private final String pathPattern;
+        private final Set<HttpMethod> methods;
+
+        public ExcludedEndpoint(String pathPattern, HttpMethod... methods) {
+            this.pathPattern = pathPattern;
+            this.methods = Set.of(methods);
+        }
+
+        public boolean matches(String requestPath, HttpMethod requestMethod, AntPathMatcher pathMatcher) {
+            boolean pathMatches = pathMatcher.match(pathPattern, requestPath);
+            boolean methodMatches = methods.contains(requestMethod);
+            return pathMatches && methodMatches;
+        }
     }
 
     @Override
@@ -75,29 +118,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String accessToken = CookieUtil.getCookie(request, ACCESS_TOKEN_KEY)
                 .map(Cookie::getValue)
                 .orElse(null);
-//        log.info("[JwtTokenFilter.doFilter] Cookie에서 JWT 토큰 추출: {}", accessToken);
 
         try {
             if (accessToken != null) {
                 // Access Token 검증 및 Claims 객체 추출
                 Claims claims = validateAccessToken(accessToken);
-                if (claims == null) {
-                    throw new InvalidTokenException(INVALID_TOKEN_RETURN_MESSAGE);
-                }
-
-                // Access Token 만료기간 검증 (accessTokenExpiration 변수 사용)
-                Date issuedAt = claims.getIssuedAt();
-                if (issuedAt != null) {
-                    long now = System.currentTimeMillis();
-                    long expirationTime = issuedAt.getTime() + (accessTokenExpiration * 1000L); // 초 단위 → ms 변환
-
-                    if (now > expirationTime) {
-                        throw new ExpiredTokenException(EXPIRED_TOKEN_RETURN_MESSAGE);
-                    }
-                } else {
-                    // issuedAt 자체가 없으면 JWT 예외로 판단
-                    throw new InvalidTokenException(INVALID_TOKEN_RETURN_MESSAGE);
-                }
 
                 /**
                  *  인증 객체 범위
@@ -124,42 +149,18 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         }
         catch (ExpiredTokenException e) {
             log.info("[JwtTokenFilter.doFilter] : 만료된 Access Token으로 API 요청이 들어왔습니다.");
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setContentType("application/json");
-
-            // 요청 path 가져오기
-            String path = request.getRequestURI();
-
-            // DTO 생성
-            ErrorResponseDto errorResponse = new ErrorResponseDto(
-                    HttpStatus.UNAUTHORIZED,
-                    EXPIRED_TOKEN_RETURN_MESSAGE,
-                    path
-            );
-
-            // JSON 직렬화
-            new ObjectMapper().writeValue(response.getWriter(), errorResponse);
+            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, EXPIRED_TOKEN_RETURN_MESSAGE, request.getRequestURI());
         }
 
         // JWT 검증에서 예외가 발생하면 doFilter() 메서드를 통해 필터 체인에 접근하지 않고 사용자에게 에러를 반환
-        catch (Exception e) {
+        catch (InvalidTokenException e) {
             log.error("[JwtTokenFilter.doFilter] : Access Token이 올바르지 않습니다.");
+            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, INVALID_TOKEN_RETURN_MESSAGE, request.getRequestURI());
+        }
+
+        catch (Exception e) {
+            log.error("[JwtTokenFilter.doFilter] : 예외 발생");
             e.printStackTrace();
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setContentType("application/json");
-
-            // 요청 path 가져오기
-            String path = request.getRequestURI();
-
-            // DTO 생성
-            ErrorResponseDto errorResponse = new ErrorResponseDto(
-                    HttpStatus.UNAUTHORIZED,
-                    INVALID_TOKEN_RETURN_MESSAGE,
-                    path
-            );
-
-            // JSON 직렬화
-            new ObjectMapper().writeValue(response.getWriter(), errorResponse);
         }
     }
 
@@ -169,6 +170,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
      *  - 암호화 알고리즘을 통해 나온 문자열인 서명을 입력받은 토큰의 서명 부분과 비교
      *  - 일치하면 true, 불일치면 false 반환
      *  - getBody()를 통해 페이로드 부분(Claims) 추출
+     *
+     *  - parse를 진행하면서 만료 또는 서명 등은 라이브러리 자체 검증이 진행
      */
     public Claims validateAccessToken(String accessToken) {
         try {
@@ -177,21 +180,41 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     .build()
                     .parseClaimsJws(accessToken)
                     .getBody();
-        } catch (Exception e) {
-            log.error("[JwtTokenFilter.validateAccessToken] : 유효하지 않은 Access Token 입니다. {}", e.getMessage());
-            return null;
+        } catch (ExpiredJwtException e) {
+            throw new ExpiredTokenException(EXPIRED_TOKEN_RETURN_MESSAGE);
+        } catch (JwtException e) {
+            throw new InvalidTokenException(INVALID_TOKEN_RETURN_MESSAGE);
         }
     }
 
     /**
      * JWT에서 Member ID 추출 메서드
+     * - 만료된 JWT에서도 Member ID는 추출 가능하도록 처리(ex. Access Token 재발급)
      */
     public Long extractMemberId(String accessToken) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(secretKey)
-                .parseClaimsJws(accessToken)
-                .getBody();
+        try {
+            Claims claims = Jwts.parser()
+                    .setSigningKey(secretKey)
+                    .parseClaimsJws(accessToken)
+                    .getBody();
 
-        return Long.valueOf(claims.getSubject());
+            return Long.valueOf(claims.getSubject());
+        } catch (ExpiredJwtException e) {
+            Claims claims = e.getClaims();
+            return Long.valueOf(claims.getSubject());
+        }
+    }
+
+    /**
+     * 공통 에러 응답 처리
+     * - 공통 에러 DTO를 JSON 직렬화하여 응답 처리
+     */
+    private void sendErrorResponse(HttpServletResponse response, HttpStatus status, String message, String path)
+            throws IOException {
+        response.setStatus(status.value());
+        response.setContentType("application/json");
+
+        ErrorResponseDto errorResponse = new ErrorResponseDto(status, message, path);
+        new ObjectMapper().writeValue(response.getWriter(), errorResponse);
     }
 }
