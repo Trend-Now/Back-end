@@ -162,17 +162,20 @@ public class PostLikesService {
         String redisKey =
                 REDIS_LIKE_MEMBER_KEY_PREFIX + boardId + REDIS_LIKE_BOARD_KEY_DELIMITER + postId;
 
-        // Redis에서 회원이 좋아요를 누른지 확인
-        Boolean isMember = redisMembersTemplate.opsForSet().isMember(redisKey, memberName);
-
-        if (Boolean.TRUE.equals(isMember)) {
-            return true;
-        }
-
-        // Redis 장애나 데이터가 초기화된 상황인 경우에는 DB를 확인
-        Optional<Members> findMember = memberRepository.findByName(memberName);
-
-        return postLikesRepository.existsByPostsIdAndMembersId(postId, findMember.get().getId());
+        // Redis에서 회원이 좋아요를 누른지 확인, Redis의 장애 발생에 대비하기 위해 withFallback()을 사용
+        return withFallback(
+                () -> {
+                    Boolean isMember = redisMembersTemplate.opsForSet()
+                            .isMember(redisKey, memberName);
+                    return Boolean.TRUE.equals(isMember);
+                },
+                () -> {
+                    return memberRepository.findByName(memberName)
+                            .map(m -> postLikesRepository.existsByPostsIdAndMembersId(postId,
+                                    m.getId()))
+                            .orElse(false);
+                }
+        );
     }
 
     @Transactional
