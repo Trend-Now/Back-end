@@ -103,7 +103,6 @@ public class PostsService {
     }
 
     /**
-     * 게시글 단건 조회 - 가변 타이머 작동 중에만 가능
      * 게시글 작성, 수정 API에 응답되는 메서드
      */
     public PostsInfoDto findPostsById(Long boardId, Long postId, Long requestMemberId, String memberName) {
@@ -119,9 +118,7 @@ public class PostsService {
 
         // 게시글 조회수와 게시글 좋아요 개수 값을 postsInfoDto에 설정 (Look Aside)
         setViewCountAndPostLike(postId, postsInfoDto, boards);
-
-        // 조회 시 조회수 증가
-        postViewService.incrementPostView(postId);
+        postsInfoDto.setViewCount(0); // 게시글 작성, 수정 API에서는 조회수 0으로 강제 세팅
 
         return postsInfoDto;
     }
