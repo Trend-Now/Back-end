@@ -63,6 +63,8 @@ public class BoardCache {
         boardsList.forEach(boards ->
             boardCacheEntryMap.put(boards.getId(), BoardCacheEntry.builder()
                 .boardName(boards.getName())
+                .splitBoardNameByBlank(Arrays.stream(boards.getName().split(BLANK))
+                    .collect(Collectors.toSet()))
                 .createdAt(boards.getCreatedAt())
                 .updatedAt(boards.getUpdatedAt())
                 .build())
@@ -93,7 +95,7 @@ public class BoardCache {
                 boardCacheEntryMap.put(boardRankInfo.getBoardId(),
                     BoardCacheEntry.builder()
                         .boardName(boardRankInfo.getKeyword())
-                        .splitBoardName(Arrays.stream(boardRankInfo.getKeyword().split("\\s+"))
+                        .splitBoardNameByBlank(Arrays.stream(boardRankInfo.getKeyword().split(BLANK))
                             .collect(Collectors.toSet()))
                         .build()
                 );
@@ -130,7 +132,7 @@ public class BoardCache {
             .collect(Collectors.toSet());
 
         for (BoardCacheEntry boardCacheEntry : boardCacheEntryMap.asMap().values()) {
-            Set<String> originSet = boardCacheEntry.getSplitBoardName();
+            Set<String> originSet = boardCacheEntry.getSplitBoardNameByBlank();
             // 교집합
             Set<String> intersection = new HashSet<>(newSet);
             intersection.retainAll(originSet);
