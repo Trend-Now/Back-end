@@ -10,7 +10,7 @@ import lombok.Getter;
 public class BoardCacheEntry {
 
     private String boardName;
-    private Set<String> splitBoardName; // 문자열 유사도 비교를 위한 Set
+    private Set<String> splitBoardNameByBlank; // 문자열 유사도 비교를 위한 Set
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
