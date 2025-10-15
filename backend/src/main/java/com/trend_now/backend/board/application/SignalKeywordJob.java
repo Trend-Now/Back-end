@@ -29,6 +29,7 @@ public class SignalKeywordJob implements Job {
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
+        log.info("실시간 검색어 순위 리스트 스케줄러 실행 시작 -  현재 시각: {}", Instant.now());
         JobDataMap jobDataMap = context.getMergedJobDataMap();
 
         ApplicationContext applicationContext = (ApplicationContext) jobDataMap.get(
