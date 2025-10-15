@@ -23,6 +23,7 @@ public class BoardService {
 
     private final BoardRepository boardRepository;
     private final BoardCache boardCache;
+    private final BoardRedisService boardRedisService;
 
     /**
      * 게시판이 존재하지 않으면 저장, 삭제된 게시판이면 isDeleted 상태 변경 후 반환
@@ -42,6 +43,9 @@ public class BoardService {
 
             // 비슷한 이름의 게시판이 존재하면 이름 업데이트
             if (!similarBoard.equals(boardSaveDto.getBoardName())) {
+                // 새로 들어온 키워드가 기존 게시판 대신 저장되므로, 기존 게시판은 Redis에서 삭제한다.
+                boardRedisService.deleteBoardRankKey(boardSaveDto.getBoardId(), similarBoard);
+                boardRedisService.deleteBoardValueKey(boardSaveDto.getBoardId(), similarBoard);
                 Boards board = boardRepository.findByName(similarBoard)
                     .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE));
                 board.updateName(boardSaveDto.getBoardName());

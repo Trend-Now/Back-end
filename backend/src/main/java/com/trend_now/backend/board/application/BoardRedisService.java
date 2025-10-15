@@ -278,6 +278,16 @@ public class BoardRedisService {
         return redisTemplate.opsForValue().get(BOARD_RANK_VALID_KEY);
     }
 
+    public void deleteBoardValueKey(Long boardId, String boardName) {
+        String key = boardName + BOARD_KEY_DELIMITER + boardId;
+        redisTemplate.delete(key);
+    }
+
+    public void deleteBoardRankKey(Long boardId, String boardName) {
+        String key = boardName + BOARD_KEY_DELIMITER + boardId;
+        redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, key);
+    }
+
     public BoardInfoDto getBoardInfo(Long boardId) {
         Boards findBoard = boardRepository.findById(boardId)
             .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
