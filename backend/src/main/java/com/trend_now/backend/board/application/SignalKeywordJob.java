@@ -9,10 +9,10 @@ import com.trend_now.backend.board.dto.SignalKeywordEventDto;
 import com.trend_now.backend.board.dto.Top10;
 import com.trend_now.backend.board.dto.Top10WithChange;
 import com.trend_now.backend.board.dto.Top10WithDiff;
-import java.util.ArrayList;
-import java.util.List;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -42,7 +42,7 @@ public class SignalKeywordJob implements Job {
         RedisPublisher redisPublisher = applicationContext.getBean(RedisPublisher.class);
         BoardCache boardCache = applicationContext.getBean(BoardCache.class);
         BoardSummaryTriggerService boardSummaryTriggerService = applicationContext.getBean(
-            BoardSummaryTriggerService.class);
+                BoardSummaryTriggerService.class);
 
         // Redis의 realtime_keywords에 boardId 값을 저장하기 위한 리스트
         List<Long> boardIdList = new ArrayList<>();
@@ -50,6 +50,7 @@ public class SignalKeywordJob implements Job {
         Instant now = Instant.now();
         try {
             SignalKeywordDto signalKeywordDto = signalKeywordService.fetchRealTimeKeyword().block();
+            boardService.updateBoardIsDeleted();
             boardRedisService.cleanUpExpiredKeys();
 
             for (int i = 0; i < signalKeywordDto.getTop10().size(); i++) {
@@ -89,13 +90,15 @@ public class SignalKeywordJob implements Job {
             boardCache.setBoardInfo(boardRedisService.getBoardRank(0, -1));
 
             // Redis(realtime_keywords)에 실시간 검색어 순위 리스트 저장 후 저장된 데이터 반환
-            List<String> realtimeKeywordList = signalKeywordService.saveRealtimeKeywords(signalKeywordDto,
-                boardIdList);
+            List<String> realtimeKeywordList = signalKeywordService.saveRealtimeKeywords(
+                    signalKeywordDto,
+                    boardIdList);
 
             // SSE 메세지를 보내기 위한 Top10WithChange 객체 생성
             List<Top10WithDiff> top10WithDiffList = realtimeKeywordList.stream()
-                .map(Top10WithDiff::from).toList();
-            Top10WithChange top10WithChange = new Top10WithChange(signalKeywordDto.getNow(), top10WithDiffList);
+                    .map(Top10WithDiff::from).toList();
+            Top10WithChange top10WithChange = new Top10WithChange(signalKeywordDto.getNow(),
+                    top10WithDiffList);
 
             Set<String> allClientId = signalKeywordService.findAllClientId();
             for (String clientId : allClientId) {
