@@ -3,7 +3,6 @@
     "github-label-sync": "^3.0.0"
   },
   "devDependencies": {
-    "husky": "^9.1.7",
     "jira-prepare-commit-msg": "^1.7.2"
   },
   "scripts": {
