@@ -26,19 +26,22 @@ import lombok.Setter;
 @Getter
 public class Posts extends BaseEntity {
 
+    public static final int MAX_TITLE_LENGTH = 100;
+    public static final int MAX_CONTENT_LENGTH = 10000;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "post_id")
     private Long id;
 
-    @Column(nullable = false)
+    @Column(length = MAX_TITLE_LENGTH, nullable = false)
     private String title;
 
     @Column(nullable = false)
     private String writer;
 
     @Lob
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = false, length = MAX_CONTENT_LENGTH)
     private String content;
 
     @Builder.Default

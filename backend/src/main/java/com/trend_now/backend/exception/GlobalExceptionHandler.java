@@ -6,8 +6,11 @@ import com.trend_now.backend.exception.customException.UnauthorizedException;
 import com.trend_now.backend.exception.dto.ErrorResponseDto;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.stream.Collectors;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -113,5 +116,24 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponseDto);
+    }
+
+    /**
+     * @Valid 또는 @Validated 검증이 실패하면 BadRequest(400) 상태코드와 함께 에러 메시지를 반환한다.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public  ResponseEntity<ErrorResponseDto> handleValidationException(MethodArgumentNotValidException exception, HttpServletRequest request) {
+        String errorMessage = exception.getBindingResult()
+            .getAllErrors()
+            .stream()
+            .map(DefaultMessageSourceResolvable::getDefaultMessage)
+            .collect(Collectors.joining(", "));
+
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+                HttpStatus.BAD_REQUEST,
+                errorMessage,
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDto);
     }
 }

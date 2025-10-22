@@ -1,6 +1,5 @@
 package com.trend_now.backend.board.application.board_summary;
 
-import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.client.GeminiApiClient;
 import com.trend_now.backend.client.NaverApiClient;
 import com.trend_now.backend.client.dto.NaverNewsResponseDto;
@@ -15,14 +14,14 @@ import org.springframework.stereotype.Service;
 public class AsyncSummaryGeneratorService {
 
     private static final int NAVER_NEWS_DISPLAY_COUNT = 5;
-    private static final String SUMMARIZE_REQUEST_PROMPT = """
+    // 네이버 뉴스 기사 기반 요약 요청 프롬프트
+    private static final String SUMMARIZE_REQUEST_WITH_NEWS_PROMPT = """
         # 역할
         당신은 여러 뉴스를 종합하여 핵심 이슈를 객관적으로 분석하는 전문 뉴스 애널리스트입니다.
         
         # 목표
         분석할 키워드 = '%s'
         아래 5개의 뉴스 기사를 바탕으로, '[분석할 키워드]'에 대한 핵심 이슈를 3~4개의 완결된 문장으로 요약해 주세요.
-        만약 아래에 제공된 뉴스기사가 없다면 자체적인 검색을 통해 해당 이슈에 대해 요약해 주세요.
         
         # 규칙
         -   반드시 제공된 기사 내용에만 근거하여 작성하세요.
@@ -35,6 +34,23 @@ public class AsyncSummaryGeneratorService {
         
         # 입력 데이터
         뉴스 기사 5개: '%s'
+        """;
+    // 구글 검색 기반 요약 요청 프롬프트
+    private static final String SUMMARIZE_REQUEST_WITH_GOOGLE_SEARCH_PROMPT = """
+        # 역할
+        당신은 여러 뉴스를 종합하여 핵심 이슈를 객관적으로 분석하는 전문 뉴스 애널리스트입니다.
+        
+        # 목표
+        분석할 키워드 = '%s'
+        구글 검색을 통해 해당 키워드에 대한 내용을 파악한 후, '[분석할 키워드]'에 대한 핵심 이슈를 3~4개의 완결된 문장으로 요약해 주세요.
+        
+        # 규칙
+        -   반드시 제공된 기사 내용에만 근거하여 작성하세요.
+        -   객관적이고 중립적인 사실만 전달하세요.
+        -   당신의 의견을 추가하지 마세요.
+        -   높임말을 사용하세요.
+        -   **"검색을 진행한 결과", "검색된 정보에 따르면" 등과 같은 서술적 표현은 생략하고, 바로 핵심 내용만 기술하세요.**
+        -   분석 과정이나 방법론을 언급하지 말고, 오직 핵심 사실만 기술하세요.
         """;
     private static final String GEMINI_MODEL_NAME = "gemini-2.5-flash-lite";
     // 네이버 뉴스 API에서 한 번에 가져올 뉴스 기사 수
@@ -56,12 +72,14 @@ public class AsyncSummaryGeneratorService {
         // TODO: Gemini API가 응답하지 않는 경우에 대한 예외 처리 필요
 
         // 프롬프트 작성
-        String prompt = String.format(SUMMARIZE_REQUEST_PROMPT, keyword,
-            naverNewsResponseDto.getItems());
         // 뉴스 기사가 없으면 자체 검색 모델로 요약, 있으면 일반 모델로 제공된 기사 바탕 요약
         String summary = naverNewsResponseDto.getItems().isEmpty()
-            ? geminiApiClient.generateAnswerWithGoogleSearch(prompt, GEMINI_MODEL_NAME)
-            : geminiApiClient.generateAnswer(prompt, GEMINI_MODEL_NAME);
+            ? geminiApiClient.generateAnswerWithGoogleSearch(
+            String.format(SUMMARIZE_REQUEST_WITH_GOOGLE_SEARCH_PROMPT,
+                keyword), GEMINI_MODEL_NAME)
+            : geminiApiClient.generateAnswer(
+                String.format(SUMMARIZE_REQUEST_WITH_NEWS_PROMPT,
+                    keyword, naverNewsResponseDto.getItems()), GEMINI_MODEL_NAME);
 
         log.info(COMPLETE_GENERATION_SUMMARY, getClass().getName(), keyword);
 
