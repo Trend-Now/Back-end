@@ -31,6 +31,7 @@ public class BoardCache {
     public static final int MAXIMUM_SIZE = 1000; // 캐시 최대 크기
     public static final double SIMILARITY_THRESHOLD = 0.3; // 유사도 임계값 (0.3 = 두 단어 이상 일치)
     public static final String BLANK = "\\s+"; // 공백 정규식
+    public static final String SPECIAL_CHAR_PATTERN = "[^가-힣a-zA-Z0-9\\s]";
 
 
     private final BoardRepository boardRepository;
@@ -63,7 +64,8 @@ public class BoardCache {
         boardsList.forEach(boards ->
             boardCacheEntryMap.put(boards.getId(), BoardCacheEntry.builder()
                 .boardName(boards.getName())
-                .splitBoardNameByBlank(Arrays.stream(boards.getName().split(BLANK))
+                .splitBoardNameByBlank(Arrays.stream(
+                        boards.getName().replaceAll(SPECIAL_CHAR_PATTERN, "").split(BLANK))
                     .collect(Collectors.toSet()))
                 .createdAt(boards.getCreatedAt())
                 .updatedAt(boards.getUpdatedAt())
@@ -95,8 +97,9 @@ public class BoardCache {
                 boardCacheEntryMap.put(boardRankInfo.getBoardId(),
                     BoardCacheEntry.builder()
                         .boardName(boardRankInfo.getKeyword())
-                        .splitBoardNameByBlank(Arrays.stream(boardRankInfo.getKeyword().split(BLANK))
-                            .collect(Collectors.toSet()))
+                        .splitBoardNameByBlank(
+                            Arrays.stream(boardRankInfo.getKeyword().split(BLANK))
+                                .collect(Collectors.toSet()))
                         .build()
                 );
             }
@@ -124,12 +127,13 @@ public class BoardCache {
     }
 
     /**
-     * 키워드와 유사한 게시판 이름이 존재하는지 확인하고, 유사한 게시판이 있으면 해당 이름을 반환.
-     * 유사한 게시판이 없으면 입력 값으로 들어온 키워드를 그대로 반환.
+     * 키워드와 유사한 게시판 이름이 존재하는지 확인하고, 유사한 게시판이 있으면 해당 이름을 반환. 유사한 게시판이 없으면 입력 값으로 들어온 키워드를 그대로 반환.
      */
     public String findKeywordSimilarity(String newKeyword) {
-        Set<String> newSet = Arrays.stream(newKeyword.split(BLANK))
-            .collect(Collectors.toSet());
+        Set<String> newSet = Arrays.stream(newKeyword
+                .replaceAll(SPECIAL_CHAR_PATTERN, "")
+                .split(BLANK)
+            ).collect(Collectors.toSet());
 
         for (BoardCacheEntry boardCacheEntry : boardCacheEntryMap.asMap().values()) {
             Set<String> originSet = boardCacheEntry.getSplitBoardNameByBlank();
