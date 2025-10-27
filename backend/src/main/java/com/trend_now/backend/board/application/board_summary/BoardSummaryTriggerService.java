@@ -35,6 +35,7 @@ public class BoardSummaryTriggerService {
         }
 
         // 게시판 요약이 존재하지 않거나, state 값이 NEW라면 요약 생성 작업 비동기 등록
+        log.info(("{} 게시판의 요약 생성 작업을 비동기로 시작합니다."), keyword);
         asyncSummaryGeneratorService.generateSummaryAndSave(boardId, keyword);
     }
 }
