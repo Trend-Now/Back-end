@@ -168,7 +168,7 @@ public class MemberService {
             CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, reissuancedAccessToken, ONE_YEAR);
             return REISSUANCE_ACCESS_TOKEN_SUCCESS;
         } else {
-            throw new NotFoundException(NOT_EXIST_MATCHED_REFRESH_TOKEN_IN_REDIS);
+            throw new InvalidTokenException(NOT_EXIST_MATCHED_REFRESH_TOKEN_IN_REDIS);
         }
     }
 

@@ -1,38 +1,30 @@
 package com.trend_now.backend.config.auth;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trend_now.backend.common.CookieUtil;
 import com.trend_now.backend.exception.customException.ExpiredTokenException;
 import com.trend_now.backend.exception.customException.InvalidTokenException;
-import com.trend_now.backend.exception.dto.ErrorResponseDto;
-import com.trend_now.backend.member.domain.Members;
-import com.trend_now.backend.member.repository.MemberRepository;
-
+import com.trend_now.backend.exception.customException.NotFoundException;
+import com.trend_now.backend.member.application.MemberRedisService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import jakarta.servlet.*;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
 
 @Component
 @Slf4j
@@ -40,76 +32,22 @@ import java.util.*;
 public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final CustomUserDetailsService customUserDetailsService;
-    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+    private final MemberRedisService memberRedisService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     private static final String ACCESS_TOKEN_KEY = "access_token";
-    private static final String JWT_PREFIX = "Bearer ";
+    private static final String REFRESH_TOKEN_KEY = "refresh_token";
     private static final String INVALID_TOKEN_RETURN_MESSAGE = "Invalid Access Token";
     private static final String EXPIRED_TOKEN_RETURN_MESSAGE = "Expired Access Token";
-    private static final String API_PREFIX = "/api/v1/";
+    private static final int ONE_YEAR = 365*24*60*60;   // 1년을 초로 변환
 
     @Value("${jwt.access-token.secret}")
     private String secretKey;
 
     @Value("${jwt.access-token.expiration}")
     private int accessTokenExpiration;
-
-    /**
-     * 특정 path 요청은 filter 제외하도록 명시
-     * todo. 필요 부분은 아래에 추가
-     */
-    private static final List<ExcludedEndpoint> EXCLUDED_ENDPOINTS = List.of(
-            new ExcludedEndpoint(API_PREFIX + "member/access-token", HttpMethod.POST),
-            new ExcludedEndpoint(API_PREFIX + "member", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "member/test-jwt", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts/{postId}", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts/cooldown", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "search/realtimePosts", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "search/realtimeBoards", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "search/fixedPosts", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "search/auto-complete", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/posts/{postId}/comments", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "unsubscribe", HttpMethod.POST),
-            new ExcludedEndpoint(API_PREFIX + "timeSync", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "subscribe", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "news/realtime", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "boards/{boardId}/name", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "boards/realtime", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "boards/list", HttpMethod.GET),
-            new ExcludedEndpoint(API_PREFIX + "boards/fixedList", HttpMethod.GET),
-            new ExcludedEndpoint("health", HttpMethod.GET)
-    );
-
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        String requestURI = request.getRequestURI();
-        HttpMethod requestMethod = HttpMethod.valueOf(request.getMethod());
-
-        return EXCLUDED_ENDPOINTS.stream()
-                .anyMatch(endpoint -> endpoint.matches(requestURI, requestMethod, pathMatcher));
-    }
-
-    /**
-     * 비인가 API 패턴 매칭 메서드
-     * - 동일 URL에 대하여 HTTP Method 분기 처리 및 PathVariable 처리 역할
-     */
-    private static class ExcludedEndpoint {
-        private final String pathPattern;
-        private final Set<HttpMethod> methods;
-
-        public ExcludedEndpoint(String pathPattern, HttpMethod... methods) {
-            this.pathPattern = pathPattern;
-            this.methods = Set.of(methods);
-        }
-
-        public boolean matches(String requestPath, HttpMethod requestMethod, AntPathMatcher pathMatcher) {
-            boolean pathMatches = pathMatcher.match(pathPattern, requestPath);
-            boolean methodMatches = methods.contains(requestMethod);
-            return pathMatches && methodMatches;
-        }
-    }
-
+    
+    
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -119,48 +57,98 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 .map(Cookie::getValue)
                 .orElse(null);
 
+        String refreshToken = CookieUtil.getCookie(request, REFRESH_TOKEN_KEY)
+                .map(Cookie::getValue)
+                .orElse(null);
+
         try {
             if (accessToken != null) {
                 // Access Token 검증 및 Claims 객체 추출
                 Claims claims = validateAccessToken(accessToken);
-
-                /**
-                 *  인증 객체 범위
-                 *  - SecurityContextHolder 객체는 SecurityContext 객체를 감싸고 있다.
-                 *  - SecurityContext 객체는 Authentication 객체를 감싸고 있다.
-                 *  - Authentication 객체는 사용자 인증 정보를 가지고 있다.
-                 *
-                 *  Spring 전역에서 SecurityContextHolder 객체를 사용할 수 있기에, 사용자 인증 정보를 바로 확인 가능하다.
-                 *  - String 사용자 정보 = SecurityContextHolder.getContext().getAuthentication().getName();
-                 */
-                // Authentication 객체 생성
-                UserDetails userDetails = customUserDetailsService.loadUserByUsername(claims.getSubject());
-                log.info("[JwtTokenFilter.doFilterInternal] 생성된 UserDetails 객체 데이터 : {} ", userDetails.toString());
-
-                Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, accessToken, userDetails.getAuthorities());
-
-                log.info("[JwtTokenFilter.doFilterInternal] 생성된 Authentication 객체 데이터 : {} ", authentication);
-                // SecurityContextHolder 객체에 사용자 정보 객체 저장
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                setAuthentication(claims, accessToken);
             }
-
-            filterChain.doFilter(request, response);
         }
+
+        /**
+         * 만료된 Access Token의 경우
+         * - 만료된 Access Token에서 memberId 추출
+         * - memberId를 통해 Refresh Token 검증 후, Access Token 재발급 또는 다음 필터 진행
+         */
         catch (ExpiredTokenException e) {
             log.info("[JwtTokenFilter.doFilter] : 만료된 Access Token으로 API 요청이 들어왔습니다.");
-            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, EXPIRED_TOKEN_RETURN_MESSAGE, request.getRequestURI());
+            Long memberIdInExpiredAccessToken = extractMemberId(accessToken);
+            boolean isAccessTokenReissuable = false;
+
+            try {
+                isAccessTokenReissuable =
+                        memberRedisService.isMatchedRefreshTokenInRedis(memberIdInExpiredAccessToken, refreshToken);
+            } catch (NotFoundException nfe) {
+                log.info("[JwtTokenFilter.validateAccessToken] Redis에 매칭되는 Refresh Token 존재하지 않습니다.");
+            }
+
+            if (isAccessTokenReissuable) {
+                String reissuancedAccessToken = jwtTokenProvider.createAccessToken(memberIdInExpiredAccessToken);
+                CookieUtil.addCookie(request, response, ACCESS_TOKEN_KEY, reissuancedAccessToken, ONE_YEAR);
+
+                // Refresh Token이 검증된 경우에만 Authentication 객체를 지정
+                Claims expiredClaims = extractClaimsFromExpiredToken(accessToken);
+                setAuthentication(expiredClaims, accessToken);
+
+            }
         }
 
-        // JWT 검증에서 예외가 발생하면 doFilter() 메서드를 통해 필터 체인에 접근하지 않고 사용자에게 에러를 반환
+        /**
+         * Invalid Access Token 또는 다른 JWT 예외의 경우
+         * - Authentication 객체를 AnonymousUser로 지정
+         */
         catch (InvalidTokenException e) {
             log.error("[JwtTokenFilter.doFilter] : Access Token이 올바르지 않습니다.");
-            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, INVALID_TOKEN_RETURN_MESSAGE, request.getRequestURI());
         }
 
         catch (Exception e) {
             log.error("[JwtTokenFilter.doFilter] : 예외 발생");
             e.printStackTrace();
+        }
+
+        /**
+         * JwtTokenFilter 측에서는 예외가 발생 시, Authentication 객체만 AnonymousUser로 지정하고 다음 필터로 진행
+         */
+        finally {
+            filterChain.doFilter(request, response);
+        }
+    }
+
+    /**
+     * 인증 객체 지정 메서드
+     * - SecurityContextHolder 객체는 SecurityContext 객체를, SecurityContext 객체는 Authentication 객체를 포함
+     * - Authentication 객체는 사용자 인증 정보를 보유
+     * - Spring 전역에서 SecurityContextHolder 객체를 사용할 수 있기에, 사용자 인증 정보를 바로 확인 가능하다.
+     */
+    private void setAuthentication(Claims claims, String accessToken) {
+        // Authentication 객체 생성
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(claims.getSubject());
+        log.info("[JwtTokenFilter.doFilterInternal] 생성된 UserDetails 객체 데이터 : {} ", userDetails.toString());
+
+        Authentication authentication =
+                new UsernamePasswordAuthenticationToken(userDetails, accessToken, userDetails.getAuthorities());
+
+        log.info("[JwtTokenFilter.doFilterInternal] 생성된 Authentication 객체 데이터 : {} ", authentication);
+        // SecurityContextHolder 객체에 사용자 정보 객체 저장
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    /**
+     * 만료된 Access Token에서 Claim 추출 메서드
+     */
+    private Claims extractClaimsFromExpiredToken(String token) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            return e.getClaims();
         }
     }
 
@@ -203,18 +191,5 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             Claims claims = e.getClaims();
             return Long.valueOf(claims.getSubject());
         }
-    }
-
-    /**
-     * 공통 에러 응답 처리
-     * - 공통 에러 DTO를 JSON 직렬화하여 응답 처리
-     */
-    private void sendErrorResponse(HttpServletResponse response, HttpStatus status, String message, String path)
-            throws IOException {
-        response.setStatus(status.value());
-        response.setContentType("application/json");
-
-        ErrorResponseDto errorResponse = new ErrorResponseDto(status, message, path);
-        new ObjectMapper().writeValue(response.getWriter(), errorResponse);
     }
 }

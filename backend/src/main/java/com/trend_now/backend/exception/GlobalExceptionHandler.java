@@ -1,6 +1,7 @@
 package com.trend_now.backend.exception;
 
 import com.trend_now.backend.exception.customException.DuplicateException;
+import com.trend_now.backend.exception.customException.InvalidTokenException;
 import com.trend_now.backend.exception.customException.NotFoundException;
 import com.trend_now.backend.exception.customException.UnauthorizedException;
 import com.trend_now.backend.exception.dto.ErrorResponseDto;
@@ -116,6 +117,22 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponseDto);
+    }
+
+    /**
+     * JWT 잘못된 구조 또는 미존재의 경우 Unauthorized(401) 상태코드와 함께 에러 메시지를 반환한다.
+     * - 만료의 경우는 비즈니스 로직에 따로 진행
+     */
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponseDto> handleInvalidTokenException(
+            InvalidTokenException exception,
+            HttpServletRequest request) {
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+                HttpStatus.UNAUTHORIZED,
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponseDto);
     }
 
     /**
