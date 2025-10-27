@@ -207,13 +207,13 @@ class CommentsServiceTest {
         redisTemplate.delete(key);
         BoardSaveDto boardSaveDto = new BoardSaveDto(
                 testBoards.getId(), testBoards.getName(), testBoards.getBoardCategory());
-        boardService.updateBoardIsDeleted(boardSaveDto, false);
+        boardService.updateBoardIsDeleted();
         commentsService.updateModifiable(testBoards.getId()); // SignalKeywordJobListener에서 하는 일 직접 실행
         em.flush();
         em.clear();
 
         // 게시판 재생성
-        boardService.updateBoardIsDeleted(boardSaveDto, true);
+        boardService.updateBoardIsDeleted();
         redisTemplate.opsForValue().set(key, "실시간 게시판");
 
         //when & then
