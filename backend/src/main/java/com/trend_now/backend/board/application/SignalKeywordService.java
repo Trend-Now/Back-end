@@ -1,6 +1,9 @@
 package com.trend_now.backend.board.application;
 
+import static com.trend_now.backend.board.application.BoardRedisService.BOARD_RANK_KEY;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trend_now.backend.board.dto.BoardSaveDto;
 import com.trend_now.backend.board.dto.MsgFormat;
 import com.trend_now.backend.board.dto.RankChangeType;
 import com.trend_now.backend.board.dto.SignalKeywordDto;
@@ -115,6 +118,25 @@ public class SignalKeywordService {
         redisTemplate.opsForValue()
             .set(REALTIME_KEYWORD_LAST_UPDATED_KEY, String.valueOf(timestamp));
     }
+    public Top10WithDiff addRealtimeKeyword(BoardSaveDto boardSaveDto, int currRank) {
+        String key = boardSaveDto.getBoardName() + ":" + boardSaveDto.getBoardId();
+
+        Long preRank = redisTemplate.opsForZSet().rank(BOARD_RANK_KEY, key);
+        RankChangeType rankChangeType = RankChangeType.NEW;
+        long diffRank = 0;
+
+        if (preRank != null) {
+            diffRank = preRank - currRank;
+            rankChangeType = diffRank > 0 ? RankChangeType.UP
+                : diffRank < 0 ? RankChangeType.DOWN : RankChangeType.SAME;
+        }
+
+        Top10WithDiff top10WithDiff = new Top10WithDiff(currRank, boardSaveDto.getBoardName(),
+            boardSaveDto.getBoardId(), rankChangeType, Math.abs((int) diffRank));
+        redisTemplate.opsForList()
+            .rightPush(SIGNAL_KEYWORD_LIST, top10WithDiff.toRealtimeKeywordsKey());
+        return top10WithDiff;
+    }
 
     // 실시간 검색어가 마지막으로 갱신된 시간 조회
     public long getLastUpdatedTime() {
@@ -156,6 +178,10 @@ public class SignalKeywordService {
 
     public void deleteClientId(String clientId) {
         redisTemplate.opsForSet().remove(CLIENT_ID_KEY, clientId);
+    }
+
+    public void deleteOldRealtimeKeywords() {
+        redisTemplate.opsForList().trim(SIGNAL_KEYWORD_LIST, -10, -1);
     }
 
     public Set<String> findAllClientId() {

@@ -32,4 +32,8 @@ public class Top10WithDiff {
         return new Top10WithDiff(Integer.parseInt(split[0]), split[1], Long.parseLong(split[2]),
             RankChangeType.valueOf(split[3]), Integer.parseInt(split[4]));
     }
+
+    public String toRealtimeKeywordsKey() {
+        return String.format("%s:%s:%s:%s:%s", rank, keyword, boardId, rankChangeType, diffRank);
+    }
 }
