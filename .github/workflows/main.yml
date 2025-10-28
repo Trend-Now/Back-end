@@ -77,13 +77,17 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }} # pem 키
           # 도커 작업
           script: |
-            echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/trendnow:v1
             sudo docker stop trendnow || true
             sudo docker rm trendnow || true
             sudo docker image prune -a -f
+            echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/trendnow:v1
             sudo docker run -d -p 8080:8080 \
             --name trendnow \
+            --memory="800m" \
+            --memory-swap="800m" \
+            --cpus="1.0" \
+            -e JAVA_OPTS="-Xms400m -Xmx400m -XX:+UseContainerSupport -XX:MaxMetaspaceSize=128m -XX:MaxDirectMemorySize=64m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC -Djava.security.egd=file:/dev/./urandom" \
             --log-driver=awslogs \
             --log-opt awslogs-region=ap-northeast-2 \
             --log-opt awslogs-group="Trendnow-Logs" \
