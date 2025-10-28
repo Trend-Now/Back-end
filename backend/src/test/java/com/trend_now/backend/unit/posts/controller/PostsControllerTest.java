@@ -8,6 +8,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trend_now.backend.board.application.BoardService;
 import com.trend_now.backend.config.auth.CustomUserDetails;
 import com.trend_now.backend.config.auth.CustomUserDetailsService;
+import com.trend_now.backend.config.auth.JwtTokenFilter;
+import com.trend_now.backend.config.auth.JwtTokenProvider;
+import com.trend_now.backend.member.application.MemberRedisService;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
 import com.trend_now.backend.post.application.PostsService;
@@ -45,6 +48,15 @@ public class PostsControllerTest {
 
     @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
+
+    @MockitoBean
+    private MemberRedisService memberRedisService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private JwtTokenFilter jwtTokenFilter;
 
     @BeforeEach
     public void setup() {
