@@ -44,14 +44,12 @@ public class SignalKeywordJob implements Job {
         BoardSummaryTriggerService boardSummaryTriggerService = applicationContext.getBean(
             BoardSummaryTriggerService.class);
 
-        // Redis의 realtime_keywords에 boardId 값을 저장하기 위한 리스트
-        List<Long> boardIdList = new ArrayList<>();
         // 스케줄러 실행 시 생기는 시간 차이를 줄이기 위해 Instant.now()를 최초 1회만 호출
         Instant now = Instant.now();
         try {
             SignalKeywordDto signalKeywordDto = signalKeywordService.fetchRealTimeKeyword().block();
             boardRedisService.cleanUpExpiredKeys();
-
+            List<Top10WithDiff> top10WithDiffList = new ArrayList<>();
             for (int i = 0; i < signalKeywordDto.getTop10().size(); i++) {
 
                 /**
@@ -73,14 +71,17 @@ public class SignalKeywordJob implements Job {
                 // 저장된 게시판의 AI 요약 저장 또는 업데이트
                 boardSummaryTriggerService.triggerSummaryUpdate(boards.getId(), boards.getName());
 
-                // Redis의 realtime_keywords에 저장하기 위해 boardId를 따로 리스트에 수집
-                boardIdList.add(boards.getId());
+                // Redis의 realtime_keywords에 게시판 정보와 순위, 순위 변화량 저장
+                Top10WithDiff top10WithDiff = signalKeywordService.addRealtimeKeyword(
+                    boardSaveDto, i);
+                top10WithDiffList.add(top10WithDiff);
 
                 // i는 10번을 순회하면서 첫 번째는 0.1, 두 번째는 0.09, ... , 열 번째는 0.01의 값을 위 시간에서 더한다
                 double score = calculateScore(now, i);
-                // Redis zSet(board_rank)에 score와 함께 저장
                 boardRedisService.saveBoardRedis(boardSaveDto, score);
             }
+            // Redis(realtime_keywords)에 저장된 이전 실시간 검색어 순위 리스트 삭제
+            signalKeywordService.deleteOldRealtimeKeywords();
             // Redis(board_rank_valid)의 유효시간 갱신
             boardRedisService.setRankValidListTime();
             signalKeywordService.updateLastUpdatedTime(signalKeywordDto.getNow());
@@ -88,13 +89,6 @@ public class SignalKeywordJob implements Job {
             // 인메모리 캐시에 게시판 정보 갱신
             boardCache.setBoardInfo(boardRedisService.getBoardRank(0, -1));
 
-            // Redis(realtime_keywords)에 실시간 검색어 순위 리스트 저장 후 저장된 데이터 반환
-            List<String> realtimeKeywordList = signalKeywordService.saveRealtimeKeywords(signalKeywordDto,
-                boardIdList);
-
-            // SSE 메세지를 보내기 위한 Top10WithChange 객체 생성
-            List<Top10WithDiff> top10WithDiffList = realtimeKeywordList.stream()
-                .map(Top10WithDiff::from).toList();
             Top10WithChange top10WithChange = new Top10WithChange(signalKeywordDto.getNow(), top10WithDiffList);
 
             Set<String> allClientId = signalKeywordService.findAllClientId();
