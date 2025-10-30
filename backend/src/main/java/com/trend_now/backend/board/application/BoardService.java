@@ -23,7 +23,15 @@ public class BoardService {
 
     private final BoardRepository boardRepository;
     private final BoardCache boardCache;
-    private final BoardRedisService boardRedisService;
+
+    @Transactional
+    public Boards saveBoard(BoardSaveDto boardSaveDto) {
+        Boards boards = Boards.builder()
+            .name(boardSaveDto.getBoardName())
+            .boardCategory(boardSaveDto.getBoardCategory())
+            .build();
+        return boardRepository.save(boards);
+    }
 
     /**
      * 게시판이 존재하지 않으면 저장, 삭제된 게시판이면 isDeleted 상태 변경 후 반환
@@ -35,24 +43,11 @@ public class BoardService {
         if (optionalBoards.isPresent()) {
             // 삭제된 게시판이 다시 실시간 검색어에 등재된 경우, isDeleted 상태 변경
             Boards board = optionalBoards.get();
-            board.changeDeleted();
+            if (board.isDeleted()) {
+                board.changeDeleted();
+            }
             return board;
         } else {
-            // 기존 게시판들과 유사도 검증 (비슷한 이름의 게시판이 있으면 해당 게시판의 이름 반환, 없으면 입력받은 이름 그대로 반환)
-            String similarBoard = boardCache.findKeywordSimilarity(boardSaveDto.getBoardName());
-
-            // 비슷한 이름의 게시판이 존재하면 이름 업데이트
-            if (!similarBoard.equals(boardSaveDto.getBoardName())) {
-                Boards board = boardRepository.findByName(similarBoard)
-                    .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE));
-                // 새로 들어온 키워드가 기존 게시판 대신 저장되므로, 기존 게시판은 Redis에서 삭제한다.
-                boardRedisService.deleteBoardRankKey(board.getId(), similarBoard);
-                boardRedisService.deleteBoardValueKey(board.getId(), similarBoard);
-                board.updateName(boardSaveDto.getBoardName());
-                return board;
-            }
-
-            // 비슷한 게시판이 존재하지 않으면 새로운 게시판 저장
             return boardRepository.save(
                 Boards.builder()
                     .name(boardSaveDto.getBoardName())
@@ -107,5 +102,10 @@ public class BoardService {
         Boards findBoards = boardRepository.findById(boardId)
             .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardId));
         return findBoards.getName();
+    }
+
+    @Transactional
+    public void updateBoardName(Boards boards, String newBoardName) {
+        boards.updateName(newBoardName);
     }
 }

@@ -206,7 +206,7 @@ class CommentsServiceTest {
         // 게시판 활성화 시간 끝과 동시에 작성된 댓글은 수정/삭제 비활성화
         redisTemplate.delete(key);
         BoardSaveDto boardSaveDto = new BoardSaveDto(
-                testBoards.getId(), testBoards.getName(), testBoards.getBoardCategory());
+                testBoards.getId(), testBoards.getName(), testBoards.getBoardCategory(), 1);
         boardService.updateBoardIsDeleted(boardSaveDto, false);
         commentsService.updateModifiable(testBoards.getId()); // SignalKeywordJobListener에서 하는 일 직접 실행
         em.flush();

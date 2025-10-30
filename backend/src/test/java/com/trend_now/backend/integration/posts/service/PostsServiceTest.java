@@ -232,7 +232,7 @@ public class PostsServiceTest {
         //when
         // 게시판 삭제
         redisTemplate.delete(key);
-        BoardSaveDto boardSaveDto = new BoardSaveDto(boards.getId(), boards.getName(), boards.getBoardCategory());
+        BoardSaveDto boardSaveDto = new BoardSaveDto(boards.getId(), boards.getName(), boards.getBoardCategory(), 1);
         boardService.updateBoardIsDeleted(boardSaveDto, false);
         postsService.updateModifiable(boards.getId()); // SignalKeywordJobListener에서 하는 일 직접 실행
         em.flush();

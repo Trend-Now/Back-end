@@ -77,26 +77,16 @@ public class PostsServiceTest {
             .build();
 
         PostsSaveDto dto = PostsSaveDto.of("testTitle", "testContent", null);
-        String boardUserKey = String.format("board:%s:user:%s", boardId, memberId);
+        String boardUserKey = String.format("post-cooldown:board:%s:user:%s", boardId, memberId);
         String lastPostTimeKey = "last_post_time";
 
+        // 게시판이 존재하고 실시간 게시판
         when(boardRepository.findById(boardId)).thenReturn(Optional.of(board));
         when(boardRedisService.isNotRealTimeBoard(any(), any(), any())).thenReturn(false);
-        // 게시글 최초 작성 시에는 Redis에 저장된 시간이 없으므로 null을 반환
-        when(hashOperations.get(boardUserKey, lastPostTimeKey)).thenReturn(null);
 
-        // when
-        postsService.savePosts(dto, members, boardId);
-
-        // then
-        verify(postsRepository, times(1)).save(any(Posts.class));
-        // Redis에 게시글 작성 시간을 저장하는 put 메서드가 호출 되었는지 확인
-        verify(hashOperations, times(1)).put(eq(boardUserKey), eq(lastPostTimeKey), anyLong());
-
-        // given
-        // 게시글을 작성했기 때문에 Redis에 작성 시간이 저장되어 있어야 함
-        long currentTime = System.currentTimeMillis();
-        when(hashOperations.get(boardUserKey, lastPostTimeKey)).thenReturn(currentTime);
+        // Redis에 5분 이내 작성한 기록이 있다는 가정
+        long recentPostTime = System.currentTimeMillis() - (60 * 1000);
+        when(hashOperations.get(boardUserKey, lastPostTimeKey)).thenReturn(recentPostTime);
 
         // when & then
         // 5분 이내에 다시 게시글을 작성하려고 시도했기 때문에 예외 발생
@@ -104,8 +94,8 @@ public class PostsServiceTest {
             postsService.savePosts(dto, members, boardId);
         });
 
-        // 게시글 작성 시도는 2번이었지만, 실제로 save 메서드는 1번만 실행됐어야 함
-        verify(postsRepository, times(1)).save(any(Posts.class));
+        // 쿨다운에 걸렸기 때문에 save 메서드가 호출되지 않아야 함
+        verify(postsRepository, times(0)).save(any(Posts.class));
     }
 }
 

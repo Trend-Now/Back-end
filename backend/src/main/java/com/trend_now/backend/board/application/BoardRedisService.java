@@ -1,6 +1,5 @@
 package com.trend_now.backend.board.application;
 
-import com.trend_now.backend.board.cache.BoardCache;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.BoardSummary;
 import com.trend_now.backend.board.domain.Boards;
@@ -278,12 +277,17 @@ public class BoardRedisService {
         return redisTemplate.opsForValue().get(BOARD_RANK_VALID_KEY);
     }
 
-    public void deleteBoardValueKey(Long boardId, String boardName) {
+    public void deleteKeyInBoardRank(Long boardId, String boardName) {
+        deleteBoardValueKey(boardId, boardName);
+        deleteBoardRankKey(boardId, boardName);
+    }
+
+    private void deleteBoardValueKey(Long boardId, String boardName) {
         String key = boardName + BOARD_KEY_DELIMITER + boardId;
         redisTemplate.delete(key);
     }
 
-    public void deleteBoardRankKey(Long boardId, String boardName) {
+    private void deleteBoardRankKey(Long boardId, String boardName) {
         String key = boardName + BOARD_KEY_DELIMITER + boardId;
         redisTemplate.opsForZSet().remove(BOARD_RANK_KEY, key);
     }
