@@ -184,8 +184,8 @@ public class BoardRedisService {
      * BoardKeyProvider 인터페이스를 통해서 isRealTimeBoard 메서드에 접근한다. - 특정 DTO에만 종속되는 한계에서 확장성을 고려하여 설계 -
      * isRealTimeBoard 메서드에 접근할려는 DTO는 BoardKeyProvider 인터페이스를 구현체로 진행
      */
-    public boolean isRealTimeBoard(BoardKeyProvider provider) {
-        String key = provider.getBoardName() + BOARD_KEY_DELIMITER + provider.getBoardId();
+    public boolean isRealTimeBoard(String boardName, Long boardId) {
+        String key = boardName + BOARD_KEY_DELIMITER + boardId;
         return redisTemplate.hasKey(key);
     }
 

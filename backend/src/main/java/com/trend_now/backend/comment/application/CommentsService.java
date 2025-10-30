@@ -63,7 +63,7 @@ public class CommentsService {
 
         // 게시판이 활성화되어 있거나, 고정 게시판 경우에는 댓글 작성 가능
         if (boards.getBoardCategory().equals(BoardCategory.FIXED)
-                || boardRedisService.isRealTimeBoard(saveCommentsDto)) {
+                || boardRedisService.isRealTimeBoard(saveCommentsDto.getBoardName(), saveCommentsDto.getBoardId())) {
 
             return commentsRepository.save(Comments.builder()
                     .content(saveCommentsDto.getContent())
