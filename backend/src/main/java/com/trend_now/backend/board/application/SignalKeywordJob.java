@@ -107,18 +107,19 @@ public class SignalKeywordJob implements Job {
                 if (isRealTimeBoard && hasSimilarBoard) {
                     // 새로운 키워드 랭크 변동 추이 계산 후 realtime_keywords에 저장
                     signalKeywordService.addRealtimeKeywordWithRankTracking(board.getId(), oldBoardName, boardSaveDto.getBoardName(), top10.getRank());
-                    // 새로 키워드로 게시판 생성 후 저장
+                    // board_rank에 새로운 키워드 저장
                     boardRedisService.saveBoardRedis(boardSaveDto, score);
                     // 기존 게시판은 board_rank에서 삭제
                     boardRedisService.deleteKeyInBoardRank(board.getId(), oldBoardName);
-                    // 게시판 이름 변경
-                    boardService.updateBoardName(board, boardSaveDto.getBoardName());
+                    // 게시판 이름 변경 (Quartz Job에서 조회된 엔티티는 Detached 상태이므로 트랜잭션 내에서 조회 후 수정해야 함. 따라서 메서드에 id 전달)
+                    boardService.updateBoardName(board.getId(), boardSaveDto.getBoardName());
                     continue;
                 }
 
                 /* 실시간 게시판에 없음 (복원) */
                 if (board.isDeleted()) {
-                    boardService.updateIsDeleted(board, false);
+                    // Quartz Job에서 조회된 엔티티는 Detached 상태이므로 트랜잭션 내에서 조회 후 수정해야 함. 따라서 메서드에 id 전달
+                    boardService.updateIsDeleted(board.getId(), false);
                 }
                 // 삭제 되었다가 다시 생성된 게시판이므로 게시판 요약 재생성
                 boardSummaryTriggerService.triggerSummaryUpdate(board.getId(), board.getName());
