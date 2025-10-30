@@ -66,10 +66,17 @@ public class SignalKeywordJob implements Job {
                 // signal.bz의 top10 객체를 BoardSaveDto 객체로 변환
                 BoardSaveDto boardSaveDto = BoardSaveDto.from(top10);
 
-                Optional<Boards> optionalBoards = boardRepository.findByName(
-                    boardSaveDto.getBoardName());
+                // 기존 게시판들과 유사도 검증 (비슷한 이름의 게시판이 있으면 해당 게시판의 이름 반환, 없으면 입력받은 이름 그대로 반환)
+                String oldBoardName = boardCache.findKeywordSimilarity(boardSaveDto.getBoardName());
+                // 새로 들어온 키워드와 oldBoardName가 다르면 비슷한 이름의 게시판이 존재하는 것
+                boolean hasSimilarBoard = !oldBoardName.equals(boardSaveDto.getBoardName());
+                String searchBoardName = hasSimilarBoard ? oldBoardName : boardSaveDto.getBoardName();
+
+                Optional<Boards> optionalBoards = boardRepository.findByName(searchBoardName);
+
                 double score = calculateScore(now, top10.getRank());
-                /* 완전히 새로운 게시판인 경우 */
+
+                /* 완전히 새로운 게시판 */
                 if (optionalBoards.isEmpty()) {
                     // 게시판 생성 후 저장
                     Boards board = boardService.saveBoard(boardSaveDto);
@@ -85,10 +92,10 @@ public class SignalKeywordJob implements Job {
 
                 Boards board = optionalBoards.get();
                 boardSaveDto.setBoardId(board.getId());
-                boolean isRealTimeBoard = boardRedisService.isRealTimeBoard(boardSaveDto);
+                boolean isRealTimeBoard = boardRedisService.isRealTimeBoard(board.getName(), board.getId());
 
-                /* 실시간 게시판에 이미 존재하는 키워드인 경우 */
-                if (isRealTimeBoard) {
+                /* 정확히 같은 키워드가 실시간 이슈 목록에 있음 */
+                if (isRealTimeBoard && !hasSimilarBoard) {
                     // 랭크 변동 추이 계산 후 realtime_keywords에 저장
                     signalKeywordService.addRealtimeKeywordWithRankTracking(board.getId(), board.getName(), boardSaveDto.getBoardName(), top10.getRank());
                     // board_rank에 새로운 score로 저장하고 TTL로 초기화
@@ -96,24 +103,22 @@ public class SignalKeywordJob implements Job {
                     continue;
                 }
 
-                // 기존 게시판들과 유사도 검증 (비슷한 이름의 게시판이 있으면 해당 게시판의 이름 반환, 없으면 입력받은 이름 그대로 반환)
-                String oldBoardName = boardCache.findKeywordSimilarity(boardSaveDto.getBoardName());
-                // 새로 들어온 키워드와 oldBoardName가 다르면 비슷한 이름의 게시판이 존재하는 것
-                boolean hasSimilarBoard = !oldBoardName.equals(boardSaveDto.getBoardName());
-                /* 똑같은 키워드가 실시간 게시판에 존재하지 않지만, 유사한 게시판은 존재하는 경우 */
-                if (hasSimilarBoard) {
+                /* 유사한 키워드가 실시간 이슈 목록에 있음 */
+                if (isRealTimeBoard && hasSimilarBoard) {
                     boardService.updateBoardName(board, boardSaveDto.getBoardName());
-                    // 기존의 유사한 게시판은 board_rank에서 삭제
+                    // 기존 게시판은 board_rank에서 삭제
                     boardRedisService.deleteKeyInBoardRank(board.getId(), oldBoardName);
-                    // realtime_keywords에 랭크 변동 추이 계산 후 새로운 키워드 저장
+                    // 새로운 키워드 랭크 변동 추이 계산 후 realtime_keywords에 저장
                     signalKeywordService.addRealtimeKeywordWithRankTracking(board.getId(), oldBoardName, boardSaveDto.getBoardName(), top10.getRank());
-                    // 새로 들어온 게시판 저장
+                    // 새로 키워드로 게시판 생성 후 저장
                     boardRedisService.saveBoardRedis(boardSaveDto, score);
                     continue;
                 }
 
-                /* 실시간 게시판에도 없고, 유사한 게시판도 없지만 DB에는 저장 돼 있는 경우 */
-                board.changeDeleted();
+                /* 실시간 게시판에 없음 (복원) */
+                if (board.isDeleted()) {
+                    board.changeDeleted();
+                }
                 // 삭제 되었다가 다시 생성된 게시판이므로 게시판 요약 재생성
                 boardSummaryTriggerService.triggerSummaryUpdate(board.getId(), board.getName());
                 signalKeywordService.addNewRealtimeKeyword(board.getId(), boardSaveDto.getBoardName(), top10.getRank());
