@@ -105,7 +105,16 @@ public class BoardService {
     }
 
     @Transactional
-    public void updateBoardName(Boards boards, String newBoardName) {
-        boards.updateName(newBoardName);
+    public void updateBoardName(Boards board, String newBoardName) {
+        board.updateName(newBoardName);
+        boardRepository.save(board);
+    }
+
+    @Transactional
+    public void updateIsDeleted(Boards board, boolean isDeleted) {
+        if (isDeleted != board.isDeleted()) {
+            board.changeDeleted();
+            boardRepository.save(board);
+        }
     }
 }

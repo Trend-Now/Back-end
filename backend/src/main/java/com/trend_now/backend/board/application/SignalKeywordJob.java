@@ -105,19 +105,20 @@ public class SignalKeywordJob implements Job {
 
                 /* 유사한 키워드가 실시간 이슈 목록에 있음 */
                 if (isRealTimeBoard && hasSimilarBoard) {
-                    boardService.updateBoardName(board, boardSaveDto.getBoardName());
                     // 새로운 키워드 랭크 변동 추이 계산 후 realtime_keywords에 저장
                     signalKeywordService.addRealtimeKeywordWithRankTracking(board.getId(), oldBoardName, boardSaveDto.getBoardName(), top10.getRank());
                     // 새로 키워드로 게시판 생성 후 저장
                     boardRedisService.saveBoardRedis(boardSaveDto, score);
                     // 기존 게시판은 board_rank에서 삭제
                     boardRedisService.deleteKeyInBoardRank(board.getId(), oldBoardName);
+                    // 게시판 이름 변경
+                    boardService.updateBoardName(board, boardSaveDto.getBoardName());
                     continue;
                 }
 
                 /* 실시간 게시판에 없음 (복원) */
                 if (board.isDeleted()) {
-                    board.changeDeleted();
+                    boardService.updateIsDeleted(board, false);
                 }
                 // 삭제 되었다가 다시 생성된 게시판이므로 게시판 요약 재생성
                 boardSummaryTriggerService.triggerSummaryUpdate(board.getId(), board.getName());
