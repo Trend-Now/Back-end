@@ -106,12 +106,12 @@ public class SignalKeywordJob implements Job {
                 /* 유사한 키워드가 실시간 이슈 목록에 있음 */
                 if (isRealTimeBoard && hasSimilarBoard) {
                     boardService.updateBoardName(board, boardSaveDto.getBoardName());
-                    // 기존 게시판은 board_rank에서 삭제
-                    boardRedisService.deleteKeyInBoardRank(board.getId(), oldBoardName);
                     // 새로운 키워드 랭크 변동 추이 계산 후 realtime_keywords에 저장
                     signalKeywordService.addRealtimeKeywordWithRankTracking(board.getId(), oldBoardName, boardSaveDto.getBoardName(), top10.getRank());
                     // 새로 키워드로 게시판 생성 후 저장
                     boardRedisService.saveBoardRedis(boardSaveDto, score);
+                    // 기존 게시판은 board_rank에서 삭제
+                    boardRedisService.deleteKeyInBoardRank(board.getId(), oldBoardName);
                     continue;
                 }
 
