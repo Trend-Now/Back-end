@@ -105,7 +105,18 @@ public class BoardService {
     }
 
     @Transactional
-    public void updateBoardName(Boards boards, String newBoardName) {
-        boards.updateName(newBoardName);
+    public void updateBoardName(Long boardId, String newBoardName) {
+        Boards board = boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardId));
+        board.updateName(newBoardName);
+    }
+
+    @Transactional
+    public void updateIsDeleted(Long boardId, boolean isDeleted) {
+        Boards board = boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardId));
+        if (isDeleted != board.isDeleted()) {
+            board.changeDeleted();
+        }
     }
 }

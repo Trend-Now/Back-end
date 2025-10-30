@@ -147,7 +147,7 @@ public class BoardCache {
 
             double similarity = (double) intersection.size() / union.size();
 
-            if (similarity > SIMILARITY_THRESHOLD) {
+            if (similarity < 1.0 && similarity > SIMILARITY_THRESHOLD) {
                 log.info("유사한 게시판 발견 - 새로운 키워드: {}, 기존 키워드: {}, 유사도: {}", newKeyword,
                     boardCacheEntry.getBoardName(), similarity);
                 return boardCacheEntry.getBoardName();
