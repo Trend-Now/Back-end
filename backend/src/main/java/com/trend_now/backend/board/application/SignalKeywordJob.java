@@ -87,10 +87,14 @@ public class SignalKeywordJob implements Job {
                     signalKeywordService.addNewRealtimeKeyword(board.getId(), boardSaveDto.getBoardName(), top10.getRank());
                     // board_rank에 저장
                     boardRedisService.saveBoardRedis(boardSaveDto, score);
+                    // 인메모리 캐시에 게시판 정보 갱신
+                    boardCache.addRealtimeBoardCache(board.getId(), board.getName());
                     continue;
                 }
 
                 Boards board = optionalBoards.get();
+                // 인메모리 캐시에 게시판 정보 갱신
+                boardCache.addRealtimeBoardCache(board.getId(), boardSaveDto.getBoardName());
                 boardSaveDto.setBoardId(board.getId());
                 boolean isRealTimeBoard = boardRedisService.isRealTimeBoard(board.getName(), board.getId());
 
@@ -131,8 +135,6 @@ public class SignalKeywordJob implements Job {
             // Redis(board_rank_valid)의 유효시간 갱신
             boardRedisService.setRankValidListTime();
             signalKeywordService.updateLastUpdatedTime(signalKeywordDto.getNow());
-            // 인메모리 캐시에 게시판 정보 갱신
-            boardCache.setBoardInfo(boardRedisService.getBoardRank(0, -1));
             // 실시간 이슈 키워드 변경 SSE 이벤트 발행
             publishRealtimeKeywordsEvent(signalKeywordService, redisPublisher);
         } catch (Exception e) {
