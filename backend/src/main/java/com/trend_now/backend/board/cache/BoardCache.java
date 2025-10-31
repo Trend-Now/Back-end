@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BoardCache {
 
-    public static final int EXPIRATION_TIME = 30; // 캐시 만료 시간 (분 단위)
+    public static final int EXPIRATION_TIME = 60; // 캐시 만료 시간 (분 단위)
     public static final int MAXIMUM_SIZE = 1000; // 캐시 최대 크기
     public static final double SIMILARITY_THRESHOLD = 0.3; // 유사도 임계값 (0.3 = 두 단어 이상 일치)
     public static final String BLANK = "\\s+"; // 공백 정규식

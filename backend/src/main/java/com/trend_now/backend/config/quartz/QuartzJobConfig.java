@@ -26,7 +26,8 @@ public class QuartzJobConfig {
     private static final String SIGNAL_KEYWORD_TRIGGER = "SignalKeywordTrigger";
     // signal.bz의 실시간 검색어 목록 갱신 주기가 30분이므로 요청 스케줄러 반복 시간도 30분(1800초)으로 설정
     private static final int SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS = 1801;
-    private static final String SIGNAL_KEYWORD_SCHEDULER_CRON_EXPRESSION = "0 0,30 * * * ?";
+//    private static final String SIGNAL_KEYWORD_SCHEDULER_CRON_EXPRESSION = "0 0,30 * * * ?";
+    private static final String SIGNAL_KEYWORD_SCHEDULER_CRON_EXPRESSION = "0/5 * * * * ?";
 
     private static final String POST_LIKES_SYNC_DB_JOB = "PostLikesSyncDbJob";
     private static final String POST_LIKES_SYNC_DB_JOB_GROUP = "PostLikesSyncDbJobGroup";
