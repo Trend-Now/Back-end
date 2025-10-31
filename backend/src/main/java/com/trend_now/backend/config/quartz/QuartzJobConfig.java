@@ -24,8 +24,7 @@ public class QuartzJobConfig {
     private static final String SIGNAL_KEYWORD_GROUP = "SignalGroup";
     private static final String SIGNAL_KEYWORD_JOB = "SignalKeywordJob";
     private static final String SIGNAL_KEYWORD_TRIGGER = "SignalKeywordTrigger";
-    public static final int SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS = 30;
-    private static final String SIGNAL_KEYWORD_SCHEDULER_CRON_EXPRESSION = String.format("0 0,%s * * * ?", SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS);
+    private static final String SIGNAL_KEYWORD_SCHEDULER_CRON_EXPRESSION = "0 0,30 * * * ?";
 
     private static final String POST_LIKES_SYNC_DB_JOB = "PostLikesSyncDbJob";
     private static final String POST_LIKES_SYNC_DB_JOB_GROUP = "PostLikesSyncDbJobGroup";
