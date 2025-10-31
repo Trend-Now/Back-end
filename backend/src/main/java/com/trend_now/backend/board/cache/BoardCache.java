@@ -1,6 +1,9 @@
 package com.trend_now.backend.board.cache;
 
+import static com.trend_now.backend.board.application.BoardRedisService.BOARD_KEY_DELIMITER;
+import static com.trend_now.backend.board.application.BoardRedisService.BOARD_RANK_KEY;
 import static com.trend_now.backend.board.application.SignalKeywordService.SIGNAL_KEYWORD_LIST;
+import static com.trend_now.backend.config.quartz.QuartzJobConfig.SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -27,7 +30,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BoardCache {
 
-    public static final int EXPIRATION_TIME = 60; // 캐시 만료 시간 (분 단위)
+    public static final int EXPIRATION_TIME = SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS + 1; // 캐시 만료 시간 (분 단위)
     public static final int MAXIMUM_SIZE = 1000; // 캐시 최대 크기
     public static final double SIMILARITY_THRESHOLD = 0.3; // 유사도 임계값 (0.3 = 두 단어 이상 일치)
     public static final String BLANK = "\\s+"; // 공백 정규식
@@ -50,6 +53,15 @@ public class BoardCache {
         // 캐시의 최대 크기 설정
         .maximumSize(MAXIMUM_SIZE)
         .build();
+
+    public void addRealtimeBoardCache(Long boardId, String boardName) {
+        boardCacheEntryMap.put(boardId, BoardCacheEntry.builder()
+            .boardName(boardName)
+            .splitBoardNameByBlank(Arrays.stream(
+                    boardName.replaceAll(SPECIAL_CHAR_PATTERN, "").split(BLANK))
+                .collect(Collectors.toSet()))
+            .build());
+    }
 
     @Async
     public void setBoardInfo(Set<String> boardRank) {
@@ -85,7 +97,7 @@ public class BoardCache {
         boardCacheEntryMap.invalidateAll();
 
         // 만약 redis에 저장된 실시간 게시판 순위가 없다면 캐싱 작업 중단
-        List<String> boardRankList = redisTemplate.opsForList().range(SIGNAL_KEYWORD_LIST, 0, -1);
+        Set<String> boardRankList = redisTemplate.opsForZSet().range(BOARD_RANK_KEY, 0, -1);
         if (boardRankList == null || boardRankList.isEmpty()) {
             return;
         }
@@ -93,12 +105,14 @@ public class BoardCache {
         // 캐시 생성
         boardRankList.forEach(
             boardRankValue -> {
-                Top10WithDiff boardRankInfo = Top10WithDiff.from(boardRankValue);
-                boardCacheEntryMap.put(boardRankInfo.getBoardId(),
+                String[] split = boardRankValue.split(BOARD_KEY_DELIMITER);
+                String boardKeyword = split[0];
+                long boardId = Long.parseLong(split[1]);
+                boardCacheEntryMap.put(boardId,
                     BoardCacheEntry.builder()
-                        .boardName(boardRankInfo.getKeyword())
+                        .boardName(boardKeyword)
                         .splitBoardNameByBlank(
-                            Arrays.stream(boardRankInfo.getKeyword().split(BLANK))
+                            Arrays.stream(boardKeyword.split(BLANK))
                                 .collect(Collectors.toSet()))
                         .build()
                 );

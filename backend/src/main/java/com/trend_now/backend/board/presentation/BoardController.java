@@ -1,7 +1,10 @@
 package com.trend_now.backend.board.presentation;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.trend_now.backend.board.application.BoardRedisService;
 import com.trend_now.backend.board.application.BoardService;
+import com.trend_now.backend.board.cache.BoardCache;
+import com.trend_now.backend.board.cache.BoardCacheEntry;
 import com.trend_now.backend.board.dto.BoardInfoDto;
 import com.trend_now.backend.board.dto.BoardPagingRequestDto;
 import com.trend_now.backend.board.dto.BoardPagingResponseDto;
@@ -29,6 +32,7 @@ public class BoardController {
 
     private final BoardRedisService boardRedisService;
     private final BoardService boardService;
+    private final BoardCache boardCache;
 
     @Operation(summary = "실시간 게시판 리스트 조회", description = "실시간 게시판 리스트를 페이징하여 가져옵니다.")
     @GetMapping("/list")
@@ -66,9 +70,17 @@ public class BoardController {
 
     @Operation(summary = "게시판 이름 조회", description = "게시판 ID에 해당하는 게시판 이름을 조회합니다.")
     @GetMapping("/{boardId}/name")
-
     public ResponseEntity<String> getBoardNameById(@PathVariable Long boardId) {
         String boardName = boardService.getBoardNameById(boardId);
         return ResponseEntity.status(HttpStatus.OK).body(boardName);
     }
+
+    @Operation(summary = "인메모리 캐시 조회", description = "인메모리 캐시에 저장된 게시판 정보를 조회합니다.")
+    @GetMapping("/cache")
+    public ResponseEntity<List<BoardCacheEntry>> getInMemoryCacheBoards() {
+        Cache<Long, BoardCacheEntry> boardCacheEntryMap = boardCache.getBoardCacheEntryMap();
+        List<BoardCacheEntry> cacheBoards = boardCacheEntryMap.asMap().values().stream().toList();
+        return ResponseEntity.status(HttpStatus.OK).body(cacheBoards);
+    }
+
 }
