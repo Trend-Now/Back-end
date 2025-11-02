@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BoardService {
 
-    private final static String BOARD_NOT_FOUND_MESSAGE = "해당 게시판이 존재하지 않습니다: ";
+    public final static String BOARD_NOT_FOUND_MESSAGE = "해당 게시판이 존재하지 않습니다: ";
 
     private final BoardRepository boardRepository;
     private final BoardCache boardCache;
@@ -108,7 +108,9 @@ public class BoardService {
     public void updateBoardName(Long boardId, String newBoardName) {
         Boards board = boardRepository.findById(boardId)
             .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardId));
-        board.updateName(newBoardName);
+        if (!boardRepository.existsByName(newBoardName)) {
+            board.updateName(newBoardName);
+        }
     }
 
     @Transactional
