@@ -24,7 +24,8 @@ public class QuartzJobConfig {
     private static final String SIGNAL_KEYWORD_GROUP = "SignalGroup";
     private static final String SIGNAL_KEYWORD_JOB = "SignalKeywordJob";
     private static final String SIGNAL_KEYWORD_TRIGGER = "SignalKeywordTrigger";
-    private static final String SIGNAL_KEYWORD_SCHEDULER_CRON_EXPRESSION = "0 0,30 * * * ?";
+    // signal.bz의 키워드가 매시 0분, 30분에 갱신되므로 1분, 31분에 실행
+    private static final String SIGNAL_KEYWORD_SCHEDULER_CRON_EXPRESSION = "0 1,31 * * * ?";
 
     private static final String POST_LIKES_SYNC_DB_JOB = "PostLikesSyncDbJob";
     private static final String POST_LIKES_SYNC_DB_JOB_GROUP = "PostLikesSyncDbJobGroup";
