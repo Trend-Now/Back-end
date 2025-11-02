@@ -73,10 +73,10 @@ public class SignalKeywordService {
             .set(REALTIME_KEYWORD_LAST_UPDATED_KEY, String.valueOf(timestamp));
     }
 
-    public void addNewRealtimeKeyword(Long boardId, String boardName, int currRank) {
+    public void addNewRealtimeKeyword(BoardKeyProvider boardKeyProvider, int currRank) {
         // 새로 들어온 키워드를 realtime_keywords에 추가
-        Top10WithDiff top10WithDiff = new Top10WithDiff(currRank, boardName,
-            boardId, RankChangeType.NEW, 0);
+        Top10WithDiff top10WithDiff = new Top10WithDiff(currRank, boardKeyProvider.getBoardName(),
+            boardKeyProvider.getBoardId(), RankChangeType.NEW, 0);
         redisTemplate.opsForList()
             .rightPush(SIGNAL_KEYWORD_LIST, top10WithDiff.toRealtimeKeywordsKey());
     }
