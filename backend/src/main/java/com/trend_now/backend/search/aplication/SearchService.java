@@ -14,7 +14,7 @@ import com.trend_now.backend.post.dto.PostWithBoardSummaryDto;
 import com.trend_now.backend.search.dto.FixedPostSearchDto;
 import com.trend_now.backend.search.dto.RealtimePostSearchDto;
 import com.trend_now.backend.post.repository.PostsRepository;
-import com.trend_now.backend.search.dto.AutoCompleteDto;
+import com.trend_now.backend.search.dto.BoardRedisKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -128,7 +128,7 @@ public class SearchService {
     }
 
     // 게시판 이름 자동완성 메서드
-    public List<AutoCompleteDto> findBoardsByPrefix(String prefix) {
+    public List<BoardRedisKey> findBoardsByPrefix(String prefix) {
         // 공백 제거
         String trimmedPrefix = prefix.replaceAll(" ", "");
         // 캐싱해놓은 실시간 인기 검색어 리스트 조회
@@ -138,26 +138,26 @@ public class SearchService {
         ConcurrentMap<Long, BoardCacheEntry> fixedBoardCacheMap = boardCache.getFixedBoardCacheMap()
             .asMap();
 
-        List<AutoCompleteDto> filteredBoards = boardCacheEntryMap.entrySet().stream()
+        List<BoardRedisKey> filteredBoards = boardCacheEntryMap.entrySet().stream()
             .filter(fixedBoard -> fixedBoard.getValue().getBoardName().replaceAll(" ", "")
                 .contains(trimmedPrefix))
-            .map(fixedBoard -> AutoCompleteDto.builder()
+            .map(fixedBoard -> BoardRedisKey.builder()
                 .boardId(fixedBoard.getKey())
                 .boardName(fixedBoard.getValue().getBoardName())
                 .build())
             .toList();
 
         // 고정 게시판 조회
-        List<AutoCompleteDto> fixedBoardList = fixedBoardCacheMap.entrySet().stream()
+        List<BoardRedisKey> fixedBoardList = fixedBoardCacheMap.entrySet().stream()
             .filter(entry -> entry.getValue().getBoardName().contains(trimmedPrefix))
-            .map(fixedBoard -> AutoCompleteDto.builder()
+            .map(fixedBoard -> BoardRedisKey.builder()
                 .boardId(fixedBoard.getKey())
                 .boardName(fixedBoard.getValue().getBoardName())
                 .build())
             .toList();
 
         // 실시간 게시판과 고정 게시판 결합
-        List<AutoCompleteDto> result = new ArrayList<>(filteredBoards);
+        List<BoardRedisKey> result = new ArrayList<>(filteredBoards);
         result.addAll(fixedBoardList);
 
         return result;

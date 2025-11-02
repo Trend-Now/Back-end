@@ -64,8 +64,8 @@ public class BoardRedisService {
     private final PostLikesService postLikesService;
     private final BoardSummaryRepository boardSummaryRepository;
 
-    public void saveBoardRedis(BoardSaveDto boardSaveDto, double score) {
-        String key = boardSaveDto.getBoardName() + BOARD_KEY_DELIMITER + boardSaveDto.getBoardId();
+    public void saveBoardRedis(BoardKeyProvider boardKeyProvider, double score) {
+        String key = boardKeyProvider.getBoardName() + BOARD_KEY_DELIMITER + boardKeyProvider.getBoardId();
         long keyLiveTime = KEY_LIVE_TIME;
 
         // 기존 키의 TTL이 남아 있을 경우 새로운 시간이 할당되지 않고, 기존 시간이 그대로 유지되는 버그 때문에 주석 처리
@@ -184,8 +184,8 @@ public class BoardRedisService {
      * BoardKeyProvider 인터페이스를 통해서 isRealTimeBoard 메서드에 접근한다. - 특정 DTO에만 종속되는 한계에서 확장성을 고려하여 설계 -
      * isRealTimeBoard 메서드에 접근할려는 DTO는 BoardKeyProvider 인터페이스를 구현체로 진행
      */
-    public boolean isRealTimeBoard(String boardName, Long boardId) {
-        String key = boardName + BOARD_KEY_DELIMITER + boardId;
+    public boolean isRealTimeBoard(BoardKeyProvider boardKeyProvider) {
+        String key = boardKeyProvider.getBoardName() + BOARD_KEY_DELIMITER + boardKeyProvider.getBoardId();
         return redisTemplate.hasKey(key);
     }
 

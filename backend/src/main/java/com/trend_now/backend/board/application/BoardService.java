@@ -105,11 +105,11 @@ public class BoardService {
     }
 
     @Transactional
-    public void updateBoardName(Long boardId, String newBoardName) {
-        Boards board = boardRepository.findById(boardId)
-            .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardId));
-        if (!boardRepository.existsByName(newBoardName)) {
-            board.updateName(newBoardName);
+    public void updateBoardName(BoardSaveDto boardSaveDto) {
+        Boards board = boardRepository.findById(boardSaveDto.getBoardId())
+            .orElseThrow(() -> new NotFoundException(BOARD_NOT_FOUND_MESSAGE + boardSaveDto.getBoardName()));
+        if (!boardRepository.existsByName(boardSaveDto.getBoardName())) {
+            board.updateName(boardSaveDto.getBoardName());
         }
     }
 

@@ -6,14 +6,17 @@ import static com.trend_now.backend.board.application.BoardRedisService.KEY_LIVE
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.trend_now.backend.board.application.BoardKeyProvider;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.search.dto.BoardRedisKey;
 import jakarta.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -52,11 +55,11 @@ public class BoardCache {
         .maximumSize(MAXIMUM_SIZE)
         .build();
 
-    public void addRealtimeBoardCache(Long boardId, String boardName) {
-        boardCacheEntryMap.put(boardId, BoardCacheEntry.builder()
-            .boardName(boardName)
+    public void addRealtimeBoardCache(BoardKeyProvider boardKeyProvider) {
+        boardCacheEntryMap.put(boardKeyProvider.getBoardId(), BoardCacheEntry.builder()
+            .boardName(boardKeyProvider.getBoardName())
             .splitBoardNameByBlank(Arrays.stream(
-                    boardName.replaceAll(SPECIAL_CHAR_PATTERN, "").split(BLANK))
+                    boardKeyProvider.getBoardName().replaceAll(SPECIAL_CHAR_PATTERN, "").split(BLANK))
                 .collect(Collectors.toSet()))
             .build());
     }
@@ -141,13 +144,15 @@ public class BoardCache {
     /**
      * 키워드와 유사한 게시판 이름이 존재하는지 확인하고, 유사한 게시판이 있으면 해당 이름을 반환. 유사한 게시판이 없으면 입력 값으로 들어온 키워드를 그대로 반환.
      */
-    public String findKeywordSimilarity(String newKeyword) {
+    public BoardRedisKey findKeywordSimilarity(String newKeyword) {
         Set<String> newSet = Arrays.stream(newKeyword
                 .replaceAll(SPECIAL_CHAR_PATTERN, "")
                 .split(BLANK)
             ).collect(Collectors.toSet());
 
-        for (BoardCacheEntry boardCacheEntry : boardCacheEntryMap.asMap().values()) {
+        ConcurrentMap<Long, BoardCacheEntry> cacheMap = boardCacheEntryMap.asMap();
+        for (Long boardId : cacheMap.keySet()) {
+            BoardCacheEntry boardCacheEntry = cacheMap.get(boardId);
             Set<String> originSet = boardCacheEntry.getSplitBoardNameByBlank();
             // 교집합
             Set<String> intersection = new HashSet<>(newSet);
@@ -162,10 +167,10 @@ public class BoardCache {
             if (similarity < 1.0 && similarity > SIMILARITY_THRESHOLD) {
                 log.info("유사한 게시판 발견 - 새로운 키워드: {}, 기존 키워드: {}, 유사도: {}", newKeyword,
                     boardCacheEntry.getBoardName(), similarity);
-                return boardCacheEntry.getBoardName();
+                return new BoardRedisKey(boardId, boardCacheEntry.getBoardName());
             }
         }
 
-        return newKeyword;
+        return new BoardRedisKey(null, newKeyword);
     }
 }
