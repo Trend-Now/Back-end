@@ -68,7 +68,8 @@ public class SecurityConfig {
                     "/api/v1/news/realtime", "/api/v1/timeSync", "/api/v1/subscribe",
                     "/api/v1/unsubscribe", "/sse-test", "/api/v1/member/test-jwt",
                     "/oauth2/authorization/**", "/login/oauth2/code/**", // OAuth2 로그인 관련 URL 허용
-                    "/api/v1/member/access-token"   // Access Token 재발급
+                    "/api/v1/member/access-token",   // Access Token 재발급
+                    "/api/v1/member/logout"     // 로그아웃
                 ).permitAll()
                 .anyRequest().authenticated())
             // 인증되지 않은 사용자가 접근할 경우, CustomAuthenticationEntryPoint를 통해 예외 처리

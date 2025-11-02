@@ -2,14 +2,12 @@ package com.trend_now.backend.board.cache;
 
 import static com.trend_now.backend.board.application.BoardRedisService.BOARD_KEY_DELIMITER;
 import static com.trend_now.backend.board.application.BoardRedisService.BOARD_RANK_KEY;
-import static com.trend_now.backend.board.application.SignalKeywordService.SIGNAL_KEYWORD_LIST;
-import static com.trend_now.backend.config.quartz.QuartzJobConfig.SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS;
+import static com.trend_now.backend.board.application.BoardRedisService.KEY_LIVE_TIME;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
-import com.trend_now.backend.board.dto.Top10WithDiff;
 import com.trend_now.backend.board.repository.BoardRepository;
 import jakarta.annotation.PostConstruct;
 import java.util.Arrays;
@@ -30,7 +28,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BoardCache {
 
-    public static final int EXPIRATION_TIME = SIGNAL_KEYWORD_SCHEDULER_INTERVAL_SECONDS + 1; // 캐시 만료 시간 (분 단위)
+    public static final long EXPIRATION_TIME = KEY_LIVE_TIME + 5; // 캐시 만료 시간 (랭크 변화 추이 계산을 위해 5초의 여유 시간 추가)
     public static final int MAXIMUM_SIZE = 1000; // 캐시 최대 크기
     public static final double SIMILARITY_THRESHOLD = 0.3; // 유사도 임계값 (0.3 = 두 단어 이상 일치)
     public static final String BLANK = "\\s+"; // 공백 정규식
@@ -43,7 +41,7 @@ public class BoardCache {
     @Getter
     private final Cache<Long, BoardCacheEntry> boardCacheEntryMap = Caffeine.newBuilder()
         // write 작업이 일어난 이후 30분 뒤 캐시 만료
-        .expireAfterWrite(EXPIRATION_TIME, TimeUnit.MINUTES)
+        .expireAfterWrite(EXPIRATION_TIME, TimeUnit.SECONDS)
         // 캐시의 최대 크기 설정
         .maximumSize(MAXIMUM_SIZE)
         .build();
