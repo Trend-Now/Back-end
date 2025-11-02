@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AsyncSummaryGeneratorService {
 
-    private static final int NAVER_NEWS_DISPLAY_COUNT = 5;
+    private static final int NAVER_NEWS_DISPLAY_COUNT = 10;
     // 네이버 뉴스 기사 기반 요약 요청 프롬프트
     private static final String SUMMARIZE_REQUEST_WITH_NEWS_PROMPT = """
         # 역할
