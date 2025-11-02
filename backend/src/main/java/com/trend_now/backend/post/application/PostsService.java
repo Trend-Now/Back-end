@@ -81,7 +81,10 @@ public class PostsService {
         PostsPagingRequestDto postsPagingRequestDto) {
 
         // 게시판이 가변 타이머가 작동 중인지 확인
-        Boards boards = findAndValidateBoard(postsPagingRequestDto.getBoardId());
+//        Boards boards = findAndValidateBoard(postsPagingRequestDto.getBoardId());
+
+        Boards boards = boardRepository.findById(postsPagingRequestDto.getBoardId())
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_BOARD));
 
         Pageable pageable = PageRequest.of(postsPagingRequestDto.getPage(),
             postsPagingRequestDto.getSize(), Sort.by(Direction.DESC, "createdAt")); // 최신순으로 조회
@@ -228,11 +231,11 @@ public class PostsService {
 
         String boardUserKey = String.format(POST_COOLDOWN_PREFIX + POST_COOLDOWN_KEY, boardId,
             members.getId());
-        long postCoolDown = getPostCooldown(boardUserKey);
-        // 같은 사용자가 같은 게시판에서의 cooldown이 남아있는지 확인
-        if (postCoolDown > 0) {
-            throw new IllegalStateException(String.format(POST_COOLDOWN_MESSAGE, postCoolDown));
-        }
+//        long postCoolDown = getPostCooldown(boardUserKey);
+//        // 같은 사용자가 같은 게시판에서의 cooldown이 남아있는지 확인
+//        if (postCoolDown > 0) {
+//            throw new IllegalStateException(String.format(POST_COOLDOWN_MESSAGE, postCoolDown));
+//        }
         refreshPostLimit(boardUserKey);
 
         Posts posts = Posts.builder()
