@@ -6,7 +6,7 @@ import static com.trend_now.backend.board.application.BoardRedisService.KEY_LIVE
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.trend_now.backend.board.application.BoardKeyProvider;
+import com.trend_now.backend.board.dto.BoardKeyProvider;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;

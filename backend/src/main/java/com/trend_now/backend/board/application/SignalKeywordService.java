@@ -3,6 +3,7 @@ package com.trend_now.backend.board.application;
 import static com.trend_now.backend.board.application.BoardRedisService.BOARD_RANK_KEY;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trend_now.backend.board.dto.BoardKeyProvider;
 import com.trend_now.backend.board.dto.MsgFormat;
 import com.trend_now.backend.board.dto.RankChangeType;
 import com.trend_now.backend.board.dto.SignalKeywordDto;

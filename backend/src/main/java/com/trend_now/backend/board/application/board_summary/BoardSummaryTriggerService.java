@@ -1,12 +1,8 @@
 package com.trend_now.backend.board.application.board_summary;
 
-import static com.trend_now.backend.board.application.BoardRedisService.BOARD_RANK_KEY;
-
-import com.trend_now.backend.board.application.BoardKeyProvider;
-import com.trend_now.backend.board.application.BoardRedisService;
+import com.trend_now.backend.board.dto.BoardKeyProvider;
 import com.trend_now.backend.board.cache.BoardCache;
 import com.trend_now.backend.board.domain.BoardSummary;
-import com.trend_now.backend.board.dto.RankChangeType;
 import com.trend_now.backend.board.repository.BoardSummaryRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
