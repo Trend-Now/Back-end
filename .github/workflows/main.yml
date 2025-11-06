@@ -24,17 +24,6 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: make application.yml file
-        run: |
-          cd backend
-          mkdir -p ./src/main/resources
-          cd ./src/main/resources
-          touch ./application.yml
-          touch ./application-prod.yml
-          echo "${{ secrets.APPLICATION_YML }}" | base64 -d > ./application.yml
-          echo "${{ secrets.APPLICATION_PROD_YML }}" | base64 -d > ./application-prod.yml
-
-
       - name: make application-test.yml file
         run: |
           cd backend
@@ -77,6 +66,10 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }} # pem 키
           # 도커 작업
           script: |
+            # .env.prod 파일 생성
+            echo "${{ secrets.ENV_FILE }}" > /home/ec2-user/.env.prod
+
+            # Docker 로그인 및 배포
             echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/trendnow:v1
             sudo docker stop trendnow || true
@@ -84,6 +77,7 @@ jobs:
             sudo docker image prune -a -f
             sudo docker run -d -p 8080:8080 \
             --name trendnow \
+            --env-file /home/ec2-user/.env.prod \
             --log-driver=awslogs \
             --log-opt awslogs-region=ap-northeast-2 \
             --log-opt awslogs-group="Trendnow-Logs" \

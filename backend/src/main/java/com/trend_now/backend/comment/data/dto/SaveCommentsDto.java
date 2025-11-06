@@ -1,6 +1,6 @@
 package com.trend_now.backend.comment.data.dto;
 
-import com.trend_now.backend.board.application.BoardKeyProvider;
+import com.trend_now.backend.board.dto.BoardKeyProvider;
 import lombok.*;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED)

@@ -1,6 +1,5 @@
 package com.trend_now.backend.board.dto;
 
-import com.trend_now.backend.board.application.BoardKeyProvider;
 import com.trend_now.backend.board.domain.BoardCategory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

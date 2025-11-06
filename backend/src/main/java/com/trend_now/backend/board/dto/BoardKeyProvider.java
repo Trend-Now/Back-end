@@ -1,4 +1,4 @@
-package com.trend_now.backend.board.application;
+package com.trend_now.backend.board.dto;
 
 public interface BoardKeyProvider {
 
