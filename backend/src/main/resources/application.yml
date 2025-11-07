@@ -1,6 +1,7 @@
 # git secret에 등록할 때 base64로 인코딩
 server:
   port: 8080
+  forward-headers-strategy: native
 
 spring:
   config:

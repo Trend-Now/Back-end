@@ -128,8 +128,8 @@ public class SignalKeywordJob implements Job {
         // DB에 같은 이름의 게시판이 존재하는 경우
         if (optionalBoards.isPresent()) {
             // 케이스 1: 삭제 되었다가 다시 생성된 게시판 복원
-            // 케이스 2: 기존 실시간 게시판 키워드 순위 갱신
             boardSaveDto.setBoardId(optionalBoards.get().getId());
+            // 케이스 2: 기존 실시간 게시판 키워드 순위 갱신
             handleExistingBoard(boardSaveDto, top10.getRank(), score, services);
             return;
         }
