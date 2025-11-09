@@ -106,8 +106,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         }
 
         catch (Exception e) {
-            log.error("[JwtTokenFilter.doFilter] : 예외 발생");
-            e.printStackTrace();
+            log.error("[JwtTokenFilter.doFilter] : 예외 발생 - {}", e.getMessage());
         }
 
         /**
