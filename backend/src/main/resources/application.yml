@@ -80,7 +80,6 @@ cloud:
       static: ap-northeast-2
     s3:
       bucket: ${AWS_S3_BUCKET}
-
 logging:
   level:
     org.hibernate.SQL: ${LOGGING_LEVEL_SQL}
@@ -106,3 +105,9 @@ google:
 springdoc:
   swagger-ui:
     with-credentials: true
+
+opensearch:
+  uris: ${OPENSEARCH_URIS}
+  host: ${OPENSEARCH_HOST}
+  port: ${OPENSEARCH_PORT}
+  schema: ${OPENSEARCH_SCHEMA}
