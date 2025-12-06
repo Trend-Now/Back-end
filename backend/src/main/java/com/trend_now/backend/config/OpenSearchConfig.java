@@ -31,7 +31,7 @@ public class OpenSearchConfig {
     @Value("${opensearch.username:#{null}}")
     private String username;
 
-    @Value("${opensearch.password}:#{null}}")
+    @Value("${opensearch.password:#{null}}")
     private String password;
 
     @Bean
