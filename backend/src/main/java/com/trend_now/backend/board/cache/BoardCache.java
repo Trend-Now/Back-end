@@ -10,6 +10,7 @@ import com.trend_now.backend.board.dto.BoardKeyProvider;
 import com.trend_now.backend.board.domain.BoardCategory;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.repository.BoardRepository;
+import com.trend_now.backend.opensearch.service.OpenSearchService;
 import com.trend_now.backend.search.dto.BoardRedisKey;
 import jakarta.annotation.PostConstruct;
 import java.util.Arrays;
@@ -39,6 +40,7 @@ public class BoardCache {
 
 
     private final BoardRepository boardRepository;
+    private final OpenSearchService openSearchService;
     private final RedisTemplate<String, String> redisTemplate;
 
     @Getter
@@ -88,6 +90,8 @@ public class BoardCache {
 
     @PostConstruct
     public void init() {
+        // OpenSearch 인덱스 생성
+        openSearchService.initIndex();
         initRealtimeBoard();
         initFixedBoard();
     }

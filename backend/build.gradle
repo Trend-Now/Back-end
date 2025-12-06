@@ -80,6 +80,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'com.github.ben-manes.caffeine:caffeine'
 
+//    // OpenSearch (OpenSearch)
+    implementation 'org.opensearch.client:opensearch-java:2.11.1'
+    implementation 'org.opensearch.client:opensearch-rest-client:2.11.1'
 }
 
 tasks.named('test') {

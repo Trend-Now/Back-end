@@ -277,9 +277,9 @@ public class BoardRedisService {
         return redisTemplate.opsForValue().get(BOARD_RANK_VALID_KEY);
     }
 
-    public void deleteKeyInBoardRank(Long boardId, String boardName) {
-        deleteBoardValueKey(boardId, boardName);
-        deleteBoardRankKey(boardId, boardName);
+    public void deleteKeyInBoardRank(BoardKeyProvider boardKeyProvider) {
+        deleteBoardValueKey(boardKeyProvider.getBoardId(), boardKeyProvider.getBoardName());
+        deleteBoardRankKey(boardKeyProvider.getBoardId(), boardKeyProvider.getBoardName());
     }
 
     private void deleteBoardValueKey(Long boardId, String boardName) {
