@@ -357,7 +357,19 @@ public class PostsService {
     // 회원이 작성한 게시글 조회 - 가변 타이머 작동 중에만 가능
     public Page<PostWithBoardSummaryDto> getPostsByMemberId(Long memberId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Direction.DESC, "createdAt"));
-        return postsRepository.findByMemberId(memberId, pageable);
+
+        Page<PostWithBoardSummaryDto> postSummmaryPage = postsRepository.findByMemberId(memberId,
+            pageable);
+        // 만약 redis에 저장된 게시글 조회수와 게시글 좋아요 수가 있다면, 해당 조회수를 PostSummaryDto에 설정 (Look Aside)
+        postSummmaryPage.forEach(postSummaryDto -> {
+            int postViewCount = postViewService.getPostViewCount(postSummaryDto.getPostId());
+            postSummaryDto.setViewCount(postViewCount);
+            int postLikesCount = postLikesService.getPostLikesCount(postSummaryDto.getBoardId(),
+                postSummaryDto.getPostId());
+            postSummaryDto.setLikeCount(postLikesCount);
+        });
+
+        return postSummmaryPage;
     }
 
     /**

@@ -10,6 +10,7 @@ import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.RankChangeType;
 import com.trend_now.backend.board.repository.BoardRepository;
 import com.trend_now.backend.board.repository.BoardSummaryRepository;
+import com.trend_now.backend.search.dto.BoardRedisKey;
 import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -46,9 +47,10 @@ public class BoardSummaryServiceTest {
             .boardCategory(BoardCategory.REALTIME)
             .build();
         Boards saveBoard = boardRepository.save(board);
+        BoardRedisKey boardRedisKey = new BoardRedisKey(saveBoard.getId(), saveBoard.getName());
 
         // when
-        boardSummaryTriggerService.triggerSummaryUpdate(saveBoard.getId(), saveBoard.getName());
+        boardSummaryTriggerService.triggerSummaryUpdate(boardRedisKey);
 
         // then
         await()

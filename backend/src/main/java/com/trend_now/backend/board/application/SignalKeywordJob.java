@@ -122,22 +122,23 @@ public class SignalKeywordJob implements Job {
         // signal.bz의 top10 객체를 BoardSaveDto 객체로 변환
         BoardSaveDto boardSaveDto = BoardSaveDto.from(top10);
 
-        BoardRedisKey openSearchRedisKey = services.openSearchService.findSimilarKeyword(
+        BoardRedisKey openSearchRedisKey = services.openSearchService().findSimilarKeyword(
                 boardSaveDto.getBoardName());
         double score = calculateScore(now, top10.getRank());
 
         // DB에 비슷하거나 같은 게시판이 존재하는 경우
         if (openSearchRedisKey != null) {
-            boolean isRealTimeBoard = services.boardRedisService.isRealTimeBoard(openSearchRedisKey);
+            boolean isRealTimeBoard = services.boardRedisService().isRealTimeBoard(openSearchRedisKey);
             boardSaveDto.setBoardId(openSearchRedisKey.getBoardId());
             // OpenSearch에서 찾은 게시판이 실시간 게시판에 존재하는 경우
             if (isRealTimeBoard) {
                 updateExistingRealtimeBoard(openSearchRedisKey, boardSaveDto, top10.getRank(), score, services);
-                services.boardService.updateBoardName(openSearchRedisKey.getBoardId(), boardSaveDto.getBoardName());
+                services.boardService().updateBoardName(openSearchRedisKey.getBoardId(), boardSaveDto.getBoardName());
+                return;
             }
             // OpenSearch에서 찾은 게시판이 실시간 게시판에 존재하지 않는 경우
             restoreDeletedBoard(openSearchRedisKey, top10.getRank(), score, services);
-            services.boardService.updateBoardName(openSearchRedisKey.getBoardId(), boardSaveDto.getBoardName());
+            services.boardService().updateBoardName(openSearchRedisKey.getBoardId(), boardSaveDto.getBoardName());
             return;
         }
 
@@ -191,10 +192,13 @@ public class SignalKeywordJob implements Job {
         log.info("기존 실시간 게시판 키워드 순위 갱신 - boardId: {}, boardName: {}",
                 oldBoardKey.getBoardId(), oldBoardKey.getBoardName());
 
+        // realtime_keywords에 저장 (사이드바)
         services.signalKeywordService().addRealtimeKeywordWithRankTracking(oldBoardKey.getBoardId(),
                 oldBoardKey.getBoardName(), newBoardKey.getBoardName(), rank);
-        services.boardCache().addRealtimeBoardCache(newBoardKey);
+        services.boardRedisService().deleteKeyInBoardRank(oldBoardKey);
+        // board_rank(정렬용)와 value(TTL)에 저장
         services.boardRedisService().saveBoardRedis(newBoardKey, score);
+        services.boardCache().addRealtimeBoardCache(newBoardKey);
     }
 
     /**
@@ -239,7 +243,7 @@ public class SignalKeywordJob implements Job {
         // 인메모리 캐시에 게시판 정보 갱신
         services.boardCache().addRealtimeBoardCache(boardSaveDto);
         // OpenSearch에 인덱싱
-        services.openSearchService.saveKeyword(boardSaveDto.getBoardName());
+        services.openSearchService().saveKeyword(boardSaveDto);
     }
 
     /**
