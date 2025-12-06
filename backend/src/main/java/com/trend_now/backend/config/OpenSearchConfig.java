@@ -37,6 +37,9 @@ public class OpenSearchConfig {
     @Bean
     public OpenSearchClient openSearchClient() {
         RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(host, port, schema));
+        log.info("host: {}, port: {}, schema: {} username: {}, password: {}", host, port, schema,
+            StringUtils.hasText(username) ? username : "null",
+            StringUtils.hasText(password) ? password : "null");
         // 배포 환경 (AWS OpenSearch)
         if (StringUtils.hasText(username) && StringUtils.hasText(password)) {
             BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
