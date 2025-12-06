@@ -107,7 +107,8 @@ springdoc:
     with-credentials: true
 
 opensearch:
-  uris: ${OPENSEARCH_URIS}
   host: ${OPENSEARCH_HOST}
   port: ${OPENSEARCH_PORT}
   schema: ${OPENSEARCH_SCHEMA}
+  username: ${OPENSEARCH_USERNAME:}
+  password: ${OPENSEARCH_PASSWORD:}
