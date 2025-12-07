@@ -22,15 +22,6 @@ public class BoardSummaryTriggerService {
 
     // Self-Invocation 문제 해결을 위해 별도의 서비스로 분리
     public void triggerSummaryUpdate(BoardKeyProvider boardKeyProvider) {
-        Optional<BoardSummary> optionalBoardSummary = boardSummaryRepository.findByBoards_Id(boardKeyProvider.getBoardId());
-        boolean inBoardCache = boardCache.isInBoardCache(boardKeyProvider.getBoardId());
-
-        // 게시판 요약이 존재하고, 이전에 실시간 순위에 있던 게시판이라면 요약 생성 작업 무시
-        if (optionalBoardSummary.isPresent() && inBoardCache) {
-            log.info("{} 게시판의 요약 생성 작업을 생략합니다.", boardKeyProvider.getBoardName());
-            return;
-        }
-
         // 게시판 요약이 존재하지 않거나, state 값이 NEW라면 요약 생성 작업 비동기 등록
         log.info(("{} 게시판의 요약 생성 작업을 비동기로 시작합니다."), boardKeyProvider.getBoardName());
         asyncSummaryGeneratorService.generateSummaryAndSave(boardKeyProvider.getBoardId(), boardKeyProvider.getBoardName());
