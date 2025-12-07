@@ -137,7 +137,7 @@ public class SignalKeywordJob implements Job {
                 return;
             }
             // OpenSearch에서 찾은 게시판이 실시간 게시판에 존재하지 않는 경우
-            restoreDeletedBoard(openSearchRedisKey, top10.getRank(), score, services);
+            restoreDeletedBoard(boardSaveDto, top10.getRank(), score, services);
             services.boardService().updateBoardName(openSearchRedisKey.getBoardId(), boardSaveDto.getBoardName());
             return;
         }
@@ -167,20 +167,20 @@ public class SignalKeywordJob implements Job {
     /**
      * 케이스 1: 삭제 되었다가 다시 생성된 게시판 복원
      */
-    private void restoreDeletedBoard(BoardRedisKey boardRedisKey, int rank, double score,
+    private void restoreDeletedBoard(BoardKeyProvider newBoardRedisKey, int rank, double score,
                                      Services services) {
 
         log.info("삭제 되었다가 다시 생성된 게시판 복원 처리 - boardId: {}, boardName: {}",
-                boardRedisKey.getBoardId(), boardRedisKey.getBoardName());
+                newBoardRedisKey.getBoardId(), newBoardRedisKey.getBoardName());
 
         // Quartz Job에서 조회된 엔티티는 Detached 상태이므로 트랜잭션 내에서 조회 후 수정해야 함
-        services.boardService().updateIsDeleted(boardRedisKey.getBoardId(), false);
+        services.boardService().updateIsDeleted(newBoardRedisKey.getBoardId(), false);
         // 삭제 되었다가 다시 생성된 게시판이므로 게시판 요약 재생성
-        services.boardSummaryTriggerService().triggerSummaryUpdate(boardRedisKey);
+        services.boardSummaryTriggerService().triggerSummaryUpdate(newBoardRedisKey);
         // realtime_keywords에 NEW로 저장
-        services.signalKeywordService().addNewRealtimeKeyword(boardRedisKey, rank);
-        services.boardCache().addRealtimeBoardCache(boardRedisKey);
-        services.boardRedisService().saveBoardRedis(boardRedisKey, score);
+        services.signalKeywordService().addNewRealtimeKeyword(newBoardRedisKey, rank);
+        services.boardCache().addRealtimeBoardCache(newBoardRedisKey);
+        services.boardRedisService().saveBoardRedis(newBoardRedisKey, score);
     }
 
     /**
