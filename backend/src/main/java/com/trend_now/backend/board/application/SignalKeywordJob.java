@@ -5,12 +5,10 @@ import com.trend_now.backend.board.cache.BoardCache;
 import com.trend_now.backend.board.domain.Boards;
 import com.trend_now.backend.board.dto.*;
 import com.trend_now.backend.board.repository.BoardRepository;
-import com.trend_now.backend.opensearch.dto.OpenSearchDocumentDto;
 import com.trend_now.backend.opensearch.service.OpenSearchService;
 import com.trend_now.backend.search.dto.BoardRedisKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -130,42 +128,44 @@ public class SignalKeywordJob implements Job {
         if (openSearchRedisKey != null) {
             boolean isRealTimeBoard = services.boardRedisService().isRealTimeBoard(openSearchRedisKey);
             boardSaveDto.setBoardId(openSearchRedisKey.getBoardId());
-            // OpenSearch에서 찾은 게시판이 실시간 게시판에 존재하는 경우
+            // case 1 - OpenSearch에서 찾은 게시판이 실시간 게시판에 존재하는 경우
             if (isRealTimeBoard) {
                 updateExistingRealtimeBoard(openSearchRedisKey, boardSaveDto, top10.getRank(), score, services);
                 services.boardService().updateBoardName(openSearchRedisKey.getBoardId(), boardSaveDto.getBoardName());
                 return;
             }
-            // OpenSearch에서 찾은 게시판이 실시간 게시판에 존재하지 않는 경우
+            // case 2 - OpenSearch에서 찾은 게시판이 실시간 게시판에 존재하지 않는 경우
             restoreDeletedBoard(boardSaveDto, top10.getRank(), score, services);
             services.boardService().updateBoardName(openSearchRedisKey.getBoardId(), boardSaveDto.getBoardName());
             return;
         }
 
-        // DB에 비슷하거나 같은 게시판이 없다면 완전히 새로운 게시판 생성
+        // case 3 - DB에 비슷하거나 같은 게시판이 없다면 완전히 새로운 게시판 생성
         handleNewBoard(boardSaveDto, top10.getRank(), score, services);
     }
 
     /**
-     * 케이스 2, 케이스 3
+     * CASE 1: 기존 실시간 게시판 키워드 순위 갱신
      */
-//    private void handleExistingBoard(BoardRedisKey openSearchRedisKey, int rank,
-//                                     double score, Services services) {
-//
-//        boolean isRealTimeBoard = services.boardRedisService().isRealTimeBoard(openSearchRedisKey);
-//
-//        if (!isRealTimeBoard) {
-//            // 케이스 2: 실시간 게시판에 없음 (복원)
-//        } else {
-//            // 케이스 3: 실시간 게시판에 이미 존재 (순위 갱신)
-//            updateExistingRealtimeBoard(openSearchRedisKey,  rank, services);
-//        }
-//        services.boardCache().addRealtimeBoardCache(openSearchRedisKey);
-//        services.boardRedisService().saveBoardRedis(openSearchRedisKey, score);
-//    }
+    private void updateExistingRealtimeBoard(BoardKeyProvider oldBoardKey, BoardSaveDto newBoardKey, int rank, double score,
+        Services services) {
+
+        log.info("기존 실시간 게시판 키워드 순위 갱신 - boardId: {}, boardName: {}",
+            oldBoardKey.getBoardId(), oldBoardKey.getBoardName());
+
+        // realtime_keywords에 저장 (사이드바)
+        services.signalKeywordService().addRealtimeKeywordWithRankTracking(oldBoardKey.getBoardId(),
+            oldBoardKey.getBoardName(), newBoardKey.getBoardName(), rank);
+        services.boardRedisService().deleteKeyInBoardRank(oldBoardKey);
+        // board_rank(정렬용)와 value(TTL)에 저장
+        services.boardRedisService().saveBoardRedis(newBoardKey, score);
+        services.boardCache().addRealtimeBoardCache(newBoardKey);
+        // 새로운 이름으로 opensearch 문서 변경
+        services.openSearchService().saveKeyword(newBoardKey);
+    }
 
     /**
-     * 케이스 1: 삭제 되었다가 다시 생성된 게시판 복원
+     * CASE 2: 삭제 되었다가 다시 생성된 게시판 복원
      */
     private void restoreDeletedBoard(BoardKeyProvider newBoardRedisKey, int rank, double score,
                                      Services services) {
@@ -181,50 +181,12 @@ public class SignalKeywordJob implements Job {
         services.signalKeywordService().addNewRealtimeKeyword(newBoardRedisKey, rank);
         services.boardCache().addRealtimeBoardCache(newBoardRedisKey);
         services.boardRedisService().saveBoardRedis(newBoardRedisKey, score);
+        // 새로운 이름으로 opensearch 문서 변경
+        services.openSearchService().saveKeyword(newBoardRedisKey);
     }
 
     /**
-     * 케이스 1: 기존 실시간 게시판 키워드 순위 갱신
-     */
-    private void updateExistingRealtimeBoard(BoardKeyProvider oldBoardKey, BoardSaveDto newBoardKey, int rank, double score,
-                                             Services services) {
-
-        log.info("기존 실시간 게시판 키워드 순위 갱신 - boardId: {}, boardName: {}",
-                oldBoardKey.getBoardId(), oldBoardKey.getBoardName());
-
-        // realtime_keywords에 저장 (사이드바)
-        services.signalKeywordService().addRealtimeKeywordWithRankTracking(oldBoardKey.getBoardId(),
-                oldBoardKey.getBoardName(), newBoardKey.getBoardName(), rank);
-        services.boardRedisService().deleteKeyInBoardRank(oldBoardKey);
-        // board_rank(정렬용)와 value(TTL)에 저장
-        services.boardRedisService().saveBoardRedis(newBoardKey, score);
-        services.boardCache().addRealtimeBoardCache(newBoardKey);
-    }
-
-    /**
-     * 케이스 3: 유사한 게시판이 존재하는 경우 (게시판 이름 업데이트)
-     */
-//    private void handleSimilarBoard(BoardSaveDto boardSaveDto,
-//                                    String oldBoardName, int rank, double score, Services services) {
-//
-//        log.info("Redis에서 유사한 게시판 조회 후 업데이트 - 기존 게시판명: {}, 새로운 게시판명: {}",
-//                oldBoardName, boardSaveDto.getBoardName());
-//
-//        // 새로운 키워드 랭크 변동 추이 계산 후 realtime_keywords에 저장
-//        services.signalKeywordService().addRealtimeKeywordWithRankTracking(boardSaveDto.getBoardId(), oldBoardName,
-//                boardSaveDto.getBoardName(), rank);
-//        // board_rank에 새로운 키워드 저장
-//        services.boardRedisService().saveBoardRedis(boardSaveDto, score);
-//        // 기존 게시판은 board_rank에서 삭제
-//        services.boardRedisService().deleteKeyInBoardRank(boardSaveDto.getBoardId(), oldBoardName);
-//        // 게시판 이름 변경
-//        services.boardService().updateBoardName(boardSaveDto);
-//        // 캐시 업데이트
-//        services.boardCache().addRealtimeBoardCache(boardSaveDto);
-//    }
-
-    /**
-     * 케이스 4: 완전히 새로운 게시판 생성
+     * CASE 3: 완전히 새로운 게시판 생성
      */
     private void handleNewBoard(BoardSaveDto boardSaveDto, int rank, double score,
                                 Services services) {
