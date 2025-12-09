@@ -26,22 +26,24 @@ public class SignalKeywordJob implements Job {
      * 스케줄러에서 사용하는 모든 서비스를 담는 Record
      */
     private record Services(
-            SignalKeywordService signalKeywordService,
-            BoardRepository boardRepository,
-            BoardService boardService,
-            BoardRedisService boardRedisService,
-            RedisPublisher redisPublisher,
-            BoardCache boardCache,
-            BoardSummaryTriggerService boardSummaryTriggerService,
-            OpenSearchService openSearchService
-    ) {}
+        SignalKeywordService signalKeywordService,
+        BoardRepository boardRepository,
+        BoardService boardService,
+        BoardRedisService boardRedisService,
+        RedisPublisher redisPublisher,
+        BoardCache boardCache,
+        BoardSummaryTriggerService boardSummaryTriggerService,
+        OpenSearchService openSearchService
+    ) {
+
+    }
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         log.info("실시간 검색어 순위 리스트 스케줄러 실행 시작 -  현재 시각: {}", Instant.now());
 
         ApplicationContext applicationContext = (ApplicationContext) context
-                .getMergedJobDataMap().get("applicationContext");
+            .getMergedJobDataMap().get("applicationContext");
         Services services = initializeServices(applicationContext);
 
         // 스케줄러 실행 동안 생기는 시간 차이를 없애기 위해 Instant.now()를 최초 1회만 호출
@@ -77,7 +79,7 @@ public class SignalKeywordJob implements Job {
      */
     private static SignalKeywordDto getSignalKeywordDto(Services services) throws Exception {
         SignalKeywordDto signalKeywordDto = services.signalKeywordService()
-                .fetchRealTimeKeyword().block();
+            .fetchRealTimeKeyword().block();
         services.boardRedisService().cleanUpExpiredKeys();
 
         if (signalKeywordDto == null) {
@@ -92,14 +94,14 @@ public class SignalKeywordJob implements Job {
      */
     private Services initializeServices(ApplicationContext applicationContext) {
         return new Services(
-                applicationContext.getBean(SignalKeywordService.class),
-                applicationContext.getBean(BoardRepository.class),
-                applicationContext.getBean(BoardService.class),
-                applicationContext.getBean(BoardRedisService.class),
-                applicationContext.getBean(RedisPublisher.class),
-                applicationContext.getBean(BoardCache.class),
-                applicationContext.getBean(BoardSummaryTriggerService.class),
-                applicationContext.getBean(OpenSearchService.class)
+            applicationContext.getBean(SignalKeywordService.class),
+            applicationContext.getBean(BoardRepository.class),
+            applicationContext.getBean(BoardService.class),
+            applicationContext.getBean(BoardRedisService.class),
+            applicationContext.getBean(RedisPublisher.class),
+            applicationContext.getBean(BoardCache.class),
+            applicationContext.getBean(BoardSummaryTriggerService.class),
+            applicationContext.getBean(OpenSearchService.class)
         );
     }
 
@@ -121,22 +123,28 @@ public class SignalKeywordJob implements Job {
         BoardSaveDto boardSaveDto = BoardSaveDto.from(top10);
 
         BoardRedisKey openSearchRedisKey = services.openSearchService().findSimilarKeyword(
-                boardSaveDto.getBoardName());
+            boardSaveDto.getBoardName());
         double score = calculateScore(now, top10.getRank());
 
         // DB에 비슷하거나 같은 게시판이 존재하는 경우
         if (openSearchRedisKey != null) {
-            boolean isRealTimeBoard = services.boardRedisService().isRealTimeBoard(openSearchRedisKey);
+            boolean isRealTimeBoard = services.boardRedisService()
+                .isRealTimeBoard(openSearchRedisKey);
             boardSaveDto.setBoardId(openSearchRedisKey.getBoardId());
+            log.info("새로 들어온 키워드: {} \n 비슷하거나 같은 키워드: {} \n 실시간 여부: {}",
+                boardSaveDto.getBoardName(), openSearchRedisKey.getBoardName(), isRealTimeBoard);
             // case 1 - OpenSearch에서 찾은 게시판이 실시간 게시판에 존재하는 경우
             if (isRealTimeBoard) {
-                updateExistingRealtimeBoard(openSearchRedisKey, boardSaveDto, top10.getRank(), score, services);
-                services.boardService().updateBoardName(openSearchRedisKey.getBoardId(), boardSaveDto.getBoardName());
+                updateExistingRealtimeBoard(openSearchRedisKey, boardSaveDto, top10.getRank(),
+                    score, services);
+                services.boardService()
+                    .updateBoardName(openSearchRedisKey.getBoardId(), boardSaveDto.getBoardName());
                 return;
             }
             // case 2 - OpenSearch에서 찾은 게시판이 실시간 게시판에 존재하지 않는 경우
             restoreDeletedBoard(boardSaveDto, top10.getRank(), score, services);
-            services.boardService().updateBoardName(openSearchRedisKey.getBoardId(), boardSaveDto.getBoardName());
+            services.boardService()
+                .updateBoardName(openSearchRedisKey.getBoardId(), boardSaveDto.getBoardName());
             return;
         }
 
@@ -147,7 +155,8 @@ public class SignalKeywordJob implements Job {
     /**
      * CASE 1: 기존 실시간 게시판 키워드 순위 갱신
      */
-    private void updateExistingRealtimeBoard(BoardKeyProvider oldBoardKey, BoardSaveDto newBoardKey, int rank, double score,
+    private void updateExistingRealtimeBoard(BoardKeyProvider oldBoardKey, BoardSaveDto newBoardKey,
+        int rank, double score,
         Services services) {
 
         log.info("기존 실시간 게시판 키워드 순위 갱신 - boardId: {}, boardName: {}",
@@ -168,10 +177,10 @@ public class SignalKeywordJob implements Job {
      * CASE 2: 삭제 되었다가 다시 생성된 게시판 복원
      */
     private void restoreDeletedBoard(BoardKeyProvider newBoardRedisKey, int rank, double score,
-                                     Services services) {
+        Services services) {
 
         log.info("삭제 되었다가 다시 생성된 게시판 복원 처리 - boardId: {}, boardName: {}",
-                newBoardRedisKey.getBoardId(), newBoardRedisKey.getBoardName());
+            newBoardRedisKey.getBoardId(), newBoardRedisKey.getBoardName());
 
         // Quartz Job에서 조회된 엔티티는 Detached 상태이므로 트랜잭션 내에서 조회 후 수정해야 함
         services.boardService().updateIsDeleted(newBoardRedisKey.getBoardId(), false);
@@ -189,7 +198,7 @@ public class SignalKeywordJob implements Job {
      * CASE 3: 완전히 새로운 게시판 생성
      */
     private void handleNewBoard(BoardSaveDto boardSaveDto, int rank, double score,
-                                Services services) {
+        Services services) {
 
         log.info("완전히 새로운 게시판 생성 - boardName: {}", boardSaveDto.getBoardName());
 
@@ -218,7 +227,7 @@ public class SignalKeywordJob implements Job {
         for (String clientId : allClientId) {
             log.info("스케줄러에서 clientId: {}에게 이벤트 발행", clientId);
             SignalKeywordEventDto event = new SignalKeywordEventDto(clientId,
-                    SIGNAL_KEYWORD_LIST_EVENT_MESSAGE, top10WithChange);
+                SIGNAL_KEYWORD_LIST_EVENT_MESSAGE, top10WithChange);
             services.redisPublisher().publishSignalKeywordEvent(event);
         }
     }
