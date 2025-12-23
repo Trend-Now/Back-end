@@ -1,6 +1,6 @@
 package com.trend_now.backend.board.application.board_summary;
 
-import com.trend_now.backend.client.GeminiApiClient;
+import com.trend_now.backend.client.MistralApiClient;
 import com.trend_now.backend.client.NaverApiClient;
 import com.trend_now.backend.client.dto.NaverNewsResponseDto;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +59,8 @@ public class AsyncSummaryGeneratorService {
     private static final String START_GENERATION_SUMMARY = "{}: 게시판 요약 생성이 시작되었습니다. -> {}";
 
     private final NaverApiClient naverApiClient;
-    private final GeminiApiClient geminiApiClient;
+//    private final GeminiApiClient geminiApiClient;
+    private final MistralApiClient mistralApiClient;
     private final BoardSummaryService boardSummaryService;
 
     @Async
@@ -73,13 +74,15 @@ public class AsyncSummaryGeneratorService {
 
         // 프롬프트 작성
         // 뉴스 기사가 없으면 자체 검색 모델로 요약, 있으면 일반 모델로 제공된 기사 바탕 요약
-        String summary = naverNewsResponseDto.getItems().isEmpty()
-            ? geminiApiClient.generateAnswerWithGoogleSearch(
-            String.format(SUMMARIZE_REQUEST_WITH_GOOGLE_SEARCH_PROMPT,
-                keyword), GEMINI_MODEL_NAME)
-            : geminiApiClient.generateAnswer(
-                String.format(SUMMARIZE_REQUEST_WITH_NEWS_PROMPT,
-                    keyword, naverNewsResponseDto.getItems()), GEMINI_MODEL_NAME);
+//        String summary = naverNewsResponseDto.getItems().isEmpty()
+//            ? geminiApiClient.generateAnswerWithGoogleSearch(
+//            String.format(SUMMARIZE_REQUEST_WITH_GOOGLE_SEARCH_PROMPT,
+//                keyword), GEMINI_MODEL_NAME)
+//            : geminiApiClient.generateAnswer(
+//                String.format(SUMMARIZE_REQUEST_WITH_NEWS_PROMPT,
+//                    keyword, naverNewsResponseDto.getItems()), GEMINI_MODEL_NAME);
+
+        String summary = mistralApiClient.analyzeNews(keyword, naverNewsResponseDto.getItems());
 
         log.info(COMPLETE_GENERATION_SUMMARY, getClass().getName(), keyword);
 
