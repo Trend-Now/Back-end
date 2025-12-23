@@ -80,9 +80,17 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'com.github.ben-manes.caffeine:caffeine'
 
-//    // OpenSearch (OpenSearch)
+    // OpenSearch (OpenSearch)
     implementation 'org.opensearch.client:opensearch-java:2.11.1'
     implementation 'org.opensearch.client:opensearch-rest-client:2.11.1'
+
+    // mistral
+    // LangChain4j BOM
+    implementation(platform("dev.langchain4j:langchain4j-bom:1.9.1"))
+
+    // LangChain4j Starters
+    implementation("dev.langchain4j:langchain4j-spring-boot-starter")
+    implementation("dev.langchain4j:langchain4j-mistral-ai")
 }
 
 tasks.named('test') {

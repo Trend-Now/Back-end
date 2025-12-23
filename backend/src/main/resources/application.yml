@@ -102,6 +102,10 @@ google:
     api:
       key: ${GOOGLE_GEMINI_API_KEY}
 
+mistral:
+  api-key: ${MISTRAL_API_KEY}
+  model-name: ${MISTRAL_MODEL}
+
 springdoc:
   swagger-ui:
     with-credentials: true
