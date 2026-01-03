@@ -2,6 +2,8 @@ package com.trend_now.backend.image.domain;
 
 import com.trend_now.backend.config.domain.BaseEntity;
 import com.trend_now.backend.post.domain.Posts;
+import com.trend_now.backend.thread.domain.Threads;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -35,4 +37,8 @@ public class Images extends BaseEntity {
     @Setter
     private Posts posts;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "thread_id")
+    @Setter
+    private Threads threads;
 }
