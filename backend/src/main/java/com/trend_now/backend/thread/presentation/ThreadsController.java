@@ -25,7 +25,7 @@ public class ThreadsController {
 
     @Operation(summary = "쓰레드 저장", description = "쓰레드를 저장합니다.")
     @PostMapping("/")
-    public ResponseEntity<ApiResponse<Void>> savePosts(
+    public ResponseEntity<ApiResponse<Void>> saveThreads(
             @Valid @RequestBody ThreadsSaveDto threadsSaveDto,
             @PathVariable(value = "postId") Long postId,
             @AuthenticationPrincipal(expression = "members") Members members) {
