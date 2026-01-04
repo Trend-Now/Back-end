@@ -31,4 +31,6 @@ public interface ImagesRepository extends JpaRepository<Images, Long> {
     @Modifying
     @Query("DELETE FROM Images i WHERE i.posts IS NULL")
     void deleteByPostsIsNull();
+
+    List<Images> findAllByThreads_IdIn(List<Long> threadIds);
 }
