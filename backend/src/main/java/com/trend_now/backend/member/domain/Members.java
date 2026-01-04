@@ -2,6 +2,7 @@ package com.trend_now.backend.member.domain;
 
 
 import com.trend_now.backend.config.domain.BaseEntity;
+import com.trend_now.backend.image.domain.Images;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,7 +15,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Getter
-@ToString
+@ToString(exclude = "profileImage")
 public class Members extends BaseEntity {
 
     @Id
@@ -40,4 +41,12 @@ public class Members extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "role")
     private Role role = Role.USER;
+
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "image_id")
+    private Images profileImage;
+
+    public void updateProfileImage(Images profileImage) {
+        this.profileImage = profileImage;
+    }
 }

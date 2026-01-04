@@ -7,6 +7,10 @@ import com.trend_now.backend.config.auth.oauth.OAuthAttributes;
 import com.trend_now.backend.exception.customException.DuplicateException;
 import com.trend_now.backend.exception.customException.InvalidTokenException;
 import com.trend_now.backend.exception.customException.NotFoundException;
+import com.trend_now.backend.image.application.ImagesService;
+import com.trend_now.backend.image.domain.Images;
+import com.trend_now.backend.image.dto.ImageInfoDto;
+import com.trend_now.backend.image.dto.ImageUploadRequestDto;
 import com.trend_now.backend.member.data.dto.MyPageResponseDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.member.domain.Provider;
@@ -36,7 +40,6 @@ public class MemberService {
     private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String REFRESH_TOKEN_KEY = "refresh_token";
     private static final String REISSUANCE_ACCESS_TOKEN_SUCCESS = "Access Token 재발급에 성공하였습니다.";
-    private static final String REISSUANCE_ACCESS_TOKEN_FAIL = "Access Token 재발급에 실패하였습니다.";
     private static final String NOT_EXIST_ACCESS_TOKEN = "Access Token이 존재하지 않습니다.";
     private static final String NOT_EXIST_REFRESH_TOKEN = "Refresh Token이 존재하지 않습니다.";
     private static final int ONE_YEAR = 365*24*60*60;   // 1년을 초로 변환
@@ -49,6 +52,7 @@ public class MemberService {
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberRedisService memberRedisService;
     private final JwtTokenFilter jwtTokenFilter;
+    private final ImagesService imagesService;
 
 //    @Value("${jwt.access-token.expiration}")
 //    private int accessTokenExpiration;
@@ -62,7 +66,23 @@ public class MemberService {
     public MyPageResponseDto getMyPage(Long memberId) {
         Members members = memberRepository.findById(memberId)
             .orElseThrow(() -> new NotFoundException(NOT_EXIST_MEMBER));
-        return MyPageResponseDto.of(members.getName(), members.getEmail());
+        return MyPageResponseDto.of(members.getName(), members.getEmail(), members.getProfileImage().getImageUrl());
+    }
+
+    @Transactional
+    public void updateProfileImage(Long memberId, ImageUploadRequestDto imageUploadRequestDto) {
+        Members members = memberRepository.findById(memberId)
+            .orElseThrow(() -> new NotFoundException(NOT_EXIST_MEMBER));
+        // 새로운 이미지 저장
+        ImageInfoDto imageInfoDto = imagesService.uploadImage(imageUploadRequestDto).getFirst();
+        Images newImage = imagesService.findImageById(imageInfoDto.getId());
+        // 기존 이미지 삭제
+        Images profileImage = members.getProfileImage();
+        if (profileImage != null) {
+            imagesService.deleteImageById(profileImage.getId());
+        }
+        members.updateProfileImage(newImage);
+        log.info("프로필 이미지 변경 완료 - {}", members.getName());
     }
 
     /**
