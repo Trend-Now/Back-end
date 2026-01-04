@@ -6,10 +6,12 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class MyPageResponseDto {
+
     private String nickname;
     private String email;
+    private String profileImageUrl;
 
-    public static MyPageResponseDto of(String nickname, String email) {
-        return new MyPageResponseDto(nickname, email);
+    public static MyPageResponseDto of(String nickname, String email, String profileImageUrl) {
+        return new MyPageResponseDto(nickname, email, profileImageUrl);
     }
 }

@@ -1,7 +1,6 @@
 package com.trend_now.backend.global.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -10,8 +9,7 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public class ApiResponse<T> {
 
-    @JsonProperty("isSuccess")
-    private final boolean isSuccess;
+    private final boolean success;
     private final String message;
     private final HttpStatus statusCode;
 

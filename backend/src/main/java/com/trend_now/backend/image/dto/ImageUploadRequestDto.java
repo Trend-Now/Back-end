@@ -14,4 +14,8 @@ public class ImageUploadRequestDto {
     public static ImageUploadRequestDto of(List<MultipartFile> images, String prefix) {
         return new ImageUploadRequestDto(images, prefix);
     }
+
+    public static ImageUploadRequestDto of(MultipartFile image, String prefix) {
+        return new ImageUploadRequestDto(List.of(image), prefix);
+    }
 }

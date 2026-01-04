@@ -27,6 +27,7 @@ public class ImagesService {
     @Transactional
     public List<ImageInfoDto> uploadImage(ImageUploadRequestDto imageUploadRequestDto) {
         String prefix = imageUploadRequestDto.getPrefix();
+        log.info("ImagesService - uploadImage: 이미지 업로드 시작. prefix={}", prefix);
         return imageUploadRequestDto.getImages().stream()
             .map(image -> {
                 // S3에 업로드
@@ -63,6 +64,19 @@ public class ImagesService {
      * imageId List를 통해 S3와 DB에서 이미지 삭제
      */
     @Transactional
+    public void deleteImageById(Long imageId) {
+        // S3에서 이미지 삭제
+        String s3Key = imagesRepository.findS3KeyById(imageId);
+        s3Service.deleteFile(s3Key);
+
+        // DB에서 이미지 삭제
+        imagesRepository.deleteById(imageId);
+    }
+
+    /**
+     * imageId List를 통해 S3와 DB에서 이미지 삭제
+     */
+    @Transactional
     public void deleteImageByIdList(List<Long> imageId) {
         // S3에서 이미지 삭제
         List<String> s3Keys = imagesRepository.findS3KeyByIdIn(imageId);
@@ -84,9 +98,7 @@ public class ImagesService {
             // DB에서 이미지 삭제
             imagesRepository.deleteAllByPosts_Id(postId);
         }
-
     }
-
 
     /**
      * 버킷이름과 s3Key를 조합하여 이미지 URL을 생성

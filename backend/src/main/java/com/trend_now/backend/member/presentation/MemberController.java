@@ -3,9 +3,11 @@ package com.trend_now.backend.member.presentation;
 import com.trend_now.backend.comment.application.CommentsService;
 import com.trend_now.backend.comment.data.dto.CommentInfoDto;
 import com.trend_now.backend.comment.data.dto.CommentListPagingResponseDto;
+import com.trend_now.backend.global.dto.ApiResponse;
+import com.trend_now.backend.image.application.ImagesService;
+import com.trend_now.backend.image.dto.ImageUploadRequestDto;
 import com.trend_now.backend.member.application.MemberService;
 import com.trend_now.backend.member.data.dto.MyPageResponseDto;
-import com.trend_now.backend.member.data.dto.RefreshTokenRequestDto;
 import com.trend_now.backend.member.data.dto.UpdateNicknameRequestDto;
 import com.trend_now.backend.member.domain.Members;
 import com.trend_now.backend.post.application.PostsService;
@@ -21,9 +23,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
@@ -37,13 +41,14 @@ public class MemberController {
     private final ScrapService scrapService;
     private final PostsService postsService;
     private final CommentsService commentsService;
+    private final ImagesService imagesService;
 
     private static final String NICKNAME_UPDATE_SUCCESS_MESSAGE = "닉네임 변경 완료";
     private static final String WITHDRAWAL_SUCCESS_MESSAGE = "회원 탈퇴가 완료";
     private static final String FIND_SCRAP_POSTS_SUCCESS_MESSAGE = "사용자가 스크랩한 게시글 조회 완료";
     private static final String FIND_MEMBER_POSTS_SUCCESS_MESSAGE = "사용자가 작성한 게시글 조회 완료";
     private static final String FIND_MEMBER_COMMENTS_SUCCESS_MESSAGE = "사용자가 작성한 댓글 조회 완료";
-    private static final String REISSUANCE_ACCESS_TOKEN_SUCCESS = "Access Token 재발급에 성공하였습니다.";
+    private static final String PROFILE_IMAGE_PREFIX = "profile/";
 
 
     // 연결 확인
@@ -111,7 +116,8 @@ public class MemberController {
             member.getId(), page - 1, size);
         return new ResponseEntity<>(
             MyPostListResponse.of(FIND_SCRAP_POSTS_SUCCESS_MESSAGE,
-                scrappedPostsByMemberId.getTotalPages(), scrappedPostsByMemberId.getTotalElements(), scrappedPostsByMemberId.getContent()),
+                scrappedPostsByMemberId.getTotalPages(), scrappedPostsByMemberId.getTotalElements(),
+                scrappedPostsByMemberId.getContent()),
             HttpStatus.OK);
     }
 
@@ -124,11 +130,13 @@ public class MemberController {
         @AuthenticationPrincipal(expression = "members") Members member,
         @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "10") int size) {
-        Page<PostWithBoardSummaryDto> postsByMemberId = postsService.getPostsByMemberId(member.getId(), page - 1,
+        Page<PostWithBoardSummaryDto> postsByMemberId = postsService.getPostsByMemberId(
+            member.getId(), page - 1,
             size);
 
         return new ResponseEntity<>(MyPostListResponse.of(FIND_MEMBER_POSTS_SUCCESS_MESSAGE,
-            postsByMemberId.getTotalPages(), postsByMemberId.getTotalElements(), postsByMemberId.getContent()), HttpStatus.OK);
+            postsByMemberId.getTotalPages(), postsByMemberId.getTotalElements(),
+            postsByMemberId.getContent()), HttpStatus.OK);
     }
 
     @GetMapping("/comments")
@@ -141,24 +149,41 @@ public class MemberController {
             member.getId(), page - 1, size);
         return new ResponseEntity<>(
             CommentListPagingResponseDto.of(FIND_MEMBER_COMMENTS_SUCCESS_MESSAGE,
-                commentsByMemberId.getTotalPages(), commentsByMemberId.getTotalElements(), commentsByMemberId.getContent()),
+                commentsByMemberId.getTotalPages(), commentsByMemberId.getTotalElements(),
+                commentsByMemberId.getContent()),
             HttpStatus.OK);
     }
 
     @PostMapping("/access-token")
     @Operation(summary = "Access Token 재발급 API", description = "Access Token을 재발급합니다.")
     public ResponseEntity<String> reissuanceAccessToken(
-            HttpServletRequest request,
-            HttpServletResponse response) {
-        return new ResponseEntity<>(memberService.reissuanceAccessToken(request, response), HttpStatus.OK);
+        HttpServletRequest request,
+        HttpServletResponse response) {
+        return new ResponseEntity<>(memberService.reissuanceAccessToken(request, response),
+            HttpStatus.OK);
     }
 
     @PostMapping("/logout")
     @Operation(summary = "로그아웃 API", description = "로그아웃을 진행합니다.")
     public ResponseEntity<String> logout(
-            @AuthenticationPrincipal(expression = "members") Members member,
-            HttpServletRequest request,
-            HttpServletResponse response) {
+        @AuthenticationPrincipal(expression = "members") Members member,
+        HttpServletRequest request,
+        HttpServletResponse response) {
         return new ResponseEntity<>(memberService.logout(request, response, member), HttpStatus.OK);
+    }
+
+    /**
+     * 프로필 사진 변경 API
+     */
+    @PutMapping(value = "/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "프로필 사진 변경", description = "프로필 사진 변경을 요청한 사용자의 프로필 사진을 변경합니다.")
+    public ResponseEntity<ApiResponse<String>> updateProfileImage(
+        @RequestPart("image") MultipartFile newProfileImage,
+        @AuthenticationPrincipal(expression = "members") Members member) {
+        ImageUploadRequestDto imageUploadRequestDto = ImageUploadRequestDto.of(newProfileImage,
+            PROFILE_IMAGE_PREFIX);
+        // 프로필 이미지 업데이트
+        memberService.updateProfileImage(member.getId(), imageUploadRequestDto);
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.onSuccess("프로필 사진 변경 완료"));
     }
 }
