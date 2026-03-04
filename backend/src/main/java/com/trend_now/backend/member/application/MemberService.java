@@ -66,7 +66,7 @@ public class MemberService {
     public MyPageResponseDto getMyPage(Long memberId) {
         Members members = memberRepository.findById(memberId)
             .orElseThrow(() -> new NotFoundException(NOT_EXIST_MEMBER));
-        return MyPageResponseDto.of(members.getName(), members.getEmail(), members.getProfileImage().getImageUrl());
+        return MyPageResponseDto.of(members.getName(), members.getEmail(), null);
     }
 
     @Transactional
